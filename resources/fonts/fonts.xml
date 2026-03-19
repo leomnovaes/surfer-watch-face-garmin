@@ -1,5 +1,4 @@
 <fonts xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
-    <font id="IconsSolid" filename="garmin-icons-16.fnt" antialias="false" />
-    <font id="IconsBrands" filename="fa-brands-16.fnt" antialias="false" />
-    <font id="WeatherIcons" filename="weather-icons-16.fnt" antialias="false" />
+    <font id="CrystalIcons" filename="crystal-icons.fnt" antialias="false" />
+    <font id="WeatherIcons" filename="weather-icons.fnt" antialias="false" />
 </fonts>

@@ -213,74 +213,65 @@
 
 ### Approach (revised after research)
 - **BMFont rasterization** is the standard community approach for icon fonts on Garmin
-- **Crystal Face** (warmsound/crystal-face) is the reference implementation — uses Erik Flowers Weather Icons rasterized via BMFont with proven settings
-- **Proven BMFont settings**: fontSize=-17, aa=2, useHinting=1, useSmoothing=1, padding=0,0,0,0, spacing=1,1, outWidth=256, outHeight=256, outBitDepth=8, alphaChnl=1, format=png
-- **Grid-aligned sizes** (power of 2 divisors of em-size) produce best results: 16px, 32px for em=512/2048 fonts
-- **Anti-aliasing ON** (aa=2) produces better results than monochrome — Garmin's 1-bit renderer thresholds the gray pixels
+- **Crystal Face** (warmsound/crystal-face, GPL v3) is the reference implementation — uses Erik Flowers Weather Icons + custom crystal icons
+- **fontbm cannot match BMFont quality** — different rasterizer (FreeType2 vs Windows GDI) produces half-pixel offset and different anti-aliasing
+- **Current approach**: use Crystal Face's pre-rasterized .fnt/.png files directly where available (SIL OFL for weather icons, custom pixel-art for crystal icons)
+- **Missing icons** need to be sourced from other community fonts or rasterized once we solve the quality gap
 
-### Task 27: Validate re-rasterization approach
-- [ ] Re-rasterize a few Erik Flowers Weather Icons glyphs using Crystal Face's BMFont settings (fontSize=-17, aa=2, hinting=1, smoothing=1, padding=0, spacing=1,1, 256x256, 8-bit)
-- [ ] Compare output visually with Crystal Face's pre-rasterized `weather-icons-20.fnt`/`weather-icons-20_0.png`
-- [ ] If results match: proceed with re-rasterization for our full glyph set
-- [ ] If results differ: use Crystal Face files directly (GPL license) and supplement missing glyphs
+### Icons currently wired (from Crystal Face):
+| Icon | Source | Font | Char | Status |
+|------|--------|------|------|--------|
+| Weather conditions (17) | Crystal Face weather-icons | WeatherIcons | A-I, a-h | ✅ Wired |
+| Heart | Crystal Face crystal-icons | CrystalIcons | 3 | ✅ Wired |
+| Bluetooth | Crystal Face crystal-icons | CrystalIcons | 8 | ✅ Wired |
+| Notifications | Crystal Face crystal-icons | CrystalIcons | 5 | ✅ Wired |
+| Sunrise | Crystal Face crystal-icons | CrystalIcons | > | ✅ Wired |
+| Sunset | Crystal Face crystal-icons | CrystalIcons | ? | ✅ Wired |
 
-### Task 28: Generate final Weather Icons font
-- [ ] Using validated BMFont settings, rasterize Erik Flowers Weather Icons TTF with all needed glyphs:
-  - Weather conditions (21): per design §6 OWM mapping
-  - Sunrise/sunset (2): wi-sunrise (0xF051), wi-sunset (0xF052)
-  - Umbrella (1): wi-umbrella (0xF084)
-  - Moon phases (16): per design §7
-- [ ] Place output `.fnt` + `.png` in `resources/fonts/`
-- [ ] Add font resource entry to `resources/fonts/fonts.xml`
-- [ ] Verify font loads in simulator without errors
+### Icons still needed (text placeholders):
+| Icon | Status | Next step |
+|------|--------|-----------|
+| Umbrella/precipitation | [U] placeholder | Search community fonts or rasterize |
+| Moon phases (16) | [O] placeholder | Search community fonts or rasterize |
+| Wind direction (8) | [>] placeholder | Procedural polygon arrow |
+| Tide high/low | [^]/[v] placeholder | Search community fonts (sunpazed, mondrian) |
+| Battery | Code-drawn | Keep as-is |
 
-### Task 29: Generate final general icons font
-- [ ] Compare Crystal Face crystal-icons-small (custom pixel-art) vs Font Awesome re-rasterized with proven BMFont settings for: heart, bluetooth, notification/bell
-- [ ] Choose better-looking option
-- [ ] Place output `.fnt` + `.png` in `resources/fonts/`
-- [ ] Add font resource entry to `resources/fonts/fonts.xml`
-- [ ] Verify font loads in simulator without errors
+### Task 27: Set up Crystal Face icons
+- [x] Copy Crystal Face weather-icons .fnt/.png into `resources/fonts/`
+- [x] Copy Crystal Face crystal-icons .fnt/.png into `resources/fonts/`
+- [x] Update `resources/fonts/fonts.xml`
+- [x] Verify fonts load in simulator
 
-### Task 30: Wire weather condition icons into view
-- [ ] Load Weather Icons font resource in `SurferWatchFaceView`
-- [ ] Update `drawIconWeather()` to select glyph based on `DataManager.weatherConditionId` using OWM code mapping (design §6)
-- [ ] Verify weather condition icon changes based on live OWM data in simulator
+### Task 28: Wire Crystal Face icons into view
+- [x] Wire weather condition icon (drawIconWeather with OWM code mapping)
+- [x] Wire heart, bluetooth, notification icons
+- [x] Wire sunrise/sunset icons
+- [ ] Verify all icons render correctly in simulator (user check needed)
 
-### Task 31: Wire sunrise/sunset icons into view
-- [ ] Update `drawIconSun()` to use wi-sunrise / wi-sunset glyphs from Weather Icons font
-- [ ] Verify icons render correctly in simulator
+### Task 29: Source missing icons — umbrella, moon phases
+- [ ] Search other open source Garmin watch faces for pre-rasterized umbrella and moon phase icons
+- [ ] Check: PeterDedden, Mondobiz, other popular open source faces
+- [ ] If found: copy .fnt/.png and wire into view
+- [ ] If not found: attempt Gemini 2x rasterization approach from Weather Icons TTF
+- [ ] Fallback: keep text placeholders
 
-### Task 32: Wire heart, bluetooth, notification icons into view
-- [ ] Update `drawIconHeart()`, `drawIconBluetooth()`, `drawIconNotification()` to use chosen font glyphs
-- [ ] Verify all three icons render correctly in simulator
-
-### Task 33: Wire moon phase icons into view
-- [ ] Update `drawIconMoon()` to select from 16 phase glyphs based on `DataManager.moonPhase`
-- [ ] Map moonPhase (0.0–1.0) to 16 evenly-spaced glyph indices per design §7
-- [ ] Verify moon icon changes based on calculated phase in simulator
-
-### Task 34: Wire umbrella icon into view
-- [ ] Update `drawIconUmbrella()` to use wi-umbrella glyph from Weather Icons font
-- [ ] Verify icon renders correctly in simulator
-
-### Task 35: Implement wind direction arrow (procedural polygon)
+### Task 30: Implement wind direction arrow (procedural polygon)
 - [ ] Implement `drawWindArrow(dc, x, y, degrees)` using `dc.fillPolygon()` — triangle with swallow tail
 - [ ] Calculate polygon vertices rotated to wind direction from `DataManager.windDeg`
 - [ ] Replace wind icon placeholder with procedural arrow
 - [ ] Verify arrow rotates correctly based on live OWM wind data in simulator
 
-### Task 36: Implement tide direction icons
+### Task 31: Source tide direction icons
 - [ ] Search community fonts (sunpazed/garmin-iconfonts, mondrian) for tide high/low wave glyphs
-- [ ] Typical mapping: high tide = wave+up arrow, low tide = wave+down arrow
-- [ ] If found: rasterize with proven BMFont settings and add to font resources
+- [ ] If found: add to font resources and wire into view
 - [ ] If not found: draw procedurally or use simple up/down arrow text
-- [ ] Wire into `drawIconTide()` and verify in simulator
+- [ ] Verify in simulator
 
-### Task 37*: Add night weather condition variants (deferred)
-- [ ]* Identify night variant glyphs from Weather Icons (wi-night-clear, wi-night-alt-cloudy, etc.)
-- [ ]* Add night glyphs to the Weather Icons BMFont conversion
-- [ ]* Update `drawIconWeather()` to check if current time is between sunset and sunrise
-- [ ]* If nighttime, use night variant glyph instead of day variant
+### Task 32*: Add night weather condition variants (deferred)
+- [ ]* Crystal Face weather-icons already includes night variants (a-h)
+- [ ]* Update `owmToWeatherGlyph()` to check if current time is between sunset and sunrise
+- [ ]* If nighttime, use night variant glyph (a-h) instead of day variant (A-I)
 
 ---
 

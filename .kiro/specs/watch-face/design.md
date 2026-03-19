@@ -303,15 +303,60 @@ For imperial: OWM returns wind speed in mph directly, so skip the m/s→mph conv
 Icons are rendered via `drawText()` using BMFont-rasterized icon fonts. The proven community approach:
 
 **BMFont settings** (from Crystal Face / warmsound):
-- `fontSize` = negative value matching target pixel height (e.g., -17 for ~20px)
-- `aa=2` (anti-aliasing level 2)
-- `useHinting=1`, `useSmoothing=1`
-- `padding=0,0,0,0`
-- `spacing=1,1`
-- `outWidth=256, outHeight=256` (power of 2)
-- `outBitDepth=8`
-- `alphaChnl=1` (alpha channel stores glyph data)
-- `format=png`
+```
+fontName=Weather Icons
+fontSize=-17          # negative = match pixel height
+aa=2                  # 2x supersampling
+useSmoothing=1
+useHinting=1
+renderFromOutline=0
+useClearType=0
+padding=0,0,0,0
+spacing=1,1
+outWidth=256
+outHeight=256
+outBitDepth=8         # grayscale
+alphaChnl=1
+textureFormat=png
+```
+Note: This config is for BMFont (Windows only). fontbm (cross-platform) uses FreeType2 which produces different rasterization — slightly different anti-aliasing and half-pixel baseline offset. For identical results, use BMFont on Windows.
+
+**fontbm workaround to match BMFont aa=2 output** (render at 2x, downscale):
+```bash
+# 1. Generate at 2x size (34px for target 17px)
+fontbm --font-file weathericons.ttf --font-size 34 --chars <chars> \
+  --data-format txt --spacing-horiz 2 --spacing-vert 2 \
+  --padding-up 0 --padding-right 0 --padding-down 0 --padding-left 0 \
+  --texture-size 512x512 --output crystal_2x
+
+# 2. Downscale and convert to 8-bit grayscale (requires ImageMagick)
+magick crystal_2x_0.png -filter Mitchell -resize 256x256 \
+  -alpha extract -type grayscale -depth 8 crystal_final.png
+
+# 3. Fix .fnt file: divide all x/y/width/height/xoffset/yoffset by 2,
+#    change size to 17, scaleW/scaleH to 256
+```
+
+**Crystal Face Weather Icons glyph mapping** (unicode → ASCII character):
+```
+61441 (wi-day-cloudy)             → A (65)
+61442 (wi-day-cloudy-gusts)       → B (66)
+61445 (wi-day-lightning)          → C (67)
+61448 (wi-day-rain)               → D (68)
+61449 (wi-day-showers)            → E (69)
+61450 (wi-day-snow)               → F (70)
+61452 (wi-day-sunny-overcast)     → G (71)
+61453 (wi-day-sunny)              → H (72)
+61459 (wi-cloudy)                 → I (73)
+61475 (wi-night-alt-cloudy-gusts) → a (97)
+61477 (wi-night-alt-rain)         → b (98)
+61480 (wi-night-alt-showers)      → c (99)
+61481 (wi-night-alt-snow)         → d (100)
+61482 (wi-night-alt-thunderstorm) → e (101)
+61486 (wi-night-clear)            → f (102)
+61569 (wi-tornado)                → g (103)
+61574 (wi-night-alt-cloudy)       → h (104)
+```
 
 **Grid-aligned sizes**: for best pixel alignment, use sizes that are power-of-2 divisors of the font's em-size:
 - Font Awesome (em=512): ideal at 16px, 32px
