@@ -163,7 +163,7 @@ var tideFetchedDay as String or Null       // "YYYY-MM-DD" UTC of last fetch
 // Computed from tideExtremes on each onUpdate()
 var nextTideTime as Number or Null         // Unix timestamp
 var nextTideType as String or Null         // "high" or "low"
-var currentTideHeight as Float or Null     // interpolated meters
+var currentTideHeight as Float or Null     // predicted height of next tide event (meters)
 
 // Device/sensor data (updated each onUpdate())
 var heartRate as Number or Null
@@ -179,7 +179,7 @@ var lastKnownLng as Float or Null
 - `updateSensorData()` — called from `onUpdate()`, reads HR, battery, notifications, BT, GPS; writes lat/lng to `Application.Storage` for background process
 - `onWeatherData(data as Dictionary)` — receives parsed OWM fields from `onBackgroundData()`, stores in fields, updates `owmFetchedAt`
 - `onTideData(data as Array)` — receives parsed tide array from `onBackgroundData()`, stores and persists
-- `computeNextTide()` — walks `tideExtremes` to find next event after now, interpolates current height
+- `computeNextTide()` — walks `tideExtremes` to find next event after now, reads predicted height of that event
 - `persistTideData()` — saves `tideExtremes` and `tideFetchedDay` to `Application.Storage`
 - `loadTideData()` — restores from `Application.Storage` on startup
 
@@ -197,6 +197,7 @@ Runs inside `SurferWatchFaceDelegate` (background process). Returns a parsed Dic
 Runs inside `SurferWatchFaceDelegate` (background process). Returns a parsed Array to the delegate.
 
 - `fetch(lat, lng, apiKey)` — builds StormGlass URL with 48h window, sets `Authorization` header, calls `Communications.makeWebRequest()`
+- Uses `datum=MLLW` (Mean Lower Low Water) so heights are always positive and match what tide websites/surfers expect. Default MSL datum produces small values around 0 which are confusing.
 - Callback parses response, converts ISO time strings to Unix timestamps, returns Array of `{:height, :time, :type}`
 - Checks `meta.requestCount` vs `meta.dailyQuota`; if exhausted, writes `stormGlassQuotaExhausted=true` to `Application.Storage`
 - On error: returns null, delegate skips packaging tide data

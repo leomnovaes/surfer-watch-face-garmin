@@ -36,9 +36,10 @@
 - Free tier: 1000 calls/day
 
 ### StormGlass Tide Extremes API
-- Endpoint: `GET https://api.stormglass.io/v2/tide/extremes/point?lat={lat}&lng={lng}&start={unix}&end={unix}`
+- Endpoint: `GET https://api.stormglass.io/v2/tide/extremes/point?lat={lat}&lng={lng}&start={unix}&end={unix}&datum=MLLW`
 - Auth: `Authorization: {api_key}` header
 - Note: uses `lng` not `lon`
+- Datum: `MLLW` (Mean Lower Low Water) — heights are always positive and match tide websites. Default MSL gives small values around 0 which are confusing.
 - Returns: array of `{ height: float, time: string (UTC ISO), type: "high"|"low" }`
 - Request 48h window (start of today UTC to end of tomorrow UTC)
 - Rate limit: max 1 request per calendar day; refresh also triggered if GPS moves >50km

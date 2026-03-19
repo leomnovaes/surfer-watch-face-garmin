@@ -135,8 +135,7 @@ class DataManager {
 
     // =========================================================
     // computeNextTide() — walks tideExtremes to find next event
-    // after now, sets nextTideTime/nextTideType, interpolates
-    // currentTideHeight between previous and next extreme.
+    // after now, sets nextTideTime/nextTideType/nextTideHeight.
     // If all events are in the past, sets tideDataExpired=true
     // in Application.Storage to trigger background refresh.
     // =========================================================
@@ -170,41 +169,15 @@ class DataManager {
             return;
         }
 
-        // Set next tide info
+        // Set next tide info — time, type, and predicted height of that event
         var nextEntry = tideExtremes[nextIdx] as Dictionary;
         nextTideTime = nextEntry["time"] as Number;
         nextTideType = nextEntry["type"] as String;
-
-        // Interpolate currentTideHeight between previous and next extreme
-        if (nextIdx > 0) {
-            var prevEntry = tideExtremes[nextIdx - 1] as Dictionary;
-            var prevTime = prevEntry["time"] as Number;
-            var prevHeight = prevEntry["height"];
-            var nextHeight = nextEntry["height"];
-
-            if (prevTime != null && prevHeight != null && nextHeight != null && nextTideTime != null) {
-                var prevH = (prevHeight as Float).toFloat();
-                var nextH = (nextHeight as Float).toFloat();
-                var totalDuration = (nextTideTime - prevTime).toFloat();
-                if (totalDuration > 0.0f) {
-                    var elapsed = (now - prevTime).toFloat();
-                    var fraction = elapsed / totalDuration;
-                    // Linear interpolation
-                    currentTideHeight = prevH + (nextH - prevH) * fraction;
-                } else {
-                    currentTideHeight = prevH;
-                }
-            } else {
-                currentTideHeight = null;
-            }
+        var nextHeight = nextEntry["height"];
+        if (nextHeight != null) {
+            currentTideHeight = (nextHeight as Float).toFloat();
         } else {
-            // No previous extreme — use next extreme's height as current
-            var nextHeight = nextEntry["height"];
-            if (nextHeight != null) {
-                currentTideHeight = (nextHeight as Float).toFloat();
-            } else {
-                currentTideHeight = null;
-            }
+            currentTideHeight = null;
         }
     }
 

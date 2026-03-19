@@ -195,16 +195,18 @@
 ### Task 25: Implement computeNextTide()
 - [x] Walk `tideExtremes` array to find first event where `time > now`
 - [x] Set `DataManager.nextTideTime`, `nextTideType`
-- [x] Interpolate `currentTideHeight` between previous and next extreme
+- [x] Set `currentTideHeight` to the predicted height of the next tide event (not interpolated)
 - [x] If no future events found (all in past), write `tideDataExpired=true` to `Application.Storage` to trigger background refresh
 - [x] Call from `onUpdate()` each tick
+- Note: Originally interpolated current height between extremes. Changed to show next event's predicted height — more useful for surfers planning around tide events.
 - Satisfies: requirements §1.2, design §2.2, §4.2
 
 ### Task 26: Wire live tide data to view
 - [x] Replace tide direction placeholder with icon based on `nextTideType`
-- [x] Replace tide time placeholder with formatted `nextTideTime`
-- [x] Replace tide height placeholder with `currentTideHeight` converted per design §4.4 ("X m" or "X ft")
+- [x] Replace tide time placeholder with formatted `nextTideTime` (includes a/p in 12hr mode)
+- [x] Replace tide height placeholder with next event's predicted height converted per design §4.4 ("X m" or "X ft")
 - [x] Display `--` when tide data unavailable
+- Note: `formatUnixTime()` now includes a/p suffix in 12hr mode. Tide height shows the predicted height of the next event, not interpolated current height.
 - Satisfies: requirements §1.2, §2.4
 
 ---

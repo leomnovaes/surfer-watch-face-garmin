@@ -37,7 +37,8 @@ class TideService {
             + "?lat=" + lat.toString()
             + "&lng=" + lng.toString()
             + "&start=" + startUnix.toString()
-            + "&end=" + endUnix.toString();
+            + "&end=" + endUnix.toString()
+            + "&datum=MLLW";
 
         var options = {
             :method => Communications.HTTP_REQUEST_METHOD_GET,

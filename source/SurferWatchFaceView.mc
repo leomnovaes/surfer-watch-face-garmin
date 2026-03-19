@@ -134,8 +134,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var hours = info.hour;
         var is24Hour = System.getDeviceSettings().is24Hour;
         if (!is24Hour) {
+            var suffix = hours >= 12 ? "p" : "a";
             hours = hours % 12;
             if (hours == 0) { hours = 12; }
+            return hours.toString() + ":" + info.min.format("%02d") + suffix;
         }
         return hours.toString() + ":" + info.min.format("%02d");
     }
@@ -327,9 +329,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var glyph = isSunrise ? IC_SUNRISE : IC_SUNSET;
         var font = crystalIconsFont != null ? crystalIconsFont : Graphics.FONT_XTINY;
         drawTextAligned(dc, centerX, iconY, font, glyph, Graphics.TEXT_JUSTIFY_CENTER);
-        // Time centered below, with a/p suffix
-        var suffix = isSunrise ? "a" : "p";
-        drawTextAligned(dc, centerX, textY, Graphics.FONT_XTINY, time + suffix, Graphics.TEXT_JUSTIFY_CENTER);
+        // Time centered below
+        drawTextAligned(dc, centerX, textY, Graphics.FONT_XTINY, time, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // Right column 2x2 grid:
