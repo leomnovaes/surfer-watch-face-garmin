@@ -297,12 +297,23 @@ Not useful for our remaining needs.
 | Tide high/low | Templarian/MaterialDesign-SVG | SVG (needs rasterization) | `waves-arrow-up.svg`, `waves-arrow-down.svg`. Apache 2.0 license. |
 | Wind direction (procedural) | Custom code | `dc.fillPolygon()` | Triangle with swallow tail, rotated to exact wind degree. Primary approach. |
 
-### Rasterization approach for SVG icons (umbrella, tide):
-Material Design SVGs need to be rasterized to BMFont format. Options:
-1. **Gemini 2x approach**: fontbm at 2x size → ImageMagick downscale → grayscale 8-bit (documented in design §5.1)
-2. **IcoMoon**: upload SVGs, create custom TTF, then rasterize with fontbm
-3. **FontForge**: import SVGs, create TTF, then rasterize
-All options require testing to validate quality before committing.
+### Rasterization approach for custom icons (established):
+The proven pipeline for rasterizing SVG icons to Garmin BMFont format:
+1. Source: Material Design Icons webfont TTF (`materialdesignicons-webfont.ttf`, Apache 2.0)
+2. Rasterize: `fontbm --font-file <ttf> --font-size 17 --chars <decimal_codepoints> --spacing-horiz 1 --spacing-vert 1 --padding-up 0 --padding-right 0 --padding-down 0 --padding-left 0 --texture-size 256x256 --output <name>`
+3. Convert: `magick <name>_0.png -alpha extract -type grayscale -depth 8 <final>.png`
+4. Edit .fnt: remap high unicode char IDs to ASCII, set `alphaChnl=1 redChnl=0 greenChnl=0 blueChnl=0`, fix filename
+5. Result: 8-bit grayscale 256x256 PNG matching Crystal Face format
+
+Key findings from rasterization testing:
+- **PNG must be 8-bit grayscale** (not RGBA) — Garmin renderer reads grayscale value as alpha
+- **Channel flags must be** `alphaChnl=1 redChnl=0 greenChnl=0 blueChnl=0` — matches Crystal Face
+- **RGBA output causes bold/fat lines** — gray AA pixels get thresholded to white on MIP display
+- **fontbm native AA at 17px** produces best results — matches Crystal Face target size
+- **19px is a viable alternative** if more detail is needed
+- **Monochrome** gives thinnest lines but loses detail compared to properly formatted grayscale AA
+- **Gemini 2x supersample approach failed** — downscale destroyed glyph detail
+- **Spacing/padding variations** made no visible difference at these sizes
 
 ### Task 27: Set up Crystal Face icons
 - [x] Copy Crystal Face weather-icons .fnt/.png into `resources/fonts/`
@@ -352,12 +363,42 @@ All options require testing to validate quality before committing.
 - Note: Procedural umbrella is a stopgap. Task 31b will replace with a proper rasterized icon font glyph.
 
 ### Task 31b: Replace procedural umbrella with rasterized icon font glyph
-- [ ] Build rasterization pipeline: SVG → TTF (via IcoMoon or FontForge) → fontbm 2x → ImageMagick downscale → .fnt/.png
-- [ ] Rasterize `umbrella-outline.svg` from Templarian/MaterialDesign-SVG (Apache 2.0, already in `/tmp/`)
-- [ ] Compare quality with Crystal Face icons — iterate on fontbm settings if needed
-- [ ] If quality acceptable: add to font resources and wire into `drawIconUmbrella()`
+**Goal**: Establish a repeatable rasterization pipeline and find the best fontbm settings for our icons.
+
+**Step 1: Create TTF from SVGs**
+- [ ] Use FontForge (CLI) to import Material Design SVGs into a single TTF
+- [ ] Map: U=umbrella, H=tide-high, L=tide-low
+- [ ] SVGs already in `/tmp/`: `mdi-umbrella-outline.svg`, `mdi-waves-arrow-up.svg`, `mdi-waves-arrow-down.svg`
+
+**Step 2: Round 1 — Generate 9 variants using fontbm**
+Test umbrella glyph across different settings. Output to `/tmp/raster-test/`.
+
+| # | Size | AA | Spacing | Padding | Command notes |
+|---|------|----|---------|---------|---------------|
+| 1 | 17px | native | 1,1 | 0,0,0,0 | Crystal Face baseline |
+| 2 | 17px | native | 0,0 | 0,0,0,0 | No spacing |
+| 3 | 17px | native | 2,2 | 0,0,0,0 | Extra spacing for AA bleed |
+| 4 | 17px | native | 1,1 | 1,1,1,1 | Padding to prevent AA clipping |
+| 5 | 16px | native | 1,1 | 0,0,0,0 | Power-of-2 aligned |
+| 6 | 15px | native | 1,1 | 0,0,0,0 | Smallest, matches FONT_XTINY |
+| 7 | 17px | monochrome | 1,1 | 0,0,0,0 | No AA — sharp pixels |
+| 8 | 34→17 | 2x+Mitchell | 2,2 | 0,0,0,0 | Gemini 2x supersample approach |
+| 9 | 32→16 | 2x+Mitchell | 2,2 | 0,0,0,0 | Power-of-2 variant of Gemini |
+
+- [ ] Generate all 9 variants
+- [ ] Present PNGs to user for visual comparison
+- [ ] User picks top 2-3 candidates
+
+**Step 3: Round 2 — Fine-tune winners**
+- [ ] Take the best 2-3 from Round 1
+- [ ] Tweak spacing/padding/size by ±1px to find optimal
+- [ ] Present refined PNGs to user for final pick
+
+**Step 4: Wire winner into project**
+- [ ] Copy winning .fnt/.png to `resources/fonts/`
+- [ ] Register in `fonts.xml`
+- [ ] Update `drawIconUmbrella()` to use font glyph
 - [ ] Verify in simulator
-- Note: This task establishes the rasterization pipeline we'll reuse for tide icons (Task 32).
 
 ### Task 32: Rasterize tide icons from Material Design SVG
 - [ ] Use rasterization pipeline from Task 31b

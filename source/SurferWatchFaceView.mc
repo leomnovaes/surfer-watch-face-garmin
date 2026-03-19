@@ -60,6 +60,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private var weatherIconsFont = null;
     private var moonIconsFont = null;
     private var seg34IconsFont = null;
+    private var surferIconsFont = null;
 
     // --- Crystal Icons glyph characters (from Crystal Face) ---
     private static const IC_HEART = "3";
@@ -85,6 +86,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         weatherIconsFont = WatchUi.loadResource(Rez.Fonts.WeatherIcons);
         moonIconsFont = WatchUi.loadResource(Rez.Fonts.MoonIcons);
         seg34IconsFont = WatchUi.loadResource(Rez.Fonts.Seg34Icons);
+        surferIconsFont = WatchUi.loadResource(Rez.Fonts.SurferIcons);
     }
 
     function onShow() as Void {
@@ -267,21 +269,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     private function drawIconUmbrella(dc as Dc, x as Number, y as Number) as Void {
-        // Procedural umbrella icon — arc dome + handle
-        // x,y = top-left corner of the icon bounding box (approx 14x14)
-        var cx = x;
-        var cy = y + 7;
-        // Dome: filled arc (half circle)
-        dc.fillCircle(cx, cy, 7);
-        // Cut out bottom half of dome by drawing black rect
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.fillRectangle(cx - 8, cy, 16, 9);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        // Handle: vertical line from center down
-        dc.drawLine(cx, cy, cx, cy + 5);
-        // Hook at bottom: small arc curving left
-        dc.drawLine(cx, cy + 5, cx - 2, cy + 5);
-        dc.drawLine(cx - 2, cy + 5, cx - 2, cy + 4);
+        if (surferIconsFont != null) {
+            drawTextAligned(dc, x, y, surferIconsFont, "U", Graphics.TEXT_JUSTIFY_CENTER);
+        }
     }
 
     private function drawIconHeart(dc as Dc, x as Number, y as Number) as Void {

@@ -3,4 +3,5 @@
     <font id="WeatherIcons" filename="weather-icons.fnt" antialias="false" />
     <font id="MoonIcons" filename="moon.fnt" antialias="false" />
     <font id="Seg34Icons" filename="seg34-icons.fnt" antialias="false" />
+    <font id="SurferIcons" filename="surfer-icons.fnt" antialias="false" />
 </fonts>
