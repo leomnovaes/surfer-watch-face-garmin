@@ -58,10 +58,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     // --- Icon font resources (loaded in onLayout) ---
     private var crystalIconsFont = null;
     private var weatherIconsFont = null;
+    private var moonIconsFont = null;
+    private var seg34IconsFont = null;
 
     // --- Crystal Icons glyph characters (from Crystal Face) ---
     private static const IC_HEART = "3";
-    private static const IC_BLUETOOTH = "8";
     private static const IC_NOTIFICATIONS = "5";
     private static const IC_SUNRISE = ">";
     private static const IC_SUNSET = "?";
@@ -82,6 +83,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     function onLayout(dc as Dc) as Void {
         crystalIconsFont = WatchUi.loadResource(Rez.Fonts.CrystalIcons);
         weatherIconsFont = WatchUi.loadResource(Rez.Fonts.WeatherIcons);
+        moonIconsFont = WatchUi.loadResource(Rez.Fonts.MoonIcons);
+        seg34IconsFont = WatchUi.loadResource(Rez.Fonts.Seg34Icons);
     }
 
     function onShow() as Void {
@@ -164,13 +167,25 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     private function drawIconBluetooth(dc as Dc, x as Number, y as Number) as Void {
-        if (crystalIconsFont != null) {
-            drawTextAligned(dc, x, y, crystalIconsFont, IC_BLUETOOTH, Graphics.TEXT_JUSTIFY_LEFT);
+        if (seg34IconsFont != null) {
+            drawTextAligned(dc, x, y, seg34IconsFont, "L", Graphics.TEXT_JUSTIFY_LEFT);
         }
     }
 
     private function drawIconMoon(dc as Dc, x as Number, y as Number) as Void {
-        drawTextAligned(dc, x, y, Graphics.FONT_XTINY, IC_MOON, Graphics.TEXT_JUSTIFY_LEFT);
+        if (moonIconsFont != null) {
+            var app = Application.getApp() as SurferWatchFaceApp;
+            var dm = app.getDataManager();
+            var glyph = "0"; // default: new moon
+            if (dm != null && dm.moonPhase != null) {
+                // Map 0.0-1.0 to chars 0-7 (8 phases)
+                var idx = (dm.moonPhase * 8).toNumber() % 8;
+                glyph = idx.toString();
+            }
+            drawTextAligned(dc, x, y, moonIconsFont, glyph, Graphics.TEXT_JUSTIFY_LEFT);
+        } else {
+            drawTextAligned(dc, x, y, Graphics.FONT_XTINY, IC_MOON, Graphics.TEXT_JUSTIFY_LEFT);
+        }
     }
 
     private function drawIconWeather(dc as Dc, x as Number, y as Number) as Void {
@@ -203,11 +218,68 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     private function drawIconWind(dc as Dc, x as Number, y as Number) as Void {
-        drawTextAligned(dc, x, y, Graphics.FONT_XTINY, IC_WIND, Graphics.TEXT_JUSTIFY_LEFT);
+        // Procedural wind arrow — draws a triangle with swallow tail
+        // pointing in the direction wind comes FROM (OWM convention).
+        // x,y = center of the arrow. Rotated by DataManager.windDeg.
+        // If no wind data, don't draw anything — text below will show "--"
+        var app = Application.getApp() as SurferWatchFaceApp;
+        var dm = app.getDataManager();
+        if (dm != null && dm.windDeg != null) {
+            drawWindArrow(dc, x, y + 7, dm.windDeg, 7);
+        }
+    }
+
+    // Draws a wind direction arrow (swallow-tail triangle) at center cx,cy
+    // rotated to `degrees` (meteorological: 0=N, 90=E, 180=S, 270=W).
+    // Arrow points in the direction wind blows FROM.
+    // size = half-height of the arrow.
+    private function drawWindArrow(dc as Dc, cx as Number, cy as Number, degrees as Number, size as Number) as Void {
+        var rad = degrees * Math.PI / 180.0;
+        var sinA = Math.sin(rad);
+        var cosA = Math.cos(rad);
+
+        // Arrow shape (pointing up = north, before rotation):
+        //   tip:         (0, -size)
+        //   left base:   (-size*0.6, size)
+        //   tail notch:  (0, size*0.4)
+        //   right base:  (size*0.6, size)
+        var s = size.toFloat();
+        var pts = [
+            [0.0, -s],              // tip
+            [-s * 0.6, s],          // left base
+            [0.0, s * 0.4],         // tail notch (swallow tail)
+            [s * 0.6, s]            // right base
+        ];
+
+        // Rotate each point and translate to cx,cy
+        var poly = new [4];
+        for (var i = 0; i < 4; i++) {
+            var px = (pts[i] as Array)[0] as Float;
+            var py = (pts[i] as Array)[1] as Float;
+            var rx = px * cosA - py * sinA;
+            var ry = px * sinA + py * cosA;
+            poly[i] = [cx + rx.toNumber(), cy + ry.toNumber()];
+        }
+
+        dc.fillPolygon(poly);
     }
 
     private function drawIconUmbrella(dc as Dc, x as Number, y as Number) as Void {
-        drawTextAligned(dc, x, y, Graphics.FONT_XTINY, IC_UMBRELLA, Graphics.TEXT_JUSTIFY_LEFT);
+        // Procedural umbrella icon — arc dome + handle
+        // x,y = top-left corner of the icon bounding box (approx 14x14)
+        var cx = x;
+        var cy = y + 7;
+        // Dome: filled arc (half circle)
+        dc.fillCircle(cx, cy, 7);
+        // Cut out bottom half of dome by drawing black rect
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        dc.fillRectangle(cx - 8, cy, 16, 9);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        // Handle: vertical line from center down
+        dc.drawLine(cx, cy, cx, cy + 5);
+        // Hook at bottom: small arc curving left
+        dc.drawLine(cx, cy + 5, cx - 2, cy + 5);
+        dc.drawLine(cx - 2, cy + 5, cx - 2, cy + 4);
     }
 
     private function drawIconHeart(dc as Dc, x as Number, y as Number) as Void {
@@ -264,15 +336,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     //   top-left: moon icon    top-right: illumination %
     //   bottom-left: AM/PM     bottom-right: seconds (hidden by default)
     private function drawRightColumn(dc as Dc, ampm as String, seconds as String) as Void {
-        // Top-left: moon icon
+        // Top-left: moon icon (illumination % removed — overlaps with moon icon)
         drawIconMoon(dc, MID_RIGHT_LEFT_X, MID_RIGHT_TOP_Y);
-        // Top-right: moon illumination %
-        var app = Application.getApp() as SurferWatchFaceApp;
-        var dm = app.getDataManager();
-        if (dm != null && dm.moonPhase != null) {
-            var illum = (Math.sin(dm.moonPhase * Math.PI) * 100).toNumber();
-            drawTextAligned(dc, MID_RIGHT_RIGHT_X, MID_RIGHT_TOP_Y, Graphics.FONT_XTINY, illum.toString() + "%", Graphics.TEXT_JUSTIFY_RIGHT);
-        }
         // Bottom-left: AM/PM
         drawTextAligned(dc, MID_RIGHT_LEFT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, ampm, Graphics.TEXT_JUSTIFY_LEFT);
         // Bottom-right: seconds
@@ -447,7 +512,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             }
             windText = speed.toString() + unit;
         }
-        drawWeatherCol(dc, WX_COL2_X, WX_Y, WX_TEXT_Y, IC_WIND, windText);
+        drawIconWind(dc, WX_COL2_X, WX_Y);
+        drawTextAligned(dc, WX_COL2_X, WX_TEXT_Y, Graphics.FONT_XTINY, windText, Graphics.TEXT_JUSTIFY_CENTER);
 
         // Col 3: umbrella icon + precipitation % (from Garmin built-in current weather)
         var precipText = "--";
@@ -457,7 +523,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 precipText = conditions.precipitationChance.toString() + "%";
             }
         }
-        drawWeatherCol(dc, WX_COL3_X, WX_Y_EDGE, WX_TEXT_Y_EDGE, IC_UMBRELLA, precipText);
+        drawIconUmbrella(dc, WX_COL3_X, WX_Y_EDGE);
+        drawTextAligned(dc, WX_COL3_X, WX_TEXT_Y_EDGE, Graphics.FONT_XTINY, precipText, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // =========================================================

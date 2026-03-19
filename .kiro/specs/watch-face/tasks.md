@@ -223,18 +223,17 @@
 |------|--------|------|------|--------|
 | Weather conditions (17) | Crystal Face weather-icons | WeatherIcons | A-I, a-h | ✅ Wired |
 | Heart | Crystal Face crystal-icons | CrystalIcons | 3 | ✅ Wired |
-| Bluetooth | Crystal Face crystal-icons | CrystalIcons | 8 | ✅ Wired |
+| Bluetooth | Crystal Face crystal-icons | CrystalIcons | 8 | ✅ Replaced by Segment34 `L` |
 | Notifications | Crystal Face crystal-icons | CrystalIcons | 5 | ✅ Wired |
 | Sunrise | Crystal Face crystal-icons | CrystalIcons | > | ✅ Wired |
 | Sunset | Crystal Face crystal-icons | CrystalIcons | ? | ✅ Wired |
 
 ### Icons still needed (text placeholders):
-| Icon | Status | Potential sources found |
-|------|--------|----------------------|
-| Umbrella/precipitation | [U] placeholder | Not found in any community font yet |
-| Moon phases (9-16) | [O] placeholder | **Segment34mkII** has 9 moon phases (chars 0-8) — quality looks great |
-| Wind direction (8) | [>] placeholder | **Segment34mkII** may have directional arrows; also procedural polygon approach |
-| Tide high/low | [^]/[v] placeholder | **BCTides** has sine wave bitmaps (30x30, 35x35 etc.) — not font-based |
+| Icon | Status | Approach |
+|------|--------|----------|
+| Umbrella/precipitation | Procedural (temporary) | Task 31b: rasterize from Material Design SVG to font glyph |
+| Tide high/low | [^]/[v] placeholder | Task 32: rasterize from Material Design SVG (`waves-arrow-up/down`) |
+| Wind direction | ✅ Procedural polygon | Done — `dc.fillPolygon()` rotated to exact degree |
 | Battery | Code-drawn | Keep as-is |
 
 ### Community icon font sources discovered:
@@ -316,30 +315,52 @@ All options require testing to validate quality before committing.
 - [ ] Verify all icons render correctly in simulator (user check needed)
 
 ### Task 29: Wire Segment34 moon phases into view
-- [ ] Copy Segment34mkII moon.fnt/.png into `resources/fonts/`
-- [ ] Add font resource to `resources/fonts/fonts.xml`
-- [ ] Update `drawIconMoon()` to select from 8 phase glyphs (chars 0-7) based on `DataManager.moonPhase`
-- [ ] Map moonPhase (0.0–1.0) to 8 phases: 0=new, 1=wax crescent, 2=first quarter, 3=wax gibbous, 4=full, 5=wan gibbous, 6=last quarter, 7=wan crescent
+- [x] Copy Segment34mkII moon.fnt/.png into `resources/fonts/`
+- [x] Add font resource to `resources/fonts/fonts.xml`
+- [x] Update `drawIconMoon()` to select from 8 phase glyphs (chars 0-7) based on `DataManager.moonPhase`
+- [x] Map moonPhase (0.0–1.0) to 8 phases: 0=new, 1=wax crescent, 2=first quarter, 3=wax gibbous, 4=full, 5=wan gibbous, 6=last quarter, 7=wan crescent
+- [x] Remove moon illumination % text (overlaps with moon icon at this size)
 - [ ] Verify moon icon changes in simulator
 
-### Task 30: Implement wind direction (procedural polygon)
-- [ ] Implement `drawWindArrow(dc, x, y, degrees)` using `dc.fillPolygon()` — triangle with swallow tail
-- [ ] Calculate polygon vertices rotated to exact wind direction from `DataManager.windDeg`
-- [ ] Replace wind icon placeholder with procedural arrow
-- [ ] Verify arrow rotates correctly based on live OWM wind data in simulator
-- [ ] Fallback: if procedural doesn't look good, use Segment34 directional arrows (chars 0-7)
+### Task 29b: Swap bluetooth icon to Segment34 simple version
+- [x] Copy Segment34mkII icons.fnt/.png into `resources/fonts/`
+- [x] Add font resource to `resources/fonts/fonts.xml`
+- [x] Update `drawIconBluetooth()` to use Segment34 char `L` (connected) instead of Crystal Face char `8`
+- [ ] Optionally: show Segment34 char `M` (disconnected) when BT is off, or hide icon entirely (current behavior)
+- [x] Verify bluetooth icon renders correctly in simulator
+- Note: Segment34 has a simple bluetooth rune without background circle. Crystal Face's version had a filled circle background.
+- Note: .fnt file needed fixes — original referenced `icons.png` (renamed to `seg34-icons.png`) and had incorrect `scaleW=246` (actual texture is 377px wide).
 
-### Task 31: Rasterize umbrella icon from Material Design SVG
-- [ ] Download `umbrella-outline.svg` from Templarian/MaterialDesign-SVG (Apache 2.0)
-- [ ] Create custom TTF using IcoMoon or FontForge with the umbrella SVG
-- [ ] Rasterize using Gemini 2x approach (fontbm at 2x → ImageMagick downscale → grayscale)
-- [ ] Compare quality with Crystal Face icons — iterate on settings if needed
-- [ ] If quality acceptable: add to font resources and wire into view
-- [ ] If not: try alternative approaches or keep text placeholder
+### Task 30: Implement wind direction (procedural polygon)
+- [x] Implement `drawWindArrow(dc, x, y, degrees)` using `dc.fillPolygon()` — triangle with swallow tail
+- [x] Calculate polygon vertices rotated to exact wind direction from `DataManager.windDeg`
+- [x] Replace wind icon placeholder with procedural arrow
+- [x] Verify arrow rotates correctly based on live OWM wind data in simulator
+- [x] Don't draw arrow when no wind data — show nothing (text below shows "--")
+- Note: Procedural approach works well. Arrow is 7px half-height, swallow-tail shape, rotated to exact OWM wind_deg. Segment34 fallback not needed.
+
+### Task 30b: Wind arrow no-data default
+- [x] When `windDeg` is null, don't draw any arrow (was defaulting to north which is misleading)
+- [x] Verified: wind column shows only "--" text when no weather data
+
+### Task 31: Umbrella icon (procedural, temporary)
+- [x] Implemented procedural umbrella using `dc.fillCircle()` dome + line handle + hook
+- [x] Replaced `[U]` text placeholder in precipitation column
+- [x] Verified in simulator — functional but lower quality than font-based icons
+- Note: Procedural umbrella is a stopgap. Task 31b will replace with a proper rasterized icon font glyph.
+
+### Task 31b: Replace procedural umbrella with rasterized icon font glyph
+- [ ] Build rasterization pipeline: SVG → TTF (via IcoMoon or FontForge) → fontbm 2x → ImageMagick downscale → .fnt/.png
+- [ ] Rasterize `umbrella-outline.svg` from Templarian/MaterialDesign-SVG (Apache 2.0, already in `/tmp/`)
+- [ ] Compare quality with Crystal Face icons — iterate on fontbm settings if needed
+- [ ] If quality acceptable: add to font resources and wire into `drawIconUmbrella()`
+- [ ] Verify in simulator
+- Note: This task establishes the rasterization pipeline we'll reuse for tide icons (Task 32).
 
 ### Task 32: Rasterize tide icons from Material Design SVG
-- [ ] Download `waves-arrow-up.svg` and `waves-arrow-down.svg` from Templarian/MaterialDesign-SVG (Apache 2.0)
-- [ ] Same rasterization approach as umbrella (Task 31)
+- [ ] Use rasterization pipeline from Task 31b
+- [ ] Rasterize `waves-arrow-up.svg` and `waves-arrow-down.svg` from Templarian/MaterialDesign-SVG (Apache 2.0, already in `/tmp/`)
+- [ ] Add to font resources (can share .fnt/.png with umbrella or separate file)
 - [ ] Wire into `drawIconTide()` and verify in simulator
 
 ### Task 33*: Add night weather condition variants (deferred)

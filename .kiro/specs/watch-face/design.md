@@ -75,10 +75,10 @@ Row spacing must exceed the font's nominal size to avoid overlap. For `FONT_XTIN
 - Right column: 2x2 grid
   - Left edge x=128, right edge x=168
   - Top row y=78, bottom row y=96
-  - Top-left: moon phase icon
-  - Top-right: empty (moon illumination % added in Task 21)
+  - Top-left: moon phase icon (from Segment34mkII moon font, chars 0-7)
+  - Top-right: empty (illumination % removed — overlaps with moon icon at this size)
   - Bottom-left: am/pm, left-justified
-  - Bottom-right: seconds (visible for layout, hidden by default in Task 28)
+  - Bottom-right: seconds (visible for layout, hidden by default in Task 38)
 
 **Divider Lines** (single line)
 - Top divider: drawLine(x=8, y=68, x=160, y=68) — right side clipped to avoid HR circle area
