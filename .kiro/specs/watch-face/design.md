@@ -299,46 +299,100 @@ For imperial: OWM returns wind speed in mph directly, so skip the m/s→mph conv
 
 ## 5. Icon Strategy
 
-### 5.1 Approach: BMFont Icon Fonts (revised)
+### 5.1 Rasterization Pipeline (proven)
 
-Icons are rendered via `drawText()` using BMFont-rasterized icon fonts. The proven community approach:
+All custom icons are rasterized from TTF source fonts to BMFont format (.fnt + .png) using this pipeline:
 
-**BMFont settings** (from Crystal Face / warmsound):
-```
-fontName=Weather Icons
-fontSize=-17          # negative = match pixel height
-aa=2                  # 2x supersampling
-useSmoothing=1
-useHinting=1
-renderFromOutline=0
-useClearType=0
-padding=0,0,0,0
-spacing=1,1
-outWidth=256
-outHeight=256
-outBitDepth=8         # grayscale
-alphaChnl=1
-textureFormat=png
-```
-Note: This config is for BMFont (Windows only). fontbm (cross-platform) uses FreeType2 which produces different rasterization — slightly different anti-aliasing and half-pixel baseline offset. For identical results, use BMFont on Windows.
+**Prerequisites:**
+- `fontbm` — BMFont-compatible rasterizer (macOS binary in `tools/fontbm`)
+- `magick` (ImageMagick) — for PNG format conversion
+- Source TTF font with the glyphs you need
 
-**fontbm workaround to match BMFont aa=2 output** (render at 2x, downscale):
+**Step 1: Rasterize with fontbm**
 ```bash
-# 1. Generate at 2x size (34px for target 17px)
-fontbm --font-file weathericons.ttf --font-size 34 --chars <chars> \
-  --data-format txt --spacing-horiz 2 --spacing-vert 2 \
+tools/fontbm \
+  --font-file <source.ttf> \
+  --font-size 17 \
+  --chars <decimal_codepoints_comma_separated> \
+  --spacing-horiz 1 --spacing-vert 1 \
   --padding-up 0 --padding-right 0 --padding-down 0 --padding-left 0 \
-  --texture-size 512x512 --output crystal_2x
+  --texture-size 256x256 \
+  --output /tmp/<name>
+```
+This produces `<name>.fnt` and `<name>_0.png` (RGBA format).
 
-# 2. Downscale and convert to 8-bit grayscale (requires ImageMagick)
-magick crystal_2x_0.png -filter Mitchell -resize 256x256 \
-  -alpha extract -type grayscale -depth 8 crystal_final.png
+**Step 2: Convert PNG to 8-bit grayscale**
+```bash
+magick /tmp/<name>_0.png -alpha extract -type grayscale -depth 8 resources/fonts/<final>.png
+```
+This extracts the alpha channel into a pure 8-bit grayscale PNG — the format Garmin's renderer expects.
 
-# 3. Fix .fnt file: divide all x/y/width/height/xoffset/yoffset by 2,
-#    change size to 17, scaleW/scaleH to 256
+**Step 3: Edit .fnt file**
+Copy the .fnt to `resources/fonts/` and make these edits:
+1. Remap high unicode `char id=XXXXXX` to simple ASCII IDs (e.g., 85 for 'U')
+2. Set channel flags: `alphaChnl=1 redChnl=0 greenChnl=0 blueChnl=0`
+3. Update `file=` to point to the final PNG filename
+
+**Step 4: Register in fonts.xml**
+```xml
+<font id="MyIcons" filename="my-icons.fnt" antialias="false" />
 ```
 
-**Crystal Face Weather Icons glyph mapping** (unicode → ASCII character):
+**Step 5: Load and use in code**
+```java
+var myFont = WatchUi.loadResource(Rez.Fonts.MyIcons);
+dc.drawText(x, y, myFont, "U", Graphics.TEXT_JUSTIFY_CENTER);
+```
+
+### 5.1a Critical Format Requirements
+
+The output PNG **must be 8-bit grayscale** (not RGBA). The .fnt **must have** `alphaChnl=1 redChnl=0 greenChnl=0 blueChnl=0`.
+
+Why: Garmin's MIP renderer reads the grayscale pixel value as glyph opacity. With RGBA + `alphaChnl=0`, the renderer misinterprets the channels, causing lines to appear bold/fat. This was the root cause of our initial quality issues.
+
+Reference: Crystal Face (warmsound/crystal-face) uses this exact format — 8-bit grayscale 256x256 PNGs with `alphaChnl=1`.
+
+### 5.1b Size Selection
+
+- **17px** — best general-purpose size, matches Crystal Face and FONT_XTINY row height
+- **19px** — viable alternative when more detail is needed
+- Tested 14-20px; 17px and 19px produced the cleanest results on the Instinct 2X simulator
+- Monochrome (`--monochrome` flag) gives thinnest lines but loses detail vs grayscale AA
+- The Gemini 2x supersample approach (render at 2x, downscale) did not produce usable results
+
+### 5.1c Approaches That Did NOT Work
+
+| Approach | Result | Why |
+|----------|--------|-----|
+| fontbm RGBA output directly | Bold/fat lines | Garmin renderer misinterprets RGBA channels |
+| Gemini 2x supersample + Mitchell downscale | White blobs | Downscale destroyed glyph detail |
+| Monochrome at various sizes | Too thin, asymmetric | Lost AA detail, half-pixel misalignment visible |
+| Varying spacing/padding (0-2px) | No visible difference | At 17px, spacing/padding don't affect quality |
+
+### 5.2 Font Files In Use
+
+| Font file | Source | Glyphs | Format |
+|-----------|--------|--------|--------|
+| `weather-icons.fnt/.png` | Crystal Face (Erik Flowers, SIL OFL) | 17 weather conditions (A-I day, a-h night) | 8-bit grayscale 256x256 |
+| `crystal-icons.fnt/.png` | Crystal Face (custom pixel-art) | Heart, notifications, sunrise, sunset | 8-bit colormap 256x256 |
+| `moon.fnt/.png` | Segment34mkII | 8 moon phases (chars 0-7) | 8-bit grayscale |
+| `seg34-icons.fnt/.png` | Segment34mkII | Bluetooth (L), arrows (0-7), etc. | 8-bit grayscale |
+| `surfer-icons.fnt/.png` | MDI webfont (Apache 2.0), rasterized with our pipeline | Umbrella (U=85), waves-arrow-up (H=72) | 8-bit grayscale 256x256 |
+
+### 5.2a MDI Webfont Codepoints
+
+Source: `materialdesignicons-webfont.ttf` from Templarian/MaterialDesign-Webfont (Apache 2.0)
+Saved at: `/tmp/materialdesignicons-webfont.ttf`
+
+| Icon | MDI name | Hex codepoint | Decimal | Mapped to ASCII |
+|------|----------|---------------|---------|-----------------|
+| Umbrella | umbrella-outline | F054B | 984395 | U (85) |
+| Tide high | waves-arrow-up | F185B | 989275 | H (72) |
+| Tide low | (not in MDI) | — | — | L (76) — needs flip or alternative |
+
+### 5.2b Crystal Face Weather Icons Glyph Mapping
+
+Unicode → ASCII remapping used by Crystal Face:
 ```
 61441 (wi-day-cloudy)             → A (65)
 61442 (wi-day-cloudy-gusts)       → B (66)
@@ -359,99 +413,25 @@ magick crystal_2x_0.png -filter Mitchell -resize 256x256 \
 61574 (wi-night-alt-cloudy)       → h (104)
 ```
 
-**Grid-aligned sizes**: for best pixel alignment, use sizes that are power-of-2 divisors of the font's em-size:
-- Font Awesome (em=512): ideal at 16px, 32px
-- Weather Icons (em=2048): ideal at 16px, 32px
-- Anti-aliasing ON produces better results than monochrome — Garmin's 1-bit renderer thresholds gray pixels
+### 5.3 Icon Sources by Category
 
-**Reference implementation**: Crystal Face (warmsound/crystal-face, GPL v3) has pre-rasterized Weather Icons and custom crystal icons that serve as quality benchmark.
+| Category | Source | Status |
+|----------|--------|--------|
+| Weather conditions (17) | Crystal Face weather-icons.fnt | ✅ Wired |
+| Heart | Crystal Face crystal-icons.fnt, char `3` | ✅ Wired |
+| Notifications | Crystal Face crystal-icons.fnt, char `5` | ✅ Wired |
+| Sunrise/sunset | Crystal Face crystal-icons.fnt, chars `>` / `?` | ✅ Wired |
+| Bluetooth | Segment34mkII seg34-icons.fnt, char `L` | ✅ Wired |
+| Moon phases (8) | Segment34mkII moon.fnt, chars `0`-`7` | ✅ Wired |
+| Wind direction | Procedural `dc.fillPolygon()` — swallow-tail arrow rotated to exact degree | ✅ Wired |
+| Umbrella | MDI surfer-icons.fnt, char `U` (rasterized with our pipeline) | ✅ Wired |
+| Tide high | MDI surfer-icons.fnt, char `H` (waves-arrow-up) | Rasterized, not yet wired |
+| Tide low | Not in MDI — need to flip waves-arrow-up or find alternative | Not started |
+| Battery | Code-drawn fill bar | ✅ Wired |
 
-**Icon sources by category**:
-| Category | Source | Approach |
-|----------|--------|----------|
-| Weather conditions (21) | Erik Flowers Weather Icons TTF | BMFont rasterize with proven settings |
-| Sunrise/sunset (2) | Erik Flowers Weather Icons TTF | BMFont rasterize |
-| Umbrella (1) | Erik Flowers Weather Icons TTF | BMFont rasterize |
-| Moon phases (16) | Erik Flowers Weather Icons TTF | BMFont rasterize |
-| Heart, Bluetooth, Bell (3) | Font Awesome Solid/Brands TTF OR Crystal Face crystal-icons | Compare both, choose better |
-| Wind direction (8) | Procedural polygon | `dc.fillPolygon()` — triangle with swallow tail, rotated to wind degree |
-| Tide high/low (2) | Community fonts (sunpazed, mondrian) | Search for wave+arrow glyphs, fallback to procedural |
-| Battery | Code-drawn | Keep current fill-bar approach |
+### 5.4 Code Patterns
 
-### 5.2 Font Sources
-
-Two separate icon font files:
-
-**Garmin Icons** (`garmin-connect-icons.ttf` → `garmin-icons.fnt`):
-| Role | Glyph name | Unicode |
-|------|-----------|---------|
-| Heart (HR circle) | heart | 0x6D |
-| Bluetooth | bluetooth | 0x56 |
-| Notification | speech-bubble | 0xC2 |
-
-**Weather Icons** (`weathericons-regular-webfont.ttf` → `weather-icons.fnt`):
-
-Weather conditions (OWM code → glyph, from erikflowers OWM mapping):
-| OWM codes | Glyph name | Unicode |
-|-----------|-----------|---------|
-| 200-202, 230-232 | wi-thunderstorm | 0xF01E |
-| 210-212, 221 | wi-lightning | 0xF016 |
-| 300, 301, 321, 500 | wi-sprinkle | 0xF01C |
-| 302, 311, 312, 314, 501-504 | wi-rain | 0xF019 |
-| 310, 511, 611-616, 620 | wi-rain-mix | 0xF017 |
-| 313, 520-522 | wi-showers | 0xF01A |
-| 531, 901 | wi-storm-showers | 0xF01D |
-| 600, 601, 621, 622 | wi-snow | 0xF01B |
-| 602 | wi-sleet | 0xF0B5 |
-| 711 | wi-smoke | 0xF062 |
-| 721 | wi-day-haze | 0xF0B6 |
-| 731, 761, 762 | wi-dust | 0xF063 |
-| 741 | wi-fog | 0xF014 |
-| 771, 801-803 | wi-cloudy-gusts | 0xF011 |
-| 781, 900 | wi-tornado | 0xF056 |
-| 800 | wi-day-sunny | 0xF00D |
-| 804 | wi-cloudy | 0xF013 |
-| 902 | wi-hurricane | 0xF073 |
-| 903 | wi-snowflake-cold | 0xF076 |
-| 904 | wi-hot | 0xF072 |
-| 905 | wi-windy | 0xF021 |
-
-Other Weather Icons:
-| Role | Glyph name | Unicode |
-|------|-----------|---------|
-| Sunrise | wi-sunrise | 0xF051 |
-| Sunset | wi-sunset | 0xF052 |
-| Umbrella | wi-umbrella | 0xF084 |
-| Wind (generic) | wi-strong-wind | 0xF050 |
-
-Moon phases (16 evenly-spaced from 28 available):
-| Phase | Glyph name | Unicode |
-|-------|-----------|---------|
-| New moon | wi-moon-new | 0xF095 |
-| Waxing crescent 2 | wi-moon-waxing-crescent-2 | 0xF097 |
-| Waxing crescent 4 | wi-moon-waxing-crescent-4 | 0xF099 |
-| Waxing crescent 6 | wi-moon-waxing-crescent-6 | 0xF09B |
-| First quarter | wi-moon-first-quarter | 0xF09C |
-| Waxing gibbous 2 | wi-moon-waxing-gibbous-2 | 0xF09E |
-| Waxing gibbous 4 | wi-moon-waxing-gibbous-4 | 0xF0A0 |
-| Waxing gibbous 6 | wi-moon-waxing-gibbous-6 | 0xF0A2 |
-| Full moon | wi-moon-full | 0xF0A3 |
-| Waning gibbous 2 | wi-moon-waning-gibbous-2 | 0xF0A5 |
-| Waning gibbous 4 | wi-moon-waning-gibbous-4 | 0xF0A7 |
-| Waning gibbous 6 | wi-moon-waning-gibbous-6 | 0xF0A9 |
-| Third quarter | wi-moon-third-quarter | 0xF0AA |
-| Waning crescent 2 | wi-moon-waning-crescent-2 | 0xF0AC |
-| Waning crescent 4 | wi-moon-waning-crescent-4 | 0xF0AE |
-| Waning crescent 6 | wi-moon-waning-crescent-6 | 0xF0B0 |
-
-**Not using icon fonts:**
-- Battery — code-drawn (fill bar proportional to %)
-- Wind direction arrows — deferred (Task 32), using cardinal text labels ("N", "NE", etc.) for now
-- Tide direction — TBD (Task 35)
-
-### 5.3 Code Patterns
-
-**drawTextAligned helper**: All text and icon rendering goes through `drawTextAligned()` which compensates for the font's built-in top padding. This ensures the Y coordinate passed is where the visible pixels actually start:
+**drawTextAligned helper**: Compensates for font top padding so Y = top pixel of visible content:
 ```java
 private function drawTextAligned(dc, x, y, font, text, justify) {
     var fontHeight = dc.getFontHeight(font);
@@ -461,35 +441,13 @@ private function drawTextAligned(dc, x, y, font, text, justify) {
 }
 ```
 
-**Icon methods**: Each icon has its own `drawIcon*()` method that calls `drawTextAligned()` with the icon placeholder constant. When the icon font is ready, only the constant value and font reference change — no call sites need updating:
-```java
-private function drawIconBattery(dc, x, y) {
-    drawTextAligned(dc, x, y, Graphics.FONT_XTINY, IC_BATTERY, TEXT_JUSTIFY_LEFT);
-}
-```
+**Icon methods**: Each icon has its own `drawIcon*()` method. Font-based icons use `drawTextAligned()`. Procedural icons (wind arrow) use `dc.fillPolygon()`.
 
-**Composite components**: Reusable UI units (text + icon or icon + text) are encapsulated in methods that take `(dc, x, y, data)` so they can be placed anywhere by changing the position constants.
+**Composite components**: Reusable UI units (text + icon) take `(dc, x, y, data)`.
+- Text-first: `x` = anchor between text and icon
+- Icon-first: `x` = left edge
 
-Anchoring rule for composite components:
-- **Text-first** (text left, icon right): `x` = anchor point between text and icon. Text is `TEXT_JUSTIFY_RIGHT` to `x - SPACER`, icon is `TEXT_JUSTIFY_LEFT` from `x`.
-- **Icon-first** (icon left, text right): `x` = left edge. Icon is `TEXT_JUSTIFY_LEFT` from `x`, text is `TEXT_JUSTIFY_LEFT` from `x + iconWidth + SPACER`.
-
-Examples:
-```java
-// Text-first: "75%" [=]  — x anchors the boundary
-private function drawBatteryWithPercent(dc, x, y, percent) {
-    drawTextAligned(dc, x - SPACER, y, FONT_XTINY, percent + "%", TEXT_JUSTIFY_RIGHT);
-    drawIconBattery(dc, x, y);
-}
-
-// Icon-first: [^] 14:32  — x is the left edge
-private function drawTideInfo(dc, x, y, isHigh, time, height) {
-    drawIconTide(dc, x, y, isHigh);
-    drawTextAligned(dc, x + iconWidth + SPACER, y, FONT_XTINY, time, TEXT_JUSTIFY_LEFT);
-}
-```
-
-**Layout constants**: All pixel coordinates are `private static const` at the top of `SurferWatchFaceView`, grouped by section. Adjusting layout = changing constants only.
+**Layout constants**: All pixel coordinates are `private static const` at the top of `SurferWatchFaceView`.
 
 ---
 
