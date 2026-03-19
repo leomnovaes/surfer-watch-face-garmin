@@ -358,8 +358,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         drawIconMoon(dc, MID_RIGHT_LEFT_X, MID_RIGHT_TOP_Y);
         // Bottom-left: AM/PM
         drawTextAligned(dc, MID_RIGHT_LEFT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, ampm, Graphics.TEXT_JUSTIFY_LEFT);
-        // Bottom-right: seconds
-        drawTextAligned(dc, MID_RIGHT_RIGHT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, seconds, Graphics.TEXT_JUSTIFY_RIGHT);
+        // Bottom-right: seconds (only if ShowSeconds enabled)
+        var showSec = Application.Properties.getValue("ShowSeconds");
+        if (showSec != null && showSec == true) {
+            drawTextAligned(dc, MID_RIGHT_RIGHT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, seconds, Graphics.TEXT_JUSTIFY_RIGHT);
+        }
     }
 
     // Icon centered above text — for weather widget columns

@@ -403,9 +403,11 @@ Key findings from rasterization testing:
 
 ## Phase 7 — Polish & Sideload
 
-### Task 38: Implement seconds reveal (placeholder gesture)
-- [ ] Add seconds field to `drawMiddleSection()`, hidden by default
-- [ ] Add a settings property `ShowSeconds` (boolean) as temporary toggle until gesture is implemented
+### Task 38: Implement seconds reveal (settings toggle)
+- [x] Add `ShowSeconds` boolean property (default false) to properties.xml
+- [x] Add settings UI entry and string
+- [x] Conditionally show seconds in `drawRightColumn()` based on property value
+- [x] Seconds hidden by default — user enables via Garmin Connect app settings
 - Satisfies: requirements §4.2
 
 ### Task 39: Pixel-tune full layout with real icons

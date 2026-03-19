@@ -6,5 +6,6 @@
     <string id="StormGlassApiKeyTitle">StormGlass API Key</string>
     <string id="HomeLatTitle">Home Latitude</string>
     <string id="HomeLngTitle">Home Longitude</string>
+    <string id="ShowSecondsTitle">Show Seconds</string>
 
 </strings>

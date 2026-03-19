@@ -16,4 +16,8 @@
         <settingConfig type="alphaNumeric"/>
     </setting>
 
+    <setting propertyKey="@Properties.ShowSeconds" title="@Strings.ShowSecondsTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+
 </settings>
