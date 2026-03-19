@@ -1,0 +1,8 @@
+<properties xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+
+    <property id="OWMApiKey" type="string"></property>
+    <property id="StormGlassApiKey" type="string"></property>
+    <property id="HomeLat" type="string">0.0</property>
+    <property id="HomeLng" type="string">0.0</property>
+
+</properties>

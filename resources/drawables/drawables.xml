@@ -1,0 +1,24 @@
+<drawables xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    <bitmap id="IcTideHigh"            filename="ic_tide_high.bmp"/>
+    <bitmap id="IcTideLow"             filename="ic_tide_low.bmp"/>
+    <bitmap id="IcSunrise"             filename="ic_sunrise.bmp"/>
+    <bitmap id="IcSunset"              filename="ic_sunset.bmp"/>
+    <bitmap id="IcMoonNew"             filename="ic_moon_new.bmp"/>
+    <bitmap id="IcMoonWaxingCrescent"  filename="ic_moon_waxing_crescent.bmp"/>
+    <bitmap id="IcMoonFirstQuarter"    filename="ic_moon_first_quarter.bmp"/>
+    <bitmap id="IcMoonWaxingGibbous"   filename="ic_moon_waxing_gibbous.bmp"/>
+    <bitmap id="IcMoonFull"            filename="ic_moon_full.bmp"/>
+    <bitmap id="IcMoonWaningGibbous"   filename="ic_moon_waning_gibbous.bmp"/>
+    <bitmap id="IcMoonLastQuarter"     filename="ic_moon_last_quarter.bmp"/>
+    <bitmap id="IcMoonWaningCrescent"  filename="ic_moon_waning_crescent.bmp"/>
+    <bitmap id="IcWeatherClear"        filename="ic_weather_clear.bmp"/>
+    <bitmap id="IcWeatherClouds"       filename="ic_weather_clouds.bmp"/>
+    <bitmap id="IcWeatherRain"         filename="ic_weather_rain.bmp"/>
+    <bitmap id="IcWeatherDrizzle"      filename="ic_weather_drizzle.bmp"/>
+    <bitmap id="IcWeatherThunderstorm" filename="ic_weather_thunderstorm.bmp"/>
+    <bitmap id="IcWeatherSnow"         filename="ic_weather_snow.bmp"/>
+    <bitmap id="IcWeatherFog"          filename="ic_weather_fog.bmp"/>
+    <bitmap id="IcWindArrow"           filename="ic_wind_arrow.bmp"/>
+    <bitmap id="IcUmbrella"            filename="ic_umbrella.bmp"/>
+    <bitmap id="LauncherIcon"          filename="launcher_icon.svg" dithering="none"/>
+</drawables>

@@ -1,0 +1,279 @@
+import Toybox.Activity;
+import Toybox.Application;
+import Toybox.Lang;
+import Toybox.Position;
+import Toybox.System;
+import Toybox.Time;
+import Toybox.Time.Gregorian;
+
+class DataManager {
+
+    // --- Cached weather data (from OWM, received via onBackgroundData) ---
+    var temperature as Float or Null;
+    var weatherConditionId as Number or Null;
+    var windSpeed as Float or Null;
+    var windDeg as Number or Null;
+    var sunrise as Number or Null;
+    var sunset as Number or Null;
+    var precipPop as Float or Null;
+    var moonPhase as Float or Null;
+    var owmFetchedAt as Number or Null;
+
+    // --- Cached tide data (from StormGlass, received via onBackgroundData) ---
+    var tideExtremes as Array or Null;
+    var tideFetchedDay as String or Null;
+
+    // --- Computed from tideExtremes on each onUpdate() ---
+    var nextTideTime as Number or Null;
+    var nextTideType as String or Null;
+    var currentTideHeight as Float or Null;
+
+    // --- Device/sensor data (updated each onUpdate()) ---
+    var heartRate as Number or Null;
+    var battery as Number;
+    var notificationCount as Number;
+    var bluetoothConnected as Boolean;
+    var lastKnownLat as Float or Null;
+    var lastKnownLng as Float or Null;
+
+    function initialize() {
+        // Initialize sensor defaults
+        battery = 0;
+        notificationCount = 0;
+        bluetoothConnected = false;
+
+        // Load persisted data from Application.Storage
+        loadTideData();
+        loadWeatherData();
+    }
+
+    // =========================================================
+    // updateSensorData() — called from onUpdate() each tick
+    // Reads HR, battery, notifications, BT status, GPS
+    // Writes lat/lng/BT to Application.Storage for background
+    // =========================================================
+    function updateSensorData() as Void {
+        // Heart rate
+        var activityInfo = Activity.getActivityInfo();
+        if (activityInfo != null) {
+            heartRate = activityInfo.currentHeartRate;
+        } else {
+            heartRate = null;
+        }
+
+        // Battery
+        var stats = System.getSystemStats();
+        battery = stats.battery.toNumber();
+
+        // Notifications and Bluetooth
+        var settings = System.getDeviceSettings();
+        notificationCount = settings.notificationCount;
+        bluetoothConnected = settings.phoneConnected;
+
+        // GPS — try Position.getInfo(), fall back to HomeLat/HomeLng from settings
+        var posInfo = Position.getInfo();
+        if (posInfo != null && posInfo.accuracy != Position.QUALITY_NOT_AVAILABLE && posInfo.position != null) {
+            var coords = posInfo.position.toDegrees();
+            lastKnownLat = coords[0].toFloat();
+            lastKnownLng = coords[1].toFloat();
+        } else {
+            // Fall back to HomeLat/HomeLng from app settings
+            var homeLat = Application.Properties.getValue("HomeLat");
+            var homeLng = Application.Properties.getValue("HomeLng");
+            if (homeLat != null && homeLng != null) {
+                var lat = homeLat.toFloat();
+                var lng = homeLng.toFloat();
+                // Treat 0.0 as "not configured"
+                if (lat != 0.0 || lng != 0.0) {
+                    lastKnownLat = lat;
+                    lastKnownLng = lng;
+                } else {
+                    lastKnownLat = null;
+                    lastKnownLng = null;
+                }
+            } else {
+                lastKnownLat = null;
+                lastKnownLng = null;
+            }
+        }
+
+        // Write shared state to Application.Storage for background process
+        Application.Storage.setValue("lastKnownLat", lastKnownLat);
+        Application.Storage.setValue("lastKnownLng", lastKnownLng);
+        Application.Storage.setValue("bluetoothConnected", bluetoothConnected);
+    }
+
+    // =========================================================
+    // onWeatherData(data) — receives parsed OWM Dictionary from
+    // onBackgroundData(). Keys: :temp, :conditionId, :windSpeed,
+    // :windDeg, :sunrise, :sunset, :pop, :moonPhase
+    // =========================================================
+    function onWeatherData(data as Dictionary) as Void {
+        temperature = data["temp"] as Float or Null;
+        weatherConditionId = data["conditionId"] as Number or Null;
+        windSpeed = data["windSpeed"] as Float or Null;
+        windDeg = data["windDeg"] as Number or Null;
+        sunrise = data["sunrise"] as Number or Null;
+        sunset = data["sunset"] as Number or Null;
+        precipPop = data["pop"] as Float or Null;
+        moonPhase = data["moonPhase"] as Float or Null;
+        owmFetchedAt = Time.now().value();
+        persistWeatherData();
+    }
+
+    // =========================================================
+    // onTideData(data) — receives parsed tide Array from
+    // onBackgroundData(). Each element is a Dictionary with
+    // String keys: "height", "time", "type"
+    // =========================================================
+    function onTideData(data as Array) as Void {
+        tideExtremes = data;
+        // Clear expired flag since we have fresh data
+        Application.Storage.setValue("tideDataExpired", false);
+        persistTideData();
+    }
+
+    // =========================================================
+    // computeNextTide() — walks tideExtremes to find next event
+    // after now, sets nextTideTime/nextTideType, interpolates
+    // currentTideHeight between previous and next extreme.
+    // If all events are in the past, sets tideDataExpired=true
+    // in Application.Storage to trigger background refresh.
+    // =========================================================
+    function computeNextTide() as Void {
+        if (tideExtremes == null || tideExtremes.size() == 0) {
+            nextTideTime = null;
+            nextTideType = null;
+            currentTideHeight = null;
+            return;
+        }
+
+        var now = Time.now().value();
+        var nextIdx = -1;
+
+        // Walk array to find first event where time > now
+        for (var i = 0; i < tideExtremes.size(); i++) {
+            var entry = tideExtremes[i] as Dictionary;
+            var entryTime = entry["time"] as Number;
+            if (entryTime != null && entryTime > now) {
+                nextIdx = i;
+                break;
+            }
+        }
+
+        // If no future events found — all in past, mark expired
+        if (nextIdx == -1) {
+            nextTideTime = null;
+            nextTideType = null;
+            currentTideHeight = null;
+            Application.Storage.setValue("tideDataExpired", true);
+            return;
+        }
+
+        // Set next tide info
+        var nextEntry = tideExtremes[nextIdx] as Dictionary;
+        nextTideTime = nextEntry["time"] as Number;
+        nextTideType = nextEntry["type"] as String;
+
+        // Interpolate currentTideHeight between previous and next extreme
+        if (nextIdx > 0) {
+            var prevEntry = tideExtremes[nextIdx - 1] as Dictionary;
+            var prevTime = prevEntry["time"] as Number;
+            var prevHeight = prevEntry["height"];
+            var nextHeight = nextEntry["height"];
+
+            if (prevTime != null && prevHeight != null && nextHeight != null && nextTideTime != null) {
+                var prevH = (prevHeight as Float).toFloat();
+                var nextH = (nextHeight as Float).toFloat();
+                var totalDuration = (nextTideTime - prevTime).toFloat();
+                if (totalDuration > 0.0f) {
+                    var elapsed = (now - prevTime).toFloat();
+                    var fraction = elapsed / totalDuration;
+                    // Linear interpolation
+                    currentTideHeight = prevH + (nextH - prevH) * fraction;
+                } else {
+                    currentTideHeight = prevH;
+                }
+            } else {
+                currentTideHeight = null;
+            }
+        } else {
+            // No previous extreme — use next extreme's height as current
+            var nextHeight = nextEntry["height"];
+            if (nextHeight != null) {
+                currentTideHeight = (nextHeight as Float).toFloat();
+            } else {
+                currentTideHeight = null;
+            }
+        }
+    }
+
+    // =========================================================
+    // computeMoonPhase() — calculates moon phase from current
+    // date using synodic period. Returns 0.0–1.0 matching OWM
+    // convention: 0=new, 0.25=first quarter, 0.5=full, 0.75=last quarter
+    // =========================================================
+    function computeMoonPhase() as Void {
+        // Known new moon: Jan 6, 2000 18:14 UTC = Unix 947182440
+        var knownNewMoon = 947182440;
+        var synodicPeriod = 29.53058867;
+        var now = Time.now().value();
+        var daysSinceNew = (now - knownNewMoon).toFloat() / 86400.0f;
+        var cycles = daysSinceNew / synodicPeriod;
+        // Phase as 0.0–1.0
+        moonPhase = (cycles - cycles.toNumber().toFloat());
+        if (moonPhase < 0.0f) { moonPhase = moonPhase + 1.0f; }
+    }
+
+    // =========================================================
+    // persistTideData() — saves tideExtremes and tideFetchedDay
+    // to Application.Storage
+    // =========================================================
+    function persistTideData() as Void {
+        Application.Storage.setValue("tideExtremes", tideExtremes);
+        // Store today's date as the fetch day
+        var now = Time.now();
+        var today = Gregorian.info(now, Time.FORMAT_SHORT);
+        tideFetchedDay = today.year.format("%04d") + "-" +
+                         today.month.format("%02d") + "-" +
+                         today.day.format("%02d");
+        Application.Storage.setValue("tideFetchedDay", tideFetchedDay);
+    }
+
+    // =========================================================
+    // loadTideData() — restores tideExtremes and tideFetchedDay
+    // from Application.Storage on startup
+    // =========================================================
+    function loadTideData() as Void {
+        tideExtremes = Application.Storage.getValue("tideExtremes") as Array or Null;
+        tideFetchedDay = Application.Storage.getValue("tideFetchedDay") as String or Null;
+    }
+
+    // =========================================================
+    // persistWeatherData() — saves weather fields to
+    // Application.Storage so they survive restarts
+    // =========================================================
+    function persistWeatherData() as Void {
+        Application.Storage.setValue("cachedTemp", temperature);
+        Application.Storage.setValue("cachedConditionId", weatherConditionId);
+        Application.Storage.setValue("cachedWindSpeed", windSpeed);
+        Application.Storage.setValue("cachedWindDeg", windDeg);
+        Application.Storage.setValue("cachedSunrise", sunrise);
+        Application.Storage.setValue("cachedSunset", sunset);
+    }
+
+    // =========================================================
+    // loadWeatherData() — restores weather fields from
+    // Application.Storage on startup
+    // =========================================================
+    function loadWeatherData() as Void {
+        temperature = Application.Storage.getValue("cachedTemp") as Float or Null;
+        weatherConditionId = Application.Storage.getValue("cachedConditionId") as Number or Null;
+        windSpeed = Application.Storage.getValue("cachedWindSpeed") as Float or Null;
+        windDeg = Application.Storage.getValue("cachedWindDeg") as Number or Null;
+        sunrise = Application.Storage.getValue("cachedSunrise") as Number or Null;
+        sunset = Application.Storage.getValue("cachedSunset") as Number or Null;
+        owmFetchedAt = Application.Storage.getValue("owmFetchedAt") as Number or Null;
+    }
+
+}

@@ -1,0 +1,19 @@
+<settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+
+    <setting propertyKey="@Properties.OWMApiKey" title="@Strings.OWMApiKeyTitle">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+
+    <setting propertyKey="@Properties.StormGlassApiKey" title="@Strings.StormGlassApiKeyTitle">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+
+    <setting propertyKey="@Properties.HomeLat" title="@Strings.HomeLatTitle">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+
+    <setting propertyKey="@Properties.HomeLng" title="@Strings.HomeLngTitle">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+
+</settings>

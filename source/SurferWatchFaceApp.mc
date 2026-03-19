@@ -1,0 +1,71 @@
+import Toybox.Application;
+import Toybox.Background;
+import Toybox.Lang;
+import Toybox.System;
+import Toybox.Time;
+import Toybox.WatchUi;
+
+(:background)
+class SurferWatchFaceApp extends Application.AppBase {
+
+    var dataManager as DataManager or Null;
+
+    function initialize() {
+        AppBase.initialize();
+    }
+
+    function getDataManager() as DataManager {
+        return dataManager;
+    }
+
+    // Return the service delegate for background processing
+    (:background)
+    function getServiceDelegate() as [System.ServiceDelegate] {
+        return [new SurferWatchFaceDelegate()];
+    }
+
+    // onStart() is called on application start up — runs in BOTH foreground and background
+    function onStart(state as Dictionary?) as Void {
+        // Register background temporal event — fires every 5 minutes
+        if (Background has :registerForTemporalEvent) {
+            Background.registerForTemporalEvent(new Time.Duration(5 * 60));
+        }
+    }
+
+    // onStop() is called when your application is exiting
+    function onStop(state as Dictionary?) as Void {
+    }
+
+    // Return the initial view — only called in foreground process
+    function getInitialView() as [Views] or [Views, InputDelegates] {
+        dataManager = new DataManager();
+        return [ new SurferWatchFaceView() ];
+    }
+
+    // New app settings have been received so trigger a UI update
+    function onSettingsChanged() as Void {
+        WatchUi.requestUpdate();
+    }
+
+    // Called by the system after Background.exit() — routes data to DataManager
+    function onBackgroundData(data) as Void {
+        if (data instanceof Dictionary) {
+            if (dataManager != null) {
+                var weatherData = data["weather"];
+                if (weatherData != null && weatherData instanceof Dictionary) {
+                    dataManager.onWeatherData(weatherData as Dictionary);
+                }
+                var tideData = data["tides"];
+                if (tideData != null && tideData instanceof Array) {
+                    dataManager.onTideData(tideData as Array);
+                }
+            }
+        }
+        WatchUi.requestUpdate();
+    }
+
+}
+
+function getApp() as SurferWatchFaceApp {
+    return Application.getApp() as SurferWatchFaceApp;
+}
