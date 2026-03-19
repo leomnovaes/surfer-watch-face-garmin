@@ -109,7 +109,8 @@ class TideService {
     }
 
     // Parse ISO 8601 time string (e.g. "2024-03-18T14:32:00+00:00") to Unix timestamp
-    // Minimal parser — StormGlass returns UTC times with +00:00 offset
+    // StormGlass returns UTC times. Gregorian.moment() interprets as LOCAL time,
+    // so we must compensate by adding the local timezone offset.
     private function parseISOToUnix(isoStr as String) as Number or Null {
         // Expected format: "YYYY-MM-DDTHH:MM:SS+00:00"
         // We need at least 19 chars for "YYYY-MM-DDTHH:MM:SS"
@@ -129,7 +130,13 @@ class TideService {
             return null;
         }
 
-        var moment = Gregorian.moment({
+        // Gregorian.moment() treats input as LOCAL time, returning a UTC unix timestamp.
+        // We have UTC values, so the result is off by the timezone offset.
+        // Example: input 23:00 UTC, timezone PDT (UTC-7, offset=-25200)
+        //   Gregorian.moment(23:00) thinks it's 23:00 local → returns unix for 06:00 UTC (+7h)
+        //   Actual event is 23:00 UTC → we need to subtract 7h from the result
+        //   Fix: add tzOffset (which is negative for west of UTC)
+        var localMoment = Gregorian.moment({
             :year => year,
             :month => month,
             :day => day,
@@ -138,7 +145,8 @@ class TideService {
             :second => sec
         });
 
-        return moment.value();
+        var tzOffset = System.getClockTime().timeZoneOffset;
+        return localMoment.value() + tzOffset;
     }
 
 }
