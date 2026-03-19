@@ -302,8 +302,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     private function drawIconHeart(dc as Dc, x as Number, y as Number) as Void {
-        if (crystalIconsFont != null) {
-            drawTextAligned(dc, x, y, crystalIconsFont, IC_HEART, Graphics.TEXT_JUSTIFY_LEFT);
+        if (seg34IconsFont != null) {
+            drawTextAligned(dc, x, y, seg34IconsFont, "h", Graphics.TEXT_JUSTIFY_LEFT);
         }
     }
 
@@ -378,9 +378,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
         // Heart icon + BPM in black, vertically centered in circle
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        if (crystalIconsFont != null) {
-            var fontHeight = dc.getFontHeight(crystalIconsFont);
-            dc.drawText(HR_CENTER_X, HR_CENTER_Y - fontHeight + 8, crystalIconsFont, IC_HEART, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        if (seg34IconsFont != null) {
+            var fontHeight = dc.getFontHeight(seg34IconsFont);
+            dc.drawText(HR_CENTER_X, HR_CENTER_Y - fontHeight + 8, seg34IconsFont, "h", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
 
         // Live heart rate

@@ -224,7 +224,7 @@
 | Icon | Source | Font | Char | Status |
 |------|--------|------|------|--------|
 | Weather conditions (17) | Crystal Face weather-icons | WeatherIcons | A-I, a-h | ✅ Wired |
-| Heart | Crystal Face crystal-icons | CrystalIcons | 3 | ✅ Wired |
+| Heart | Segment34mkII (outline) | Seg34Icons | h | ✅ Wired |
 | Bluetooth | Segment34mkII | Seg34Icons | L | ✅ Wired |
 | Notifications | Crystal Face crystal-icons | CrystalIcons | 5 | ✅ Wired |
 | Sunrise/Sunset | Crystal Face crystal-icons | CrystalIcons | > / ? | ✅ Wired |
