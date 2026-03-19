@@ -130,13 +130,9 @@ class TideService {
             return null;
         }
 
-        // Gregorian.moment() treats input as LOCAL time, returning a UTC unix timestamp.
-        // We have UTC values, so the result is off by the timezone offset.
-        // Example: input 23:00 UTC, timezone PDT (UTC-7, offset=-25200)
-        //   Gregorian.moment(23:00) thinks it's 23:00 local → returns unix for 06:00 UTC (+7h)
-        //   Actual event is 23:00 UTC → we need to subtract 7h from the result
-        //   Fix: add tzOffset (which is negative for west of UTC)
-        var localMoment = Gregorian.moment({
+        // Gregorian.moment() interprets input as UTC (confirmed by Garmin forum testing).
+        // StormGlass returns UTC times, so we can feed them directly.
+        var moment = Gregorian.moment({
             :year => year,
             :month => month,
             :day => day,
@@ -145,8 +141,7 @@ class TideService {
             :second => sec
         });
 
-        var tzOffset = System.getClockTime().timeZoneOffset;
-        return localMoment.value() + tzOffset;
+        return moment.value();
     }
 
 }
