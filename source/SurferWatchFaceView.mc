@@ -62,8 +62,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private var seg34IconsFont = null;
     private var surferIconsFont = null;
 
-    // --- Sleep state: true when watch is at rest (no wrist gesture) ---
-    private var isSleeping = true;
+    // --- Sleep state: true when watch is in low power mode (no wrist gesture) ---
+    private var isSleeping = false;
 
     // --- Crystal Icons glyph characters (from Crystal Face) ---
     private static const IC_HEART = "3";
