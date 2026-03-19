@@ -248,24 +248,60 @@
 | SarahBass/Data-Heavy-Garmin-Watchface | weatherhoro.fnt/.png | 56 glyphs | Large set — weather + possibly horoscope + arrows + more |
 | bsyrowik/BCTides | sine.png (various sizes) | Sine wave bitmap | Not a font — individual PNG bitmaps for tide visualization |
 
-### Segment34mkII icon mapping (from source code):
+### Segment34mkII icon mapping (confirmed by visual inspection):
 ```
-A = Alarm
-B = Battery variant 1
-C = Battery variant 2
-D = DND (Do Not Disturb)
-H = Heart (filled?)
-h = Heart (outline?)
-L = Bluetooth connected
-M = Bluetooth disconnected
-N-R = Move bar levels 1-5
-S = ?
-0-7 = Unknown (need visual identification)
+Icons font:
+  0 = Arrow UP (N)
+  1 = Arrow UP-RIGHT (NE)
+  2 = Arrow RIGHT (E)
+  3 = Arrow DOWN-RIGHT (SE)
+  4 = Arrow DOWN (S)
+  5 = Arrow DOWN-LEFT (SW)
+  6 = Arrow LEFT (W)
+  7 = Arrow UP-LEFT (NW)
+  A = Alarm
+  B = Battery variant 1
+  C = Battery variant 2
+  D = DND (Do Not Disturb)
+  H = Heart (filled)
+  h = Heart (outline)
+  L = Bluetooth connected
+  M = Bluetooth disconnected
+  N-R = Move bar levels 1-5
+  S = Unknown
+
+Moon font:
+  0 = New moon (dark)
+  1 = Waxing crescent (illuminated from right)
+  2 = First quarter
+  3 = Waxing gibbous
+  4 = Full moon
+  5 = Waning gibbous
+  6 = Last quarter
+  7 = Waning crescent
+  8 = Death Star (easter egg, not usable)
 ```
 
-### SarahBass WeatherHoro — needs visual identification:
-56 glyphs at chars: , . 0-9 : ; ? @ A-O ` a-x
-Likely contains weather icons, possibly horoscope symbols, arrows, and other utility icons.
+### SarahBass WeatherHoro — visual inspection:
+Mostly numbers and zodiac signs. Weather icons present but lower quality than Crystal Face.
+Notable: 108 (l) = sunrise, 110 (n) = sunset.
+Not useful for our remaining needs.
+
+### Summary of available icons for remaining needs:
+| Need | Best source | Format | Notes |
+|------|-----------|--------|-------|
+| Wind direction (8) | Segment34mkII icons.fnt | Pre-rasterized .fnt/.png | Chars 0-7, 8 directional arrows. Fallback option if procedural polygon doesn't work. |
+| Moon phases (8) | Segment34mkII moon.fnt | Pre-rasterized .fnt/.png | Chars 0-7 (skip char 8 Death Star). Quality looks great. |
+| Umbrella/precipitation | Templarian/MaterialDesign-SVG | SVG (needs rasterization) | `umbrella-outline.svg`. Apache 2.0 license. |
+| Tide high/low | Templarian/MaterialDesign-SVG | SVG (needs rasterization) | `waves-arrow-up.svg`, `waves-arrow-down.svg`. Apache 2.0 license. |
+| Wind direction (procedural) | Custom code | `dc.fillPolygon()` | Triangle with swallow tail, rotated to exact wind degree. Primary approach. |
+
+### Rasterization approach for SVG icons (umbrella, tide):
+Material Design SVGs need to be rasterized to BMFont format. Options:
+1. **Gemini 2x approach**: fontbm at 2x size → ImageMagick downscale → grayscale 8-bit (documented in design §5.1)
+2. **IcoMoon**: upload SVGs, create custom TTF, then rasterize with fontbm
+3. **FontForge**: import SVGs, create TTF, then rasterize
+All options require testing to validate quality before committing.
 
 ### Task 27: Set up Crystal Face icons
 - [x] Copy Crystal Face weather-icons .fnt/.png into `resources/fonts/`
@@ -279,26 +315,34 @@ Likely contains weather icons, possibly horoscope symbols, arrows, and other uti
 - [x] Wire sunrise/sunset icons
 - [ ] Verify all icons render correctly in simulator (user check needed)
 
-### Task 29: Source missing icons — umbrella, moon phases
-- [ ] Search other open source Garmin watch faces for pre-rasterized umbrella and moon phase icons
-- [ ] Check: PeterDedden, Mondobiz, other popular open source faces
-- [ ] If found: copy .fnt/.png and wire into view
-- [ ] If not found: attempt Gemini 2x rasterization approach from Weather Icons TTF
-- [ ] Fallback: keep text placeholders
+### Task 29: Wire Segment34 moon phases into view
+- [ ] Copy Segment34mkII moon.fnt/.png into `resources/fonts/`
+- [ ] Add font resource to `resources/fonts/fonts.xml`
+- [ ] Update `drawIconMoon()` to select from 8 phase glyphs (chars 0-7) based on `DataManager.moonPhase`
+- [ ] Map moonPhase (0.0–1.0) to 8 phases: 0=new, 1=wax crescent, 2=first quarter, 3=wax gibbous, 4=full, 5=wan gibbous, 6=last quarter, 7=wan crescent
+- [ ] Verify moon icon changes in simulator
 
-### Task 30: Implement wind direction arrow (procedural polygon)
+### Task 30: Implement wind direction (procedural polygon)
 - [ ] Implement `drawWindArrow(dc, x, y, degrees)` using `dc.fillPolygon()` — triangle with swallow tail
-- [ ] Calculate polygon vertices rotated to wind direction from `DataManager.windDeg`
+- [ ] Calculate polygon vertices rotated to exact wind direction from `DataManager.windDeg`
 - [ ] Replace wind icon placeholder with procedural arrow
 - [ ] Verify arrow rotates correctly based on live OWM wind data in simulator
+- [ ] Fallback: if procedural doesn't look good, use Segment34 directional arrows (chars 0-7)
 
-### Task 31: Source tide direction icons
-- [ ] Search community fonts (sunpazed/garmin-iconfonts, mondrian) for tide high/low wave glyphs
-- [ ] If found: add to font resources and wire into view
-- [ ] If not found: draw procedurally or use simple up/down arrow text
-- [ ] Verify in simulator
+### Task 31: Rasterize umbrella icon from Material Design SVG
+- [ ] Download `umbrella-outline.svg` from Templarian/MaterialDesign-SVG (Apache 2.0)
+- [ ] Create custom TTF using IcoMoon or FontForge with the umbrella SVG
+- [ ] Rasterize using Gemini 2x approach (fontbm at 2x → ImageMagick downscale → grayscale)
+- [ ] Compare quality with Crystal Face icons — iterate on settings if needed
+- [ ] If quality acceptable: add to font resources and wire into view
+- [ ] If not: try alternative approaches or keep text placeholder
 
-### Task 32*: Add night weather condition variants (deferred)
+### Task 32: Rasterize tide icons from Material Design SVG
+- [ ] Download `waves-arrow-up.svg` and `waves-arrow-down.svg` from Templarian/MaterialDesign-SVG (Apache 2.0)
+- [ ] Same rasterization approach as umbrella (Task 31)
+- [ ] Wire into `drawIconTide()` and verify in simulator
+
+### Task 33*: Add night weather condition variants (deferred)
 - [ ]* Crystal Face weather-icons already includes night variants (a-h)
 - [ ]* Update `owmToWeatherGlyph()` to check if current time is between sunset and sunrise
 - [ ]* If nighttime, use night variant glyph (a-h) instead of day variant (A-I)
