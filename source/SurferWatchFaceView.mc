@@ -55,25 +55,37 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private static const WX_COL2_X = 88;
     private static const WX_COL3_X = 134;
 
-    // --- Icon placeholders (will be replaced with icon font glyphs) ---
+    // --- Icon font resources (loaded in onLayout) ---
+    private var iconsSolidFont = null;
+    private var iconsBrandsFont = null;
+    private var weatherIconsFont = null;
+
+    // --- Icon glyphs — Font Awesome Solid ---
+    private static const IC_FA_HEART = "\uF004";       // 0xF004
+    private static const IC_FA_BELL = "\uF0F3";        // 0xF0F3
+
+    // --- Icon glyphs — Font Awesome Brands ---
+    private static const IC_FA_BLUETOOTH = "\uF293";   // 0xF293
+
+    // --- Icon placeholders (text, used when font not loaded or for non-font icons) ---
     private static const IC_BATTERY = "[=]";
-    private static const IC_NOTIFICATION = "[!]";
     private static const IC_TIDE_HIGH = "[^]";
     private static const IC_TIDE_LOW = "[v]";
     private static const IC_SUNRISE = "[*]";
     private static const IC_SUNSET = "[.]";
-    private static const IC_BLUETOOTH = "[B]";
     private static const IC_MOON = "[O]";
     private static const IC_WEATHER = "[~]";
     private static const IC_WIND = "[>]";
     private static const IC_UMBRELLA = "[U]";
-    private static const IC_HEART = "<3";
 
     function initialize() {
         WatchFace.initialize();
     }
 
     function onLayout(dc as Dc) as Void {
+        iconsSolidFont = WatchUi.loadResource(Rez.Fonts.IconsSolid);
+        iconsBrandsFont = WatchUi.loadResource(Rez.Fonts.IconsBrands);
+        weatherIconsFont = WatchUi.loadResource(Rez.Fonts.WeatherIcons);
     }
 
     function onShow() as Void {
@@ -140,7 +152,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     private function drawIconNotification(dc as Dc, x as Number, y as Number) as Void {
-        drawTextAligned(dc, x, y, Graphics.FONT_XTINY, IC_NOTIFICATION, Graphics.TEXT_JUSTIFY_LEFT);
+        if (iconsSolidFont != null) {
+            drawTextAligned(dc, x, y, iconsSolidFont, IC_FA_BELL, Graphics.TEXT_JUSTIFY_LEFT);
+        }
     }
 
     private function drawIconTide(dc as Dc, x as Number, y as Number, isHigh as Boolean) as Void {
@@ -154,7 +168,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     private function drawIconBluetooth(dc as Dc, x as Number, y as Number) as Void {
-        drawTextAligned(dc, x, y, Graphics.FONT_XTINY, IC_BLUETOOTH, Graphics.TEXT_JUSTIFY_LEFT);
+        if (iconsBrandsFont != null) {
+            drawTextAligned(dc, x, y, iconsBrandsFont, IC_FA_BLUETOOTH, Graphics.TEXT_JUSTIFY_LEFT);
+        }
     }
 
     private function drawIconMoon(dc as Dc, x as Number, y as Number) as Void {
@@ -174,7 +190,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     private function drawIconHeart(dc as Dc, x as Number, y as Number) as Void {
-        drawTextAligned(dc, x, y, Graphics.FONT_XTINY, IC_HEART, Graphics.TEXT_JUSTIFY_LEFT);
+        if (iconsSolidFont != null) {
+            drawTextAligned(dc, x, y, iconsSolidFont, IC_FA_HEART, Graphics.TEXT_JUSTIFY_LEFT);
+        }
     }
 
     // =========================================================
@@ -255,8 +273,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
         // Heart icon + BPM in black, vertically centered in circle
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        var fontHeight = dc.getFontHeight(Graphics.FONT_XTINY);
-        dc.drawText(HR_CENTER_X, HR_CENTER_Y - fontHeight + 8, Graphics.FONT_XTINY, IC_HEART, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        if (iconsSolidFont != null) {
+            var fontHeight = dc.getFontHeight(iconsSolidFont);
+            dc.drawText(HR_CENTER_X, HR_CENTER_Y - fontHeight + 8, iconsSolidFont, IC_FA_HEART, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        }
 
         // Live heart rate
         var app = Application.getApp() as SurferWatchFaceApp;

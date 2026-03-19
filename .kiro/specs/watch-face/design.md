@@ -298,41 +298,110 @@ For imperial: OWM returns wind speed in mph directly, so skip the m/s→mph conv
 
 ## 5. Icon Strategy
 
-### 5.1 Approach: Custom Icon Font
-All icons are rendered via `drawText()` using a custom icon font (BMFont format). This approach was chosen because:
-- **Memory efficient**: one font file holds all icon glyphs, vs individual bitmap files
-- **CPU efficient**: font rendering is hardware-optimized on Garmin devices
-- **Alignment**: since both text and icons go through `drawText()`, they share the same padding behavior and align naturally at the same Y coordinate — no manual offset needed
-- **Color flexible**: icon color can be changed via `dc.setColor()` like any text (not needed for our 1-bit display, but good for portability)
+### 5.1 Approach: BMFont Icon Fonts (revised)
 
-Source font: Font Awesome subset or ftrimboli's Garmin standard icons TTF, converted via `fontbm` (Mac-compatible BMFont alternative) to `.fnt` + `.png` format.
+Icons are rendered via `drawText()` using BMFont-rasterized icon fonts. The proven community approach:
 
-Font resource declared in `resources/fonts/fonts.xml`:
-```xml
-<fonts>
-    <font id="IconFont" filename="icons.fnt" filter="..." />
-</fonts>
-```
+**BMFont settings** (from Crystal Face / warmsound):
+- `fontSize` = negative value matching target pixel height (e.g., -17 for ~20px)
+- `aa=2` (anti-aliasing level 2)
+- `useHinting=1`, `useSmoothing=1`
+- `padding=0,0,0,0`
+- `spacing=1,1`
+- `outWidth=256, outHeight=256` (power of 2)
+- `outBitDepth=8`
+- `alphaChnl=1` (alpha channel stores glyph data)
+- `format=png`
 
-Loaded in code: `var iconFont = WatchUi.loadResource(Rez.Fonts.IconFont);`
+**Grid-aligned sizes**: for best pixel alignment, use sizes that are power-of-2 divisors of the font's em-size:
+- Font Awesome (em=512): ideal at 16px, 32px
+- Weather Icons (em=2048): ideal at 16px, 32px
+- Anti-aliasing ON produces better results than monochrome — Garmin's 1-bit renderer thresholds gray pixels
 
-### 5.2 Icon Glyph Mapping
-Each icon is mapped to a character in the icon font. Until the icon font is created (Task 27), text placeholders are used:
+**Reference implementation**: Crystal Face (warmsound/crystal-face, GPL v3) has pre-rasterized Weather Icons and custom crystal icons that serve as quality benchmark.
 
-| Icon | Placeholder | Final glyph | Used for |
-|------|------------|-------------|----------|
-| Battery | `[=]` | TBD | Battery level |
-| Notification | `[!]` | TBD | Notification bell |
-| Tide High | `[^]` | TBD | Next tide = high (↑) |
-| Tide Low | `[v]` | TBD | Next tide = low (↓) |
-| Sunrise | `[*]` | TBD | Next event = sunrise |
-| Sunset | `[.]` | TBD | Next event = sunset |
-| Bluetooth | `[B]` | TBD | Bluetooth connected |
-| Moon | `[O]` | TBD | Moon phase |
-| Weather | `[~]` | TBD | Weather condition |
-| Wind | `[>]` | TBD | Wind direction |
-| Umbrella | `[U]` | TBD | Precipitation |
-| Heart | `<3` | TBD | Heart rate |
+**Icon sources by category**:
+| Category | Source | Approach |
+|----------|--------|----------|
+| Weather conditions (21) | Erik Flowers Weather Icons TTF | BMFont rasterize with proven settings |
+| Sunrise/sunset (2) | Erik Flowers Weather Icons TTF | BMFont rasterize |
+| Umbrella (1) | Erik Flowers Weather Icons TTF | BMFont rasterize |
+| Moon phases (16) | Erik Flowers Weather Icons TTF | BMFont rasterize |
+| Heart, Bluetooth, Bell (3) | Font Awesome Solid/Brands TTF OR Crystal Face crystal-icons | Compare both, choose better |
+| Wind direction (8) | Procedural polygon | `dc.fillPolygon()` — triangle with swallow tail, rotated to wind degree |
+| Tide high/low (2) | Community fonts (sunpazed, mondrian) | Search for wave+arrow glyphs, fallback to procedural |
+| Battery | Code-drawn | Keep current fill-bar approach |
+
+### 5.2 Font Sources
+
+Two separate icon font files:
+
+**Garmin Icons** (`garmin-connect-icons.ttf` → `garmin-icons.fnt`):
+| Role | Glyph name | Unicode |
+|------|-----------|---------|
+| Heart (HR circle) | heart | 0x6D |
+| Bluetooth | bluetooth | 0x56 |
+| Notification | speech-bubble | 0xC2 |
+
+**Weather Icons** (`weathericons-regular-webfont.ttf` → `weather-icons.fnt`):
+
+Weather conditions (OWM code → glyph, from erikflowers OWM mapping):
+| OWM codes | Glyph name | Unicode |
+|-----------|-----------|---------|
+| 200-202, 230-232 | wi-thunderstorm | 0xF01E |
+| 210-212, 221 | wi-lightning | 0xF016 |
+| 300, 301, 321, 500 | wi-sprinkle | 0xF01C |
+| 302, 311, 312, 314, 501-504 | wi-rain | 0xF019 |
+| 310, 511, 611-616, 620 | wi-rain-mix | 0xF017 |
+| 313, 520-522 | wi-showers | 0xF01A |
+| 531, 901 | wi-storm-showers | 0xF01D |
+| 600, 601, 621, 622 | wi-snow | 0xF01B |
+| 602 | wi-sleet | 0xF0B5 |
+| 711 | wi-smoke | 0xF062 |
+| 721 | wi-day-haze | 0xF0B6 |
+| 731, 761, 762 | wi-dust | 0xF063 |
+| 741 | wi-fog | 0xF014 |
+| 771, 801-803 | wi-cloudy-gusts | 0xF011 |
+| 781, 900 | wi-tornado | 0xF056 |
+| 800 | wi-day-sunny | 0xF00D |
+| 804 | wi-cloudy | 0xF013 |
+| 902 | wi-hurricane | 0xF073 |
+| 903 | wi-snowflake-cold | 0xF076 |
+| 904 | wi-hot | 0xF072 |
+| 905 | wi-windy | 0xF021 |
+
+Other Weather Icons:
+| Role | Glyph name | Unicode |
+|------|-----------|---------|
+| Sunrise | wi-sunrise | 0xF051 |
+| Sunset | wi-sunset | 0xF052 |
+| Umbrella | wi-umbrella | 0xF084 |
+| Wind (generic) | wi-strong-wind | 0xF050 |
+
+Moon phases (16 evenly-spaced from 28 available):
+| Phase | Glyph name | Unicode |
+|-------|-----------|---------|
+| New moon | wi-moon-new | 0xF095 |
+| Waxing crescent 2 | wi-moon-waxing-crescent-2 | 0xF097 |
+| Waxing crescent 4 | wi-moon-waxing-crescent-4 | 0xF099 |
+| Waxing crescent 6 | wi-moon-waxing-crescent-6 | 0xF09B |
+| First quarter | wi-moon-first-quarter | 0xF09C |
+| Waxing gibbous 2 | wi-moon-waxing-gibbous-2 | 0xF09E |
+| Waxing gibbous 4 | wi-moon-waxing-gibbous-4 | 0xF0A0 |
+| Waxing gibbous 6 | wi-moon-waxing-gibbous-6 | 0xF0A2 |
+| Full moon | wi-moon-full | 0xF0A3 |
+| Waning gibbous 2 | wi-moon-waning-gibbous-2 | 0xF0A5 |
+| Waning gibbous 4 | wi-moon-waning-gibbous-4 | 0xF0A7 |
+| Waning gibbous 6 | wi-moon-waning-gibbous-6 | 0xF0A9 |
+| Third quarter | wi-moon-third-quarter | 0xF0AA |
+| Waning crescent 2 | wi-moon-waning-crescent-2 | 0xF0AC |
+| Waning crescent 4 | wi-moon-waning-crescent-4 | 0xF0AE |
+| Waning crescent 6 | wi-moon-waning-crescent-6 | 0xF0B0 |
+
+**Not using icon fonts:**
+- Battery — code-drawn (fill bar proportional to %)
+- Wind direction arrows — deferred (Task 32), using cardinal text labels ("N", "NE", etc.) for now
+- Tide direction — TBD (Task 35)
 
 ### 5.3 Code Patterns
 
@@ -378,31 +447,66 @@ private function drawTideInfo(dc, x, y, isHigh, time, height) {
 
 ---
 
-## 6. OWM Weather Condition Code Mapping
+## 6. OWM Weather Condition Code → Weather Icons Mapping
+
+Uses the official erikflowers OWM mapping (https://erikflowers.github.io/weather-icons/api-list.html):
 
 ```
-200–232  → ic_weather_thunderstorm
-300–321  → ic_weather_drizzle
-500–531  → ic_weather_rain
-600–622  → ic_weather_snow
-700–781  → ic_weather_fog
-800      → ic_weather_clear
-801–804  → ic_weather_clouds
+200-202, 230-232  → wi-thunderstorm (0xF01E)
+210-212, 221      → wi-lightning (0xF016)
+300, 301, 321     → wi-sprinkle (0xF01C)
+302, 311, 312, 314→ wi-rain (0xF019)
+310, 511          → wi-rain-mix (0xF017)
+313, 520-522      → wi-showers (0xF01A)
+500               → wi-sprinkle (0xF01C)
+501-504           → wi-rain (0xF019)
+531               → wi-storm-showers (0xF01D)
+600, 601, 621, 622→ wi-snow (0xF01B)
+602               → wi-sleet (0xF0B5)
+611-616, 620      → wi-rain-mix (0xF017)
+701 (mist)        → wi-showers (0xF01A)
+711               → wi-smoke (0xF062)
+721               → wi-day-haze (0xF0B6)
+731, 761, 762     → wi-dust (0xF063)
+741               → wi-fog (0xF014)
+771               → wi-cloudy-gusts (0xF011)
+781               → wi-tornado (0xF056)
+800               → wi-day-sunny (0xF00D)
+801-803           → wi-cloudy-gusts (0xF011)
+804               → wi-cloudy (0xF013)
+900               → wi-tornado (0xF056)
+901               → wi-storm-showers (0xF01D)
+902               → wi-hurricane (0xF073)
+903               → wi-snowflake-cold (0xF076)
+904               → wi-hot (0xF072)
+905               → wi-windy (0xF021)
 ```
 
 ---
 
-## 7. Moon Phase Mapping
+## 7. Moon Phase Mapping (16 phases)
 
 ```
-phase == 0.0 or == 1.0        → ic_moon_new
-0.0 < phase < 0.25            → ic_moon_waxing_crescent
-phase == 0.25                 → ic_moon_first_quarter
-0.25 < phase < 0.5            → ic_moon_waxing_gibbous
-phase == 0.5                  → ic_moon_full
-0.5 < phase < 0.75            → ic_moon_waning_gibbous
-phase == 0.75                 → ic_moon_last_quarter
-0.75 < phase < 1.0            → ic_moon_waning_crescent
+phase == 0.0 or >= 0.96875     → wi-moon-new (0xF095)
+0.0 < phase < 0.0625           → wi-moon-new (0xF095)
+0.0625 <= phase < 0.125        → wi-moon-waxing-crescent-2 (0xF097)
+0.125 <= phase < 0.1875        → wi-moon-waxing-crescent-4 (0xF099)
+0.1875 <= phase < 0.25         → wi-moon-waxing-crescent-6 (0xF09B)
+phase == 0.25                  → wi-moon-first-quarter (0xF09C)
+0.25 < phase < 0.3125          → wi-moon-first-quarter (0xF09C)
+0.3125 <= phase < 0.375        → wi-moon-waxing-gibbous-2 (0xF09E)
+0.375 <= phase < 0.4375        → wi-moon-waxing-gibbous-4 (0xF0A0)
+0.4375 <= phase < 0.5          → wi-moon-waxing-gibbous-6 (0xF0A2)
+phase == 0.5                   → wi-moon-full (0xF0A3)
+0.5 < phase < 0.5625           → wi-moon-full (0xF0A3)
+0.5625 <= phase < 0.625        → wi-moon-waning-gibbous-2 (0xF0A5)
+0.625 <= phase < 0.6875        → wi-moon-waning-gibbous-4 (0xF0A7)
+0.6875 <= phase < 0.75         → wi-moon-waning-gibbous-6 (0xF0A9)
+phase == 0.75                  → wi-moon-third-quarter (0xF0AA)
+0.75 < phase < 0.8125          → wi-moon-third-quarter (0xF0AA)
+0.8125 <= phase < 0.875        → wi-moon-waning-crescent-2 (0xF0AC)
+0.875 <= phase < 0.9375        → wi-moon-waning-crescent-4 (0xF0AE)
+0.9375 <= phase < 0.96875      → wi-moon-waning-crescent-6 (0xF0B0)
 ```
 
 Illumination %: `Math.round(Math.sin(moonPhase * Math.PI) * 100)`

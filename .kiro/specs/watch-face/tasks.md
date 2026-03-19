@@ -211,64 +211,72 @@
 
 ## Phase 6 — Icons
 
-### Task 27: Convert Garmin icons font to BMFont format
-- [ ] Convert `garmin-connect-icons.ttf` using `fontbm` at 15px with glyphs: heart (0x6d), bluetooth (0x56), speech-bubble (0xC2)
-- [ ] Also generate at 12px and 18px for size options during pixel tuning
-- [ ] Place output `.fnt` + `.png` files in `resources/fonts/`
-- [ ] Add font resource entry to `resources/fonts/fonts.xml` (create file if needed)
-- [ ] Verify font loads in simulator without errors
+### Approach (revised after research)
+- **BMFont rasterization** is the standard community approach for icon fonts on Garmin
+- **Crystal Face** (warmsound/crystal-face) is the reference implementation — uses Erik Flowers Weather Icons rasterized via BMFont with proven settings
+- **Proven BMFont settings**: fontSize=-17, aa=2, useHinting=1, useSmoothing=1, padding=0,0,0,0, spacing=1,1, outWidth=256, outHeight=256, outBitDepth=8, alphaChnl=1, format=png
+- **Grid-aligned sizes** (power of 2 divisors of em-size) produce best results: 16px, 32px for em=512/2048 fonts
+- **Anti-aliasing ON** (aa=2) produces better results than monochrome — Garmin's 1-bit renderer thresholds the gray pixels
 
-### Task 28: Convert Weather Icons font to BMFont format
-- [ ] Identify unicode codes for all needed glyphs:
-  - Weather conditions (7): clear, clouds, rain, drizzle, thunderstorm, snow, fog
-  - Sunrise/sunset (2): wi-sunrise, wi-sunset
-  - Umbrella (1): wi-umbrella
-  - Wind directions (8): wi-wind towards-N/NE/E/SE/S/SW/W/NW
-  - Moon phases (16): select 16 evenly-spaced phases from the 28 available
-- [ ] Convert `weathericons-regular-webfont.ttf` using `fontbm` at 15px with only the needed glyphs
-- [ ] Also generate at 12px and 18px for size options
-- [ ] Place output `.fnt` + `.png` files in `resources/fonts/`
+### Task 27: Validate re-rasterization approach
+- [ ] Re-rasterize a few Erik Flowers Weather Icons glyphs using Crystal Face's BMFont settings (fontSize=-17, aa=2, hinting=1, smoothing=1, padding=0, spacing=1,1, 256x256, 8-bit)
+- [ ] Compare output visually with Crystal Face's pre-rasterized `weather-icons-20.fnt`/`weather-icons-20_0.png`
+- [ ] If results match: proceed with re-rasterization for our full glyph set
+- [ ] If results differ: use Crystal Face files directly (GPL license) and supplement missing glyphs
+
+### Task 28: Generate final Weather Icons font
+- [ ] Using validated BMFont settings, rasterize Erik Flowers Weather Icons TTF with all needed glyphs:
+  - Weather conditions (21): per design §6 OWM mapping
+  - Sunrise/sunset (2): wi-sunrise (0xF051), wi-sunset (0xF052)
+  - Umbrella (1): wi-umbrella (0xF084)
+  - Moon phases (16): per design §7
+- [ ] Place output `.fnt` + `.png` in `resources/fonts/`
 - [ ] Add font resource entry to `resources/fonts/fonts.xml`
 - [ ] Verify font loads in simulator without errors
 
-### Task 29: Wire Garmin icon font into view
-- [ ] Load Garmin icon font resource in `SurferWatchFaceView`
-- [ ] Update `drawIconHeart()` to use font glyph instead of text placeholder
-- [ ] Update `drawIconBluetooth()` to use font glyph
-- [ ] Update `drawIconNotification()` to use speech-bubble font glyph
-- [ ] Verify all three icons render correctly in simulator
+### Task 29: Generate final general icons font
+- [ ] Compare Crystal Face crystal-icons-small (custom pixel-art) vs Font Awesome re-rasterized with proven BMFont settings for: heart, bluetooth, notification/bell
+- [ ] Choose better-looking option
+- [ ] Place output `.fnt` + `.png` in `resources/fonts/`
+- [ ] Add font resource entry to `resources/fonts/fonts.xml`
+- [ ] Verify font loads in simulator without errors
 
-### Task 30: Wire Weather Icons font — weather conditions
+### Task 30: Wire weather condition icons into view
 - [ ] Load Weather Icons font resource in `SurferWatchFaceView`
 - [ ] Update `drawIconWeather()` to select glyph based on `DataManager.weatherConditionId` using OWM code mapping (design §6)
-- [ ] Verify weather condition icon changes based on live OWM data
+- [ ] Verify weather condition icon changes based on live OWM data in simulator
 
-### Task 31: Wire Weather Icons font — sunrise/sunset
-- [ ] Update `drawIconSun()` to use wi-sunrise / wi-sunset glyphs
+### Task 31: Wire sunrise/sunset icons into view
+- [ ] Update `drawIconSun()` to use wi-sunrise / wi-sunset glyphs from Weather Icons font
 - [ ] Verify icons render correctly in simulator
 
-### Task 32: Wire Weather Icons font — wind direction
-- [ ] Update `drawIconWind()` to select from 8 directional glyphs based on `DataManager.windDeg`
-- [ ] Map degree ranges to cardinal directions (0=N, 45=NE, 90=E, etc.)
-- [ ] Verify wind direction icon changes based on live OWM data
+### Task 32: Wire heart, bluetooth, notification icons into view
+- [ ] Update `drawIconHeart()`, `drawIconBluetooth()`, `drawIconNotification()` to use chosen font glyphs
+- [ ] Verify all three icons render correctly in simulator
 
-### Task 33: Wire Weather Icons font — moon phases
+### Task 33: Wire moon phase icons into view
 - [ ] Update `drawIconMoon()` to select from 16 phase glyphs based on `DataManager.moonPhase`
-- [ ] Map moonPhase (0.0–1.0) to 16 evenly-spaced glyph indices
-- [ ] Verify moon icon changes based on calculated phase
+- [ ] Map moonPhase (0.0–1.0) to 16 evenly-spaced glyph indices per design §7
+- [ ] Verify moon icon changes based on calculated phase in simulator
 
-### Task 34: Wire Weather Icons font — umbrella
-- [ ] Update `drawIconUmbrella()` to use wi-umbrella glyph
+### Task 34: Wire umbrella icon into view
+- [ ] Update `drawIconUmbrella()` to use wi-umbrella glyph from Weather Icons font
 - [ ] Verify icon renders correctly in simulator
 
-### Task 35: Tide direction icons
-- [ ] Decide on tide high/low icon approach (wave+arrow, simple arrow, or other)
-- [ ] If using Weather Icons: identify suitable glyphs
-- [ ] If custom: create simple code-drawn icons or find suitable font glyphs
-- [ ] Update `drawIconTide()` to use chosen icons
-- [ ] Verify icons render correctly in simulator
+### Task 35: Implement wind direction arrow (procedural polygon)
+- [ ] Implement `drawWindArrow(dc, x, y, degrees)` using `dc.fillPolygon()` — triangle with swallow tail
+- [ ] Calculate polygon vertices rotated to wind direction from `DataManager.windDeg`
+- [ ] Replace wind icon placeholder with procedural arrow
+- [ ] Verify arrow rotates correctly based on live OWM wind data in simulator
 
-### Task 36*: Add night weather condition variants (deferred)
+### Task 36: Implement tide direction icons
+- [ ] Search community fonts (sunpazed/garmin-iconfonts, mondrian) for tide high/low wave glyphs
+- [ ] Typical mapping: high tide = wave+up arrow, low tide = wave+down arrow
+- [ ] If found: rasterize with proven BMFont settings and add to font resources
+- [ ] If not found: draw procedurally or use simple up/down arrow text
+- [ ] Wire into `drawIconTide()` and verify in simulator
+
+### Task 37*: Add night weather condition variants (deferred)
 - [ ]* Identify night variant glyphs from Weather Icons (wi-night-clear, wi-night-alt-cloudy, etc.)
 - [ ]* Add night glyphs to the Weather Icons BMFont conversion
 - [ ]* Update `drawIconWeather()` to check if current time is between sunset and sunrise
@@ -278,26 +286,26 @@
 
 ## Phase 7 — Polish & Sideload
 
-### Task 37: Implement seconds reveal (placeholder gesture)
+### Task 38: Implement seconds reveal (placeholder gesture)
 - [ ] Add seconds field to `drawMiddleSection()`, hidden by default
 - [ ] Add a settings property `ShowSeconds` (boolean) as temporary toggle until gesture is implemented
 - Satisfies: requirements §4.2
 
-### Task 38: Pixel-tune full layout with real icons
+### Task 39: Pixel-tune full layout with real icons
 - [ ] Run in simulator with all icons rendered
-- [ ] Adjust font sizes (12/15/18px) for best visual balance
+- [ ] Adjust icon font sizes if needed (regenerate at different px)
 - [ ] Adjust coordinates until layout matches reference
 - [ ] Verify no content is clipped by semi-octagon corners
 - Satisfies: design §1.1, §1.2
 
-### Task 39: Sideload to physical watch
+### Task 40: Sideload to physical watch
 - [ ] Build `.prg` file via `Monkey C: Build for Device`
 - [ ] Copy to watch via USB: `GARMIN/APPS/`
 - [ ] Validate all fields render correctly on real hardware
 - [ ] Validate MIP display (confirm no color artifacts)
 - Satisfies: requirements §5.1
 
-### Task 40: Final layout tuning on device
+### Task 41: Final layout tuning on device
 - [ ] Compare physical watch rendering against reference-design.png
 - [ ] Adjust font sizes, spacing, divider positions as needed
 - [ ] Add dividing lines if needed for readability
