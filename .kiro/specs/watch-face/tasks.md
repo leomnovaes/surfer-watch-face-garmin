@@ -370,6 +370,14 @@ All options require testing to validate quality before committing.
 - [ ]* Update `owmToWeatherGlyph()` to check if current time is between sunset and sunrise
 - [ ]* If nighttime, use night variant glyph (a-h) instead of day variant (A-I)
 
+### Task 34: Validate tide time and height accuracy
+- [ ] Force fresh StormGlass fetch and compare tide time against Surfline for same location
+- [ ] Confirm timezone fix: `parseISOToUnix()` correctly converts UTC → unix timestamp using `System.getClockTime().timeZoneOffset`
+- [ ] If times are still off by 1h, investigate whether `Gregorian.moment()` already accounts for DST or if double-correction is happening
+- [ ] Compare tide height against Surfline (both use MLLW datum) — should be within ~0.3m for nearby stations
+- [ ] Document any remaining discrepancies as known limitations (different tide stations/models produce different predictions)
+- Note: StormGlass uses nearest tide station which may not match the exact spot Surfline uses. Time and height differences of 30-60min and 0.3-0.5m are normal between nearby stations.
+
 ---
 
 ## Phase 7 — Polish & Sideload
