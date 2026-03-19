@@ -121,6 +121,34 @@ Key-value persistent storage that survives watch face restarts and watch reboots
 - `Timer.Timer` — runs in main process, cannot make HTTP requests, fine for UI refresh triggers
 - `Background.ServiceDelegate` — runs in background process, can make HTTP requests, fires at most every 5 min
 
+## Icon Strategy
+
+### Approach
+Icons use a custom bitmap font (`.fnt` + `.png`) generated from the **Weather Icons** open-source font (MIT/SIL OFL licensed, by Erik Flowers). This is the standard approach used by experienced Garmin developers — one font resource, color-tintable in code, memory efficient.
+
+### Font Files
+- `resources/fonts/weather-icons.fnt` + `weather-icons_0.png` — generated at 15px from `weathericons-regular-webfont.ttf` using `fontbm`. Contains 18 glyphs so far (weather conditions + some directional arrows). Moon phases and remaining glyphs still to be added (Tasks 28-35).
+- `resources/fonts/crystal-icons.fnt/png` and `weather-icons-24.fnt/png` — reference files only, not used in the app.
+
+### Icon Source Font
+- `tools/weathericons.ttf` — Weather Icons TTF (gitignored, local only)
+- `tools/garmin-connect-icons.ttf` — Garmin Connect icon font (gitignored, local only)
+- `tools/fontbm` — BMFont-compatible converter for macOS (gitignored, local only)
+- Tools folder: `/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/tools/`
+
+### What Uses Fonts vs Code
+- **Font glyphs (weather-icons.fnt):** weather conditions, moon phases, tide arrows, sunrise/sunset, wind direction, umbrella
+- **Drawn in code (like battery):** heart (HR circle), bluetooth icon, notification bell
+- **BMP files in `resources/drawables/`:** generated earlier from Weather Icons TTF — will be removed once font wiring is complete in Tasks 29-35
+
+### Weather Icons Unicode Codepoints Used
+- `0xf00d` clear/sunny, `0xf013` cloudy, `0xf019` rain, `0xf01c` drizzle
+- `0xf01e` thunderstorm, `0xf01b` snow, `0xf014` fog
+- `0xf051` sunrise, `0xf052` sunset
+- `0xf0b1` wind direction arrow (rotated in code)
+- `0xf084` umbrella
+- Moon phases: `0xf095` (new) through `0xf0b0` (waning crescent-6), 8 phases selected
+
 ## Drawing Approach
 - All rendering done programmatically via `dc` (drawing context) in `onUpdate()`
 - No XML layout files — full pixel control needed for this design
