@@ -161,8 +161,13 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     private function drawIconTide(dc as Dc, x as Number, y as Number, isHigh as Boolean) as Void {
-        var glyph = isHigh ? IC_TIDE_HIGH : IC_TIDE_LOW;
-        drawTextAligned(dc, x, y, Graphics.FONT_XTINY, glyph, Graphics.TEXT_JUSTIFY_LEFT);
+        if (surferIconsFont != null) {
+            var glyph = isHigh ? "H" : "L";
+            drawTextAligned(dc, x, y, surferIconsFont, glyph, Graphics.TEXT_JUSTIFY_LEFT);
+        } else {
+            var glyph = isHigh ? IC_TIDE_HIGH : IC_TIDE_LOW;
+            drawTextAligned(dc, x, y, Graphics.FONT_XTINY, glyph, Graphics.TEXT_JUSTIFY_LEFT);
+        }
     }
 
     private function drawIconSun(dc as Dc, x as Number, y as Number, isSunrise as Boolean) as Void {

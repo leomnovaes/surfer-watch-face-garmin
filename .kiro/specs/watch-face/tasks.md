@@ -400,11 +400,13 @@ Test umbrella glyph across different settings. Output to `/tmp/raster-test/`.
 - [ ] Update `drawIconUmbrella()` to use font glyph
 - [ ] Verify in simulator
 
-### Task 32: Rasterize tide icons from Material Design SVG
-- [ ] Use rasterization pipeline from Task 31b
-- [ ] Rasterize `waves-arrow-up.svg` and `waves-arrow-down.svg` from Templarian/MaterialDesign-SVG (Apache 2.0, already in `/tmp/`)
-- [ ] Add to font resources (can share .fnt/.png with umbrella or separate file)
-- [ ] Wire into `drawIconTide()` and verify in simulator
+### Task 32: Wire tide icons from MDI webfont
+- [x] Rasterize `waves-arrow-up` (F185B, 2 waves + 2 arrows) for high tide using proven pipeline
+- [x] Rasterize `wave-arrow-down` (F1CB0, 1 wave + 1 arrow) for low tide
+- [x] Add both to surfer-icons.fnt/.png (H=72 high, L=76 low)
+- [x] Update `drawIconTide()` to use surferIconsFont
+- [x] Verify in simulator
+- Note: MDI has no `waves-arrow-down` (plural). Using mismatched pair intentionally — 2 waves for high tide (more water), 1 wave for low tide (less water) — works as visual metaphor.
 
 ### Task 33*: Add night weather condition variants (deferred)
 - [ ]* Crystal Face weather-icons already includes night variants (a-h)
