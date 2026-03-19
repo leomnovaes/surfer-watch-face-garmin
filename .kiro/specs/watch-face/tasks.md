@@ -403,11 +403,12 @@ Key findings from rasterization testing:
 
 ## Phase 7 — Polish & Sideload
 
-### Task 38: Implement seconds reveal (settings toggle)
-- [x] Add `ShowSeconds` boolean property (default false) to properties.xml
-- [x] Add settings UI entry and string
-- [x] Conditionally show seconds in `drawRightColumn()` based on property value
-- [x] Seconds hidden by default — user enables via Garmin Connect app settings
+### Task 38: Implement seconds reveal on wrist gesture
+- [x] Track sleep state via `onEnterSleep()` / `onExitSleep()` callbacks
+- [x] Show seconds only when awake (wrist raise gesture active)
+- [x] Hide seconds when sleeping (wrist at rest) to save battery
+- [x] Removed ShowSeconds settings property — behavior is automatic via gesture
+- [x] Fixed weather icon defaulting to sunny when no data — now hides icon entirely
 - Satisfies: requirements §4.2
 
 ### Task 39: Pixel-tune full layout with real icons

@@ -62,6 +62,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private var seg34IconsFont = null;
     private var surferIconsFont = null;
 
+    // --- Sleep state: true when watch is at rest (no wrist gesture) ---
+    private var isSleeping = true;
+
     // --- Crystal Icons glyph characters (from Crystal Face) ---
     private static const IC_HEART = "3";
     private static const IC_NOTIFICATIONS = "5";
@@ -218,18 +221,15 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (weatherIconsFont != null) {
             var app = Application.getApp() as SurferWatchFaceApp;
             var dm = app.getDataManager();
-            var glyph = "H"; // default: day-sunny
             if (dm != null && dm.weatherConditionId != null) {
                 var isNight = false;
                 if (dm.sunrise != null && dm.sunset != null) {
                     var now = Time.now().value();
                     isNight = (now < dm.sunrise || now >= dm.sunset);
                 }
-                glyph = owmToWeatherGlyph(dm.weatherConditionId, isNight);
+                var glyph = owmToWeatherGlyph(dm.weatherConditionId, isNight);
+                drawTextAligned(dc, x, y, weatherIconsFont, glyph, Graphics.TEXT_JUSTIFY_CENTER);
             }
-            drawTextAligned(dc, x, y, weatherIconsFont, glyph, Graphics.TEXT_JUSTIFY_CENTER);
-        } else {
-            drawTextAligned(dc, x, y, Graphics.FONT_XTINY, IC_WEATHER, Graphics.TEXT_JUSTIFY_CENTER);
         }
     }
 
@@ -358,9 +358,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         drawIconMoon(dc, MID_RIGHT_LEFT_X, MID_RIGHT_TOP_Y);
         // Bottom-left: AM/PM
         drawTextAligned(dc, MID_RIGHT_LEFT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, ampm, Graphics.TEXT_JUSTIFY_LEFT);
-        // Bottom-right: seconds (only if ShowSeconds enabled)
-        var showSec = Application.Properties.getValue("ShowSeconds");
-        if (showSec != null && showSec == true) {
+        // Bottom-right: seconds (only when awake — wrist gesture active)
+        if (!isSleeping) {
             drawTextAligned(dc, MID_RIGHT_RIGHT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, seconds, Graphics.TEXT_JUSTIFY_RIGHT);
         }
     }
@@ -557,9 +556,13 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     function onExitSleep() as Void {
+        isSleeping = false;
+        WatchUi.requestUpdate();
     }
 
     function onEnterSleep() as Void {
+        isSleeping = true;
+        WatchUi.requestUpdate();
     }
 
 }
