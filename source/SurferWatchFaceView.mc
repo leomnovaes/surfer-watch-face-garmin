@@ -220,7 +220,12 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             var dm = app.getDataManager();
             var glyph = "H"; // default: day-sunny
             if (dm != null && dm.weatherConditionId != null) {
-                glyph = owmToWeatherGlyph(dm.weatherConditionId);
+                var isNight = false;
+                if (dm.sunrise != null && dm.sunset != null) {
+                    var now = Time.now().value();
+                    isNight = (now < dm.sunrise || now >= dm.sunset);
+                }
+                glyph = owmToWeatherGlyph(dm.weatherConditionId, isNight);
             }
             drawTextAligned(dc, x, y, weatherIconsFont, glyph, Graphics.TEXT_JUSTIFY_CENTER);
         } else {
@@ -229,18 +234,18 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     // Maps OWM condition code to Crystal Face Weather Icons glyph character
-    private function owmToWeatherGlyph(code as Number) as String {
-        // Day icons (A-I)
-        if (code == 800) { return "H"; }                    // day-sunny
-        if (code >= 801 && code <= 803) { return "A"; }     // day-cloudy
-        if (code == 804) { return "I"; }                    // cloudy
-        if (code >= 200 && code <= 232) { return "C"; }     // day-lightning
-        if (code >= 300 && code <= 321) { return "E"; }     // day-showers
-        if (code >= 500 && code <= 531) { return "D"; }     // day-rain
-        if (code >= 600 && code <= 622) { return "F"; }     // day-snow
-        if (code >= 700 && code <= 781) { return "G"; }     // day-sunny-overcast (fog/haze)
-        if (code == 900 || code == 781) { return "g"; }     // tornado
-        return "H"; // fallback: sunny
+    // Day icons: A-I, Night icons: a-h
+    private function owmToWeatherGlyph(code as Number, isNight as Boolean) as String {
+        if (code == 800) { return isNight ? "f" : "H"; }                    // clear
+        if (code >= 801 && code <= 803) { return isNight ? "h" : "A"; }     // cloudy
+        if (code == 804) { return "I"; }                                     // overcast (same day/night)
+        if (code >= 200 && code <= 232) { return isNight ? "e" : "C"; }     // thunderstorm
+        if (code >= 300 && code <= 321) { return isNight ? "c" : "E"; }     // showers
+        if (code >= 500 && code <= 531) { return isNight ? "b" : "D"; }     // rain
+        if (code >= 600 && code <= 622) { return isNight ? "d" : "F"; }     // snow
+        if (code >= 700 && code <= 781) { return isNight ? "h" : "G"; }     // fog/haze
+        if (code == 900 || code == 781) { return "g"; }                      // tornado (same day/night)
+        return isNight ? "f" : "H"; // fallback: clear
     }
 
     private function drawIconWind(dc as Dc, x as Number, y as Number) as Void {

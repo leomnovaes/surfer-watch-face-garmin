@@ -385,10 +385,12 @@ Key findings from rasterization testing:
 - [x] Tuned size to match other icons (18x10 body + 2x4 terminal)
 - [x] Verified in simulator
 
-### Task 33*: Add night weather condition variants (deferred)
-- [ ]* Crystal Face weather-icons already includes night variants (a-h)
-- [ ]* Update `owmToWeatherGlyph()` to check if current time is between sunset and sunrise
-- [ ]* If nighttime, use night variant glyph (a-h) instead of day variant (A-I)
+### Task 33*: Add night weather condition variants
+- [x] Crystal Face weather-icons already includes night variants (a-h) — no rasterization needed
+- [x] Update `owmToWeatherGlyph()` to accept `isNight` flag
+- [x] Check if current time is before sunrise or after sunset to determine night
+- [x] Night mapping: clear→f, cloudy→h, thunderstorm→e, showers→c, rain→b, snow→d, fog→h, overcast/tornado→same
+- [ ] Verify night icons render correctly in simulator
 
 ### Task 34: Validate tide time and height accuracy
 - [ ] Force fresh StormGlass fetch and compare tide time against Surfline for same location
