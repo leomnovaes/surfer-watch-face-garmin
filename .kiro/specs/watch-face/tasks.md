@@ -220,23 +220,22 @@
 - **Current approach**: use Crystal Face's pre-rasterized .fnt/.png files directly where available (SIL OFL for weather icons, custom pixel-art for crystal icons)
 - **Missing icons** need to be sourced from other community fonts or rasterized once we solve the quality gap
 
-### Icons currently wired (from Crystal Face):
+### Icons currently wired:
 | Icon | Source | Font | Char | Status |
 |------|--------|------|------|--------|
 | Weather conditions (17) | Crystal Face weather-icons | WeatherIcons | A-I, a-h | ✅ Wired |
 | Heart | Crystal Face crystal-icons | CrystalIcons | 3 | ✅ Wired |
-| Bluetooth | Crystal Face crystal-icons | CrystalIcons | 8 | ✅ Replaced by Segment34 `L` |
+| Bluetooth | Segment34mkII | Seg34Icons | L | ✅ Wired |
 | Notifications | Crystal Face crystal-icons | CrystalIcons | 5 | ✅ Wired |
-| Sunrise | Crystal Face crystal-icons | CrystalIcons | > | ✅ Wired |
-| Sunset | Crystal Face crystal-icons | CrystalIcons | ? | ✅ Wired |
+| Sunrise/Sunset | Crystal Face crystal-icons | CrystalIcons | > / ? | ✅ Wired |
+| Moon phases (8) | Segment34mkII | MoonIcons | 0-7 | ✅ Wired |
+| Wind direction | Procedural `dc.fillPolygon()` | — | — | ✅ Wired |
+| Umbrella | MDI webfont (rasterized) | SurferIcons | U (85) | ✅ Wired |
+| Tide high | MDI waves-arrow-up (rasterized) | SurferIcons | H (72) | ✅ Wired |
+| Tide low | MDI wave-arrow-down (rasterized) | SurferIcons | L (76) | ✅ Wired |
+| Battery | Code-drawn fill bar | — | — | ✅ Wired |
 
-### Icons still needed (text placeholders):
-| Icon | Status | Approach |
-|------|--------|----------|
-| Umbrella/precipitation | Procedural (temporary) | Task 31b: rasterize from Material Design SVG to font glyph |
-| Tide high/low | [^]/[v] placeholder | Task 32: rasterize from Material Design SVG (`waves-arrow-up/down`) |
-| Wind direction | ✅ Procedural polygon | Done — `dc.fillPolygon()` rotated to exact degree |
-| Battery | Code-drawn | Keep as-is |
+### Icons with no remaining placeholders — all icons are now real.
 
 ### Community icon font sources discovered:
 | Repo | Font file | Glyphs | Notes |
@@ -325,7 +324,7 @@ Key findings from rasterization testing:
 - [x] Wire weather condition icon (drawIconWeather with OWM code mapping)
 - [x] Wire heart, bluetooth, notification icons
 - [x] Wire sunrise/sunset icons
-- [ ] Verify all icons render correctly in simulator (user check needed)
+- [x] Verify all icons render correctly in simulator
 
 ### Task 29: Wire Segment34 moon phases into view
 - [x] Copy Segment34mkII moon.fnt/.png into `resources/fonts/`
@@ -333,7 +332,7 @@ Key findings from rasterization testing:
 - [x] Update `drawIconMoon()` to select from 8 phase glyphs (chars 0-7) based on `DataManager.moonPhase`
 - [x] Map moonPhase (0.0–1.0) to 8 phases: 0=new, 1=wax crescent, 2=first quarter, 3=wax gibbous, 4=full, 5=wan gibbous, 6=last quarter, 7=wan crescent
 - [x] Remove moon illumination % text (overlaps with moon icon at this size)
-- [ ] Verify moon icon changes in simulator
+- [x] Verify moon icon changes in simulator
 
 ### Task 29b: Swap bluetooth icon to Segment34 simple version
 - [x] Copy Segment34mkII icons.fnt/.png into `resources/fonts/`
@@ -363,42 +362,14 @@ Key findings from rasterization testing:
 - Note: Procedural umbrella is a stopgap. Task 31b will replace with a proper rasterized icon font glyph.
 
 ### Task 31b: Replace procedural umbrella with rasterized icon font glyph
-**Goal**: Establish a repeatable rasterization pipeline and find the best fontbm settings for our icons.
-
-**Step 1: Create TTF from SVGs**
-- [ ] Use FontForge (CLI) to import Material Design SVGs into a single TTF
-- [ ] Map: U=umbrella, H=tide-high, L=tide-low
-- [ ] SVGs already in `/tmp/`: `mdi-umbrella-outline.svg`, `mdi-waves-arrow-up.svg`, `mdi-waves-arrow-down.svg`
-
-**Step 2: Round 1 — Generate 9 variants using fontbm**
-Test umbrella glyph across different settings. Output to `/tmp/raster-test/`.
-
-| # | Size | AA | Spacing | Padding | Command notes |
-|---|------|----|---------|---------|---------------|
-| 1 | 17px | native | 1,1 | 0,0,0,0 | Crystal Face baseline |
-| 2 | 17px | native | 0,0 | 0,0,0,0 | No spacing |
-| 3 | 17px | native | 2,2 | 0,0,0,0 | Extra spacing for AA bleed |
-| 4 | 17px | native | 1,1 | 1,1,1,1 | Padding to prevent AA clipping |
-| 5 | 16px | native | 1,1 | 0,0,0,0 | Power-of-2 aligned |
-| 6 | 15px | native | 1,1 | 0,0,0,0 | Smallest, matches FONT_XTINY |
-| 7 | 17px | monochrome | 1,1 | 0,0,0,0 | No AA — sharp pixels |
-| 8 | 34→17 | 2x+Mitchell | 2,2 | 0,0,0,0 | Gemini 2x supersample approach |
-| 9 | 32→16 | 2x+Mitchell | 2,2 | 0,0,0,0 | Power-of-2 variant of Gemini |
-
-- [ ] Generate all 9 variants
-- [ ] Present PNGs to user for visual comparison
-- [ ] User picks top 2-3 candidates
-
-**Step 3: Round 2 — Fine-tune winners**
-- [ ] Take the best 2-3 from Round 1
-- [ ] Tweak spacing/padding/size by ±1px to find optimal
-- [ ] Present refined PNGs to user for final pick
-
-**Step 4: Wire winner into project**
-- [ ] Copy winning .fnt/.png to `resources/fonts/`
-- [ ] Register in `fonts.xml`
-- [ ] Update `drawIconUmbrella()` to use font glyph
-- [ ] Verify in simulator
+- [x] Established rasterization pipeline: fontbm 17px AA → ImageMagick alpha extract → 8-bit grayscale
+- [x] Tested 9 variants (sizes 14-20px, AA/mono, spacing/padding combos) on simulator
+- [x] Key finding: PNG must be 8-bit grayscale with `alphaChnl=1` to match Crystal Face format
+- [x] Key finding: RGBA output causes bold/fat lines — Garmin renderer misinterprets channels
+- [x] Rasterized umbrella-outline from MDI webfont TTF (F054B → char U=85)
+- [x] Wired into `drawIconUmbrella()` using surferIconsFont
+- [x] Verified in simulator
+- Note: Pipeline documented in design §5.1. Reusable for any future icon rasterization.
 
 ### Task 32: Wire tide icons from MDI webfont
 - [x] Rasterize `waves-arrow-up` (F185B, 2 waves + 2 arrows) for high tide using proven pipeline
@@ -407,6 +378,12 @@ Test umbrella glyph across different settings. Output to `/tmp/raster-test/`.
 - [x] Update `drawIconTide()` to use surferIconsFont
 - [x] Verify in simulator
 - Note: MDI has no `waves-arrow-down` (plural). Using mismatched pair intentionally — 2 waves for high tide (more water), 1 wave for low tide (less water) — works as visual metaphor.
+
+### Task 32b: Implement code-drawn battery icon
+- [x] Replace `[=]` text placeholder with code-drawn battery: outline rectangle (18x10) + fill bar proportional to % + terminal nub
+- [x] `drawIconBattery(dc, x, y)` takes position params — moveable unit, replaceable with font icon later
+- [x] Tuned size to match other icons (18x10 body + 2x4 terminal)
+- [x] Verified in simulator
 
 ### Task 33*: Add night weather condition variants (deferred)
 - [ ]* Crystal Face weather-icons already includes night variants (a-h)

@@ -151,7 +151,24 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     // they share the same coordinate system as text.
     // =========================================================
     private function drawIconBattery(dc as Dc, x as Number, y as Number) as Void {
-        drawTextAligned(dc, x, y, Graphics.FONT_XTINY, IC_BATTERY, Graphics.TEXT_JUSTIFY_LEFT);
+        // Code-drawn battery icon: outline rectangle + fill bar proportional to %
+        var app = Application.getApp() as SurferWatchFaceApp;
+        var dm = app.getDataManager();
+        var pct = (dm != null) ? dm.battery : 0;
+
+        // Battery body: 18x10 rectangle
+        var bx = x;
+        var by = y + 2; // vertically center with text
+        var bw = 18;
+        var bh = 10;
+        dc.drawRectangle(bx, by, bw, bh);
+        // Battery tip (positive terminal): 2x4 nub on right
+        dc.fillRectangle(bx + bw, by + 3, 2, 4);
+        // Fill bar inside (1px inset)
+        var fillW = ((bw - 2) * pct / 100);
+        if (fillW > 0) {
+            dc.fillRectangle(bx + 1, by + 1, fillW, bh - 2);
+        }
     }
 
     private function drawIconNotification(dc as Dc, x as Number, y as Number) as Void {
