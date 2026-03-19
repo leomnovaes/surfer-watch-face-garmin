@@ -229,13 +229,43 @@
 | Sunset | Crystal Face crystal-icons | CrystalIcons | ? | ✅ Wired |
 
 ### Icons still needed (text placeholders):
-| Icon | Status | Next step |
-|------|--------|-----------|
-| Umbrella/precipitation | [U] placeholder | Search community fonts or rasterize |
-| Moon phases (16) | [O] placeholder | Search community fonts or rasterize |
-| Wind direction (8) | [>] placeholder | Procedural polygon arrow |
-| Tide high/low | [^]/[v] placeholder | Search community fonts (sunpazed, mondrian) |
+| Icon | Status | Potential sources found |
+|------|--------|----------------------|
+| Umbrella/precipitation | [U] placeholder | Not found in any community font yet |
+| Moon phases (9-16) | [O] placeholder | **Segment34mkII** has 9 moon phases (chars 0-8) — quality looks great |
+| Wind direction (8) | [>] placeholder | **Segment34mkII** may have directional arrows; also procedural polygon approach |
+| Tide high/low | [^]/[v] placeholder | **BCTides** has sine wave bitmaps (30x30, 35x35 etc.) — not font-based |
 | Battery | Code-drawn | Keep as-is |
+
+### Community icon font sources discovered:
+| Repo | Font file | Glyphs | Notes |
+|------|-----------|--------|-------|
+| warmsound/crystal-face | crystal-icons-small.fnt/.png | 17 (heart, BT, notif, sunrise, sunset, temp, etc.) | ✅ In use. GPL v3 code, custom pixel-art icons at 20px |
+| warmsound/crystal-face | weather-icons.fnt/.png | 17 weather conditions (A-I day, a-h night) | ✅ In use. Erik Flowers SIL OFL, BMFont rasterized |
+| ludw/Segment34mkII | icons.fnt/.png | 22 (alarm, battery x2, DND, BT on/off, heart, move bar levels, etc.) | Quality looks great. Has outline heart, simple BT |
+| ludw/Segment34mkII | moon.fnt/.png | 9 moon phases (chars 0-8) | Detailed moon phases, quality looks great |
+| bombsimon/garmin-seaside | weather-icons-16.fnt/.png | 12 weather glyphs (a-l) | Uses Garmin Weather.CONDITION_* mapping, 16px |
+| SarahBass/Data-Heavy-Garmin-Watchface | weatherhoro.fnt/.png | 56 glyphs | Large set — weather + possibly horoscope + arrows + more |
+| bsyrowik/BCTides | sine.png (various sizes) | Sine wave bitmap | Not a font — individual PNG bitmaps for tide visualization |
+
+### Segment34mkII icon mapping (from source code):
+```
+A = Alarm
+B = Battery variant 1
+C = Battery variant 2
+D = DND (Do Not Disturb)
+H = Heart (filled?)
+h = Heart (outline?)
+L = Bluetooth connected
+M = Bluetooth disconnected
+N-R = Move bar levels 1-5
+S = ?
+0-7 = Unknown (need visual identification)
+```
+
+### SarahBass WeatherHoro — needs visual identification:
+56 glyphs at chars: , . 0-9 : ; ? @ A-O ` a-x
+Likely contains weather icons, possibly horoscope symbols, arrows, and other utility icons.
 
 ### Task 27: Set up Crystal Face icons
 - [x] Copy Crystal Face weather-icons .fnt/.png into `resources/fonts/`
