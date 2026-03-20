@@ -263,7 +263,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     private function drawIconWind(dc as Dc, x as Number, y as Number, dm as DataManager) as Void {
         if (dm.windDeg != null) {
-            drawWindArrow(dc, x, y + 7, dm.windDeg, 7);
+            drawWindArrow(dc, x, y + WIND_ARROW_Y_OFFSET, dm.windDeg, WIND_ARROW_SIZE);
         }
     }
 
@@ -287,10 +287,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         //   right base:  (size*0.6, size)
         var s = size.toFloat();
         var pts = [
-            [0.0, -s],              // tip
-            [-s * 0.6, s],          // left base
-            [0.0, s * 0.4],         // tail notch (swallow tail)
-            [s * 0.6, s]            // right base
+            [0.0, -s],                          // tip
+            [-s * WIND_ARROW_WIDTH, s],          // left base
+            [0.0, s * WIND_ARROW_NOTCH],         // tail notch (swallow tail)
+            [s * WIND_ARROW_WIDTH, s]            // right base
         ];
 
         // Rotate each point and translate to cx,cy
@@ -379,6 +379,12 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         drawTextAligned(dc, centerX, iconY, Graphics.FONT_XTINY, icon, Graphics.TEXT_JUSTIFY_CENTER);
         drawTextAligned(dc, centerX, textY, Graphics.FONT_XTINY, value, Graphics.TEXT_JUSTIFY_CENTER);
     }
+
+    // --- Layout constants — Wind Arrow (tweak these) ---
+    private static const WIND_ARROW_SIZE =9;       // half-height in pixels (total height = size * 2)
+    private static const WIND_ARROW_WIDTH = 0.8;    // half-width of base as fraction of size (1.0 = as wide as tall)
+    private static const WIND_ARROW_NOTCH = 0.5;    // tail notch Y (1.0 = no tail/triangle, 0.0 = center, negative = deep tail)
+    private static const WIND_ARROW_Y_OFFSET = 7;   // vertical offset from icon position
 
     // --- Layout constants — HR Circle content positions (tweak these) ---
     private static const HR_HEART_X = 144;

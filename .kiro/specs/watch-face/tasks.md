@@ -449,11 +449,9 @@ Key findings from rasterization testing:
 - Key finding: Downscale methods (2x render → shift → downscale) add too much AA noise vs fontbm direct
 
 ### Task 44: Tune wind arrow rendering
-- [ ] Current arrow is 7px half-height with 0.6 width ratio and 0.4 tail notch — looks thin on watch
-- [ ] Experiment with larger size (8-10px half-height)
-- [ ] Experiment with wider base (0.7-0.8 width ratio)
-- [ ] Experiment with shallower swallow tail (0.2-0.3 notch depth)
-- [ ] Compare on simulator and pick best combination
+- [x] Extracted arrow params as constants: WIND_ARROW_SIZE, WIND_ARROW_WIDTH, WIND_ARROW_NOTCH, WIND_ARROW_Y_OFFSET
+- [x] Tuned to size=9, width=0.8, notch=0.5 (bigger, wider, shallower tail than original 7/0.6/0.4)
+- [x] Fixed comments to accurately describe what each constant controls
 
 ### Task 43: Experiment with clock fonts
 - [x] Researched and tested: Bebas Neue, Barlow Condensed Bold, Rajdhani Bold, Saira Condensed Bold, Oswald
