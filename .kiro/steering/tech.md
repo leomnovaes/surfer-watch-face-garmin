@@ -7,7 +7,7 @@
 - Connect IQ API Level: 3.4
 - Device ID: `instinct2x`
 - Memory: ~65KB heap (tight — keep allocations minimal)
-- Sub-screen: circular cutout at top-right, canvas position x=113 y=1 62x62px, center=(144,32) radius=31 (from simulator.json)
+- Sub-screen: circular cutout at top-right, canvas position x=113 y=1 62x62px, center=(144,31) radius=31 (from simulator.json, Y tuned to fit)
 
 ## Language
 - Monkey C (Garmin's proprietary language)

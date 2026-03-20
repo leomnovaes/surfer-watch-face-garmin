@@ -419,16 +419,18 @@ Key findings from rasterization testing:
 - Satisfies: design §1.1, §1.2
 
 ### Task 42: Add stress arc indicator to HR circle
-- [ ] Read stress via `SensorHistory.getStressHistory({:period=>1})` — returns 0-100, available since API 3.3
-- [ ] Add `stress` field to DataManager, update in `updateSensorData()`
-- [ ] Draw arc around HR circle using `dc.setPenWidth(5)` + `dc.drawArc()`
-- [ ] Arc spans from 2 o'clock (60°) to 10 o'clock (300°) = 240° total, going clockwise through the bottom
-- [ ] At 0% stress: entire arc is white (blends with circle)
-- [ ] At 100% stress: entire arc is black (filled clockwise from 2 o'clock to 10 o'clock)
-- [ ] Partial stress: white arc drawn first (full 240°), then black arc overlaid from 2 o'clock clockwise proportional to stress %
+- [-] Read stress via `SensorHistory.getStressHistory({:period=>1})` — returns 0-100, available since API 3.3
+- [x] Add `stress` field to DataManager, update in `updateSensorData()`
+- [x] Confirmed sub-screen geometry: center=(144,31), radius=31 (from simulator.json, Y tuned)
+- [-] Draw arc around HR circle using `dc.setPenWidth()` + `dc.drawArc()`
+- [ ] Arc spans from 2 o'clock (60°) to 10 o'clock (120°) = 240° total, going clockwise through the bottom
+- [ ] Frame: 1px black border on inner and outer edge of arc band
+- [ ] At 0% stress: arc fill is white (blends with circle)
+- [ ] At 100% stress: arc fill is black (filled clockwise from 2 o'clock to 10 o'clock)
 - [ ] When stress data unavailable (null): show as 0% (fully white arc)
 - [ ] Arc is always visible (not gated by sleep state)
-- Note: `drawArc` angles: 0°=3 o'clock, counter-clockwise. 2 o'clock = 60°, 10 o'clock = 300°. Radius = HR_RADIUS adjusted by half pen width so arc sits on the circle edge.
+- [ ] Tune arc width and position relative to confirmed sub-screen radius
+- Note: Stress arc code is currently commented out in `drawHrCircle()` pending re-enable with correct geometry. drawArc angles: 0°=3 o'clock, counter-clockwise. ARC_CLOCKWISE from 60° to 120° draws through the bottom.
 
 ### Task 43: Experiment with clock fonts
 - [ ] Research available Garmin system fonts and custom BMFont options for the main time display

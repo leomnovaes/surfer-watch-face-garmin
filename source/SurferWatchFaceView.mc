@@ -21,9 +21,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     // --- Layout constants — Heart Rate Circle ---
     // Sub-screen circle from simulator.json: x=113, y=1, 62x62
-    // Center = (144, 32), radius = 31
+    // Center = (144, 31), radius = 31
     private static const HR_CENTER_X = 144;
-    private static const HR_CENTER_Y = 32;
+    private static const HR_CENTER_Y = 31;
     private static const HR_RADIUS = 31;
 
     // --- Layout constants — Middle Section ---
