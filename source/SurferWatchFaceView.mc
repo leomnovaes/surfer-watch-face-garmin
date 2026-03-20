@@ -217,20 +217,48 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         }
     }
 
-    // Maps OWM condition code to Crystal Face Weather Icons glyph character
-    // Day icons: A-I, Night icons: a-h
-    // Note: Crystal Face set has no pure "overcast rain" — rain codes show sun/moon + rain
+    // Maps OWM condition code to Erik Flowers Weather Icons glyph character
+    // Day: A-V, Night: a-g. Full OWM mapping from erikflowers.github.io
     private function owmToWeatherGlyph(code as Number, isNight as Boolean) as String {
-        if (code == 800) { return isNight ? "f" : "H"; }                    // clear
-        if (code >= 801 && code <= 802) { return isNight ? "h" : "A"; }     // few/scattered clouds
-        if (code == 803 || code == 804) { return "I"; }                     // broken/overcast (same day/night)
-        if (code >= 200 && code <= 232) { return isNight ? "e" : "C"; }     // thunderstorm
-        if (code >= 300 && code <= 321) { return isNight ? "c" : "E"; }     // drizzle
-        if (code >= 500 && code <= 531) { return isNight ? "b" : "D"; }     // rain
-        if (code >= 600 && code <= 622) { return isNight ? "d" : "F"; }     // snow
-        if (code >= 700 && code <= 781) { return "I"; }                     // fog/haze/mist → cloudy
-        if (code == 900) { return "g"; }                                     // tornado
-        return isNight ? "f" : "H"; // fallback: clear
+        // Clear
+        if (code == 800) { return isNight ? "a" : "A"; }
+        // Clouds
+        if (code == 801 || code == 802) { return isNight ? "b" : "C"; }     // few/scattered → day-cloudy / night-cloudy
+        if (code == 803) { return isNight ? "g" : "Q"; }                     // broken → cloudy-gusts
+        if (code == 804) { return "D"; }                                      // overcast → cloudy (same day/night)
+        // Thunderstorm (200-232)
+        if (code >= 200 && code <= 202) { return isNight ? "e" : "F"; }      // thunderstorm with rain
+        if (code >= 210 && code <= 221) { return isNight ? "e" : "F"; }      // thunderstorm
+        if (code >= 230 && code <= 232) { return isNight ? "e" : "F"; }      // thunderstorm with drizzle
+        // Drizzle (300-321)
+        if (code == 300 || code == 301 || code == 321) { return isNight ? "d" : "G"; } // sprinkle
+        if (code >= 302 && code <= 314) { return isNight ? "c" : "H"; }      // rain
+        if (code == 500) { return isNight ? "d" : "G"; }                     // light rain → sprinkle
+        // Rain (501-531)
+        if (code >= 501 && code <= 504) { return isNight ? "c" : "H"; }      // rain
+        if (code == 511) { return "K"; }                                      // freezing rain → rain-mix
+        if (code >= 520 && code <= 522) { return isNight ? "d" : "I"; }      // showers
+        if (code == 531) { return "L"; }                                      // storm-showers
+        // Snow (600-622)
+        if (code == 600 || code == 601 || code == 621 || code == 622) { return isNight ? "f" : "J"; } // snow
+        if (code == 602) { return "M"; }                                      // sleet
+        if (code >= 611 && code <= 620) { return "K"; }                       // rain-mix
+        // Atmosphere (700-781)
+        if (code == 701) { return isNight ? "d" : "I"; }                     // mist → showers
+        if (code == 711) { return "N"; }                                      // smoke
+        if (code == 721) { return "O"; }                                      // haze
+        if (code == 731 || code == 761 || code == 762) { return "P"; }       // dust
+        if (code == 741) { return "E"; }                                      // fog
+        if (code == 771) { return "Q"; }                                      // squalls → cloudy-gusts
+        if (code == 781) { return "R"; }                                      // tornado
+        // Extreme
+        if (code == 900) { return "R"; }                                      // tornado
+        if (code == 901) { return "L"; }                                      // tropical storm
+        if (code == 902) { return "S"; }                                      // hurricane
+        if (code == 903) { return "T"; }                                      // cold
+        if (code == 904) { return "U"; }                                      // hot
+        if (code == 905) { return "V"; }                                      // windy
+        return isNight ? "a" : "A"; // fallback: clear
     }
 
     private function drawIconWind(dc as Dc, x as Number, y as Number, dm as DataManager) as Void {
