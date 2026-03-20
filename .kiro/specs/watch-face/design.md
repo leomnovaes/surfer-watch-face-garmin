@@ -185,7 +185,7 @@ var lastKnownLng as Float or Null
 **Key methods:**
 - `initialize()` — loads persisted tide data from `Application.Storage`
 - `updateSensorData()` — called from `onUpdate()`, reads HR, battery, notifications, BT, GPS; writes lat/lng to `Application.Storage` for background process
-- `onWeatherData(data as Dictionary)` — receives parsed OWM fields from `onBackgroundData()`, stores in fields, updates `owmFetchedAt`. Note: `owmFetchedAt`, `owmFetchLat`, `owmFetchLon` are persisted to `Application.Storage` by `WeatherService` in the background process (not by DataManager).
+- `onWeatherData(data as Dictionary)` — receives parsed OWM fields from `onBackgroundData()`, stores in fields. Reads `owmFetchedAt` from `Application.Storage` (written by `WeatherService` in the background process) as single source of truth for staleness checks.
 - `onTideData(data as Array)` — receives parsed tide array from `onBackgroundData()`, stores and persists
 - `computeNextTide()` — walks `tideExtremes` to find next event after now, reads predicted height of that event (not interpolated)
 - `computeMoonPhase()` — calculates moon phase from current date using synodic period (29.53 days), sets `moonPhase` as 0.0–1.0

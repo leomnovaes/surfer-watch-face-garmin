@@ -16,7 +16,6 @@ class DataManager {
     var windDeg as Number or Null;
     var sunrise as Number or Null;
     var sunset as Number or Null;
-    var precipPop as Float or Null;
     var moonPhase as Float or Null;
     var owmFetchedAt as Number or Null;
 
@@ -129,8 +128,11 @@ class DataManager {
 
     // =========================================================
     // onWeatherData(data) — receives parsed OWM Dictionary from
-    // onBackgroundData(). Keys: :temp, :conditionId, :windSpeed,
-    // :windDeg, :sunrise, :sunset, :pop, :moonPhase
+    // onBackgroundData(). Keys: temp, conditionId, windSpeed,
+    // windDeg, sunrise, sunset.
+    // owmFetchedAt is read from Application.Storage (written by
+    // WeatherService in the background process) — single source
+    // of truth for refresh timing.
     // =========================================================
     function onWeatherData(data as Dictionary) as Void {
         temperature = data["temp"] as Float or Null;
@@ -139,9 +141,8 @@ class DataManager {
         windDeg = data["windDeg"] as Number or Null;
         sunrise = data["sunrise"] as Number or Null;
         sunset = data["sunset"] as Number or Null;
-        precipPop = data["pop"] as Float or Null;
-        moonPhase = data["moonPhase"] as Float or Null;
-        owmFetchedAt = Time.now().value();
+        // Read owmFetchedAt from Storage (written by WeatherService in background)
+        owmFetchedAt = Application.Storage.getValue("owmFetchedAt") as Number or Null;
         persistWeatherData();
     }
 

@@ -464,6 +464,13 @@ Key findings from rasterization testing:
 - [x] Identified `precipPop` as dead field in DataManager.mc — populated but never read (view uses Garmin built-in). Flagged for cleanup.
 - Note: `precipPop` field remains in DataManager.mc code for now — removal is a code change, deferred to user decision.
 
+### Task 43d: Code cleanup — remove dead fields, fix owmFetchedAt naming
+- [x] Removed `precipPop` field from DataManager (dead code — OWM excludes hourly/daily, `pop` always null; view uses Garmin built-in `precipitationChance`)
+- [x] Removed `data["pop"]` and `data["moonPhase"]` reads from `onWeatherData()` (WeatherService doesn't include these keys)
+- [x] Fixed `owmFetchedAt` dual-source issue: DataManager now reads from `Application.Storage` (written by WeatherService in background) instead of stamping `Time.now()` independently — single source of truth for refresh timing
+- [x] Updated `onWeatherData()` comment to list only the keys actually in the dict (temp, conditionId, windSpeed, windDeg, sunrise, sunset)
+- [x] Updated design.md to reflect all changes
+
 ### Task 44: Tune wind arrow rendering
 - [x] Extracted arrow params as constants: WIND_ARROW_SIZE, WIND_ARROW_WIDTH, WIND_ARROW_NOTCH, WIND_ARROW_Y_OFFSET
 - [x] Tuned to size=9, width=0.8, notch=0.5 (bigger, wider, shallower tail than original 7/0.6/0.4)
