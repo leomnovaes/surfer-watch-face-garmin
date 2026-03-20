@@ -1,6 +1,6 @@
 <strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
 
-    <string id="AppName">Surfer Watch Face</string>
+    <string id="AppName">Shore Watch</string>
 
     <string id="OWMApiKeyTitle">OpenWeatherMap API Key</string>
     <string id="StormGlassApiKeyTitle">StormGlass API Key</string>

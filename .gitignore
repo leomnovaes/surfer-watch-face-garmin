@@ -1,7 +1,14 @@
 bin/
 build/
 tools/
+gen/
+mir/
+internal-mir/
+source/gen/
+source/mir/
+source/internal-mir/
 *.prg
 *.iq
 *.debug.xml
+*-settings.json
 .DS_Store
