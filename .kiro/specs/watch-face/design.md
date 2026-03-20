@@ -58,8 +58,10 @@ Row spacing must exceed the font's nominal size to avoid overlap. For `FONT_XTIN
 **Heart Rate Circle**
 - Center: x=144, y=31 (from simulator.json sub-screen geometry, tuned to fit)
 - Radius: 31px (matches sub-screen: 62x62 at x=113, y=1)
-- Drawn as filled white circle, then heart icon + BPM text on top in black
-- Heart icon and BPM use `TEXT_JUSTIFY_CENTER | TEXT_JUSTIFY_VCENTER` for centering within the circle
+- Drawn as filled white circle, then stress arc, heart icon, and BPM text on top in black
+- Heart icon at (144, 14), BPM text at (144, 34) — both `TEXT_JUSTIFY_CENTER | TEXT_JUSTIFY_VCENTER`
+- Stress arc: 6px wide band from 2 o'clock to 10 o'clock (300° clockwise through bottom), black fill proportional to stress %
+- Stress data from `SensorHistory.getStressHistory({:period=>1})`, 0-100, updates ~every 3 min
 
 **Top Section** (left side of screen, y=2 to ~y=70)
 - Row spacing: 23px between rows

@@ -371,55 +371,94 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         drawTextAligned(dc, centerX, textY, Graphics.FONT_XTINY, value, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
+    // --- Layout constants — HR Circle content positions (tweak these) ---
+    private static const HR_HEART_X = 144;
+    private static const HR_HEART_Y = 14;
+    private static const HR_TEXT_X = 144;
+    private static const HR_TEXT_Y = 34;
+    private static const STRESS_ARC_WIDTH = 6;
+
     // =========================================================
     // Section renderers — called from onUpdate()
     // =========================================================
     private function drawHrCircle(dc as Dc) as Void {
+        var app = Application.getApp() as SurferWatchFaceApp;
+        var dm = app.getDataManager();
+
         // Filled white circle
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.fillCircle(HR_CENTER_X, HR_CENTER_Y, HR_RADIUS);
 
-        // Stress arc gauge — temporarily disabled while tuning circle position
-        /*
+        // Stress arc
         var stressVal = 0;
         if (dm != null && dm.stress != null) {
             stressVal = dm.stress;
         }
-        var arcWidth = 6;
-        var arcOuterR = HR_RADIUS - 1;
-        var arcInnerR = arcOuterR - arcWidth;
-        var arcMidR = arcOuterR - (arcWidth / 2);
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.setPenWidth(1);
-        dc.drawArc(HR_CENTER_X, HR_CENTER_Y, arcOuterR, Graphics.ARC_CLOCKWISE, 60, 120);
-        dc.drawArc(HR_CENTER_X, HR_CENTER_Y, arcInnerR, Graphics.ARC_CLOCKWISE, 60, 120);
-        if (stressVal > 0) {
-            var blackDegrees = (240 * stressVal / 100);
-            var endAngle = 60 - blackDegrees;
-            dc.setPenWidth(arcWidth - 2);
-            dc.drawArc(HR_CENTER_X, HR_CENTER_Y, arcMidR, Graphics.ARC_CLOCKWISE, 60, endAngle);
-        }
-        dc.setPenWidth(1);
-        */
+        drawStressArc(dc, HR_CENTER_X, HR_CENTER_Y, HR_RADIUS, STRESS_ARC_WIDTH, stressVal);
 
-        // Heart icon + BPM in black, vertically centered in circle
+        // Heart icon
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        if (seg34IconsFont != null) {
-            var fontHeight = dc.getFontHeight(seg34IconsFont);
-            dc.drawText(HR_CENTER_X, HR_CENTER_Y - fontHeight + 8, seg34IconsFont, "h", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        }
+        drawHrHeart(dc, HR_HEART_X, HR_HEART_Y);
 
-        // Live heart rate
-        var app = Application.getApp() as SurferWatchFaceApp;
-        var dm = app.getDataManager();
+        // Heart rate text
         var hrText = "--";
         if (dm != null && dm.heartRate != null) {
             hrText = dm.heartRate.toString();
         }
-        dc.drawText(HR_CENTER_X, HR_CENTER_Y + 10, Graphics.FONT_XTINY, hrText, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        drawHrText(dc, HR_TEXT_X, HR_TEXT_Y, hrText);
 
         // Restore white for subsequent drawing
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+    }
+
+    // Draws the heart icon at (x, y) — black, centered
+    private function drawHrHeart(dc as Dc, x as Number, y as Number) as Void {
+        if (seg34IconsFont != null) {
+            dc.drawText(x, y, seg34IconsFont, "h", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        }
+    }
+
+    // Draws the heart rate number at (x, y) — black, centered
+    private function drawHrText(dc as Dc, x as Number, y as Number, text as String) as Void {
+        dc.drawText(x, y, Graphics.FONT_XTINY, text, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+    }
+
+    // Draws the stress arc gauge around a circle
+    // cx, cy = circle center; radius = circle radius; barWidth = arc thickness; stressPercent = 0-100
+    private function drawStressArc(dc as Dc, cx as Number, cy as Number, radius as Number, barWidth as Number, stressPercent as Number) as Void {
+        var arcOuterR = radius;
+        var arcInnerR = arcOuterR - barWidth;
+        var arcMidR = arcOuterR - (barWidth / 2);
+        var arcStartAngle = 60;  // 2 o'clock
+        var arcEndAngle = 120;   // 10 o'clock
+        var totalArcDeg = 300;   // clockwise from 60° through bottom to 120°
+
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        dc.setPenWidth(1);
+
+        // Outer and inner borders
+        dc.drawArc(cx, cy, arcOuterR, Graphics.ARC_CLOCKWISE, arcStartAngle, arcEndAngle);
+        dc.drawArc(cx, cy, arcInnerR, Graphics.ARC_CLOCKWISE, arcStartAngle, arcEndAngle);
+
+        // End caps — extend 1px past outer to close gap
+        var capOuterR = arcOuterR + 1;
+        var startRad = arcStartAngle * Math.PI / 180.0;
+        var endRad = arcEndAngle * Math.PI / 180.0;
+        dc.drawLine(
+            cx + (arcInnerR * Math.cos(startRad)).toNumber(), cy - (arcInnerR * Math.sin(startRad)).toNumber(),
+            cx + (capOuterR * Math.cos(startRad)).toNumber(), cy - (capOuterR * Math.sin(startRad)).toNumber());
+        dc.drawLine(
+            cx + (arcInnerR * Math.cos(endRad)).toNumber(), cy - (arcInnerR * Math.sin(endRad)).toNumber(),
+            cx + (capOuterR * Math.cos(endRad)).toNumber(), cy - (capOuterR * Math.sin(endRad)).toNumber());
+
+        // Fill: black portion proportional to stress %
+        if (stressPercent > 0) {
+            var blackDegrees = (totalArcDeg * stressPercent / 100);
+            var fillEnd = arcStartAngle - blackDegrees;
+            dc.setPenWidth(barWidth);
+            dc.drawArc(cx, cy, arcMidR, Graphics.ARC_CLOCKWISE, arcStartAngle, fillEnd);
+        }
+        dc.setPenWidth(1);
     }
 
     private function drawTopSection(dc as Dc) as Void {

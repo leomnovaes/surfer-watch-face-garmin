@@ -419,18 +419,19 @@ Key findings from rasterization testing:
 - Satisfies: design §1.1, §1.2
 
 ### Task 42: Add stress arc indicator to HR circle
-- [-] Read stress via `SensorHistory.getStressHistory({:period=>1})` — returns 0-100, available since API 3.3
+- [x] Read stress via `SensorHistory.getStressHistory({:period=>1})` — returns 0-100, available since API 3.3
 - [x] Add `stress` field to DataManager, update in `updateSensorData()`
 - [x] Confirmed sub-screen geometry: center=(144,31), radius=31 (from simulator.json, Y tuned)
-- [-] Draw arc around HR circle using `dc.setPenWidth()` + `dc.drawArc()`
-- [ ] Arc spans from 2 o'clock (60°) to 10 o'clock (120°) = 240° total, going clockwise through the bottom
-- [ ] Frame: 1px black border on inner and outer edge of arc band
-- [ ] At 0% stress: arc fill is white (blends with circle)
-- [ ] At 100% stress: arc fill is black (filled clockwise from 2 o'clock to 10 o'clock)
-- [ ] When stress data unavailable (null): show as 0% (fully white arc)
-- [ ] Arc is always visible (not gated by sleep state)
-- [ ] Tune arc width and position relative to confirmed sub-screen radius
-- Note: Stress arc code is currently commented out in `drawHrCircle()` pending re-enable with correct geometry. drawArc angles: 0°=3 o'clock, counter-clockwise. ARC_CLOCKWISE from 60° to 120° draws through the bottom.
+- [x] Draw arc around HR circle using `dc.setPenWidth()` + `dc.drawArc()`
+- [x] Arc spans from 2 o'clock (60°) to 10 o'clock (120°) = 300° total, going clockwise through the bottom
+- [x] Frame: 1px black border on inner and outer edge, end caps at start/end
+- [x] At 0% stress: arc frame visible, fill is white (blends with circle)
+- [x] At 100% stress: arc fill is black (filled clockwise from 2 o'clock to 10 o'clock)
+- [x] When stress data unavailable (null): show as 0% (fully white arc)
+- [x] Arc is always visible (not gated by sleep state)
+- [x] Refactored into `drawStressArc()`, `drawHrHeart()`, `drawHrText()` with tweakable position constants
+- [x] Wired to real stress data from DataManager
+- Note: Heart at (144,14), BPM text at (144,34), arc width 6px. Positions are `private static const` for easy tuning.
 
 ### Task 43: Experiment with clock fonts
 - [ ] Research available Garmin system fonts and custom BMFont options for the main time display
