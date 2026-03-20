@@ -86,7 +86,7 @@ Row spacing must exceed the font's nominal size to avoid overlap. For `FONT_XTIN
 - Right column: 2x2 grid
   - Left edge x=132, right edge x=174
   - Top row y=74, bottom row y=94
-  - Top-left: moon phase icon (Segment34mkII, chars 0-7)
+  - Top-left: moon phase icon (Erik Flowers Weather Icons, 28 phases, rasterized at 24px)
   - Bottom-left: am/pm, left-justified
   - Bottom-right: seconds (only when awake — wrist gesture active)
 
@@ -160,8 +160,7 @@ var windSpeed as Float or Null             // m/s, converted to km/h or mph at r
 var windDeg as Number or Null
 var sunrise as Number or Null              // Unix timestamp
 var sunset as Number or Null               // Unix timestamp
-var precipPop as Float or Null             // 0.0–1.0
-var moonPhase as Float or Null             // 0.0–1.0
+var moonPhase as Float or Null             // 0.0–1.0 (computed locally via synodic period)
 var owmFetchedAt as Number or Null         // Unix timestamp of last successful fetch
 
 // Cached tide data (from StormGlass, received via onBackgroundData)
@@ -175,6 +174,7 @@ var currentTideHeight as Float or Null     // predicted height of next tide even
 
 // Device/sensor data (updated each onUpdate())
 var heartRate as Number or Null
+var stress as Number or Null               // 0-100, from SensorHistory.getStressHistory()
 var battery as Number                      // 0–100
 var notificationCount as Number
 var bluetoothConnected as Boolean
@@ -185,9 +185,10 @@ var lastKnownLng as Float or Null
 **Key methods:**
 - `initialize()` — loads persisted tide data from `Application.Storage`
 - `updateSensorData()` — called from `onUpdate()`, reads HR, battery, notifications, BT, GPS; writes lat/lng to `Application.Storage` for background process
-- `onWeatherData(data as Dictionary)` — receives parsed OWM fields from `onBackgroundData()`, stores in fields, updates `owmFetchedAt`
+- `onWeatherData(data as Dictionary)` — receives parsed OWM fields from `onBackgroundData()`, stores in fields, updates `owmFetchedAt`. Note: `owmFetchedAt`, `owmFetchLat`, `owmFetchLon` are persisted to `Application.Storage` by `WeatherService` in the background process (not by DataManager).
 - `onTideData(data as Array)` — receives parsed tide array from `onBackgroundData()`, stores and persists
-- `computeNextTide()` — walks `tideExtremes` to find next event after now, reads predicted height of that event
+- `computeNextTide()` — walks `tideExtremes` to find next event after now, reads predicted height of that event (not interpolated)
+- `computeMoonPhase()` — calculates moon phase from current date using synodic period (29.53 days), sets `moonPhase` as 0.0–1.0
 - `persistTideData()` — saves `tideExtremes` and `tideFetchedDay` to `Application.Storage`
 - `loadTideData()` — restores from `Application.Storage` on startup
 
@@ -197,15 +198,16 @@ Runs inside `SurferWatchFaceDelegate` (background process). Returns a parsed Dic
 
 - `fetch(lat, lon, apiKey, units)` — builds OWM One Call 3.0 URL, calls `Communications.makeWebRequest()`
 - Callback parses response JSON, extracts only the fields we need, returns Dictionary:
-  `{:temp, :conditionId, :windSpeed, :windDeg, :sunrise, :sunset, :pop, :moonPhase}`
+  `{:temp, :conditionId, :windSpeed, :windDeg, :sunrise, :sunset}`
+- On success: writes `owmFetchedAt`, `owmFetchLat`, `owmFetchLon` to `Application.Storage` before invoking callback
 - On error: returns null, delegate skips packaging weather data
 
 ### 2.4 TideService
 
 Runs inside `SurferWatchFaceDelegate` (background process). Returns a parsed Array to the delegate.
 
-- `fetch(lat, lng, apiKey)` — builds StormGlass URL with 48h window, sets `Authorization` header, calls `Communications.makeWebRequest()`
-- Uses `datum=MLLW` (Mean Lower Low Water) so heights are always positive and match what tide websites/surfers expect. Default MSL datum produces small values around 0 which are confusing.
+- `fetch(lat, lng, apiKey)` — builds StormGlass URL with 48h window and `datum=MLLW`, sets `Authorization` header, calls `Communications.makeWebRequest()`
+- Uses `datum=MLLW` (Mean Lower Low Water) so heights are always positive and match what tide websites/surfers expect
 - Callback parses response, converts ISO time strings to Unix timestamps, returns Array of `{:height, :time, :type}`
 - Checks `meta.requestCount` vs `meta.dailyQuota`; if exhausted, writes `stormGlassQuotaExhausted=true` to `Application.Storage`
 - On error: returns null, delegate skips packaging tide data
@@ -382,12 +384,14 @@ Reference: Crystal Face (warmsound/crystal-face) uses this exact format — 8-bi
 
 | Font file | Source | Glyphs | Format |
 |-----------|--------|--------|--------|
-| `weather-icons.fnt/.png` | Crystal Face (Erik Flowers, SIL OFL) | 17 weather conditions (A-I day, a-h night) | 8-bit grayscale 256x256 |
-| `crystal-icons.fnt/.png` | Crystal Face (custom pixel-art) | Notifications, sunrise, sunset | 8-bit colormap 256x256 |
-| `moon.fnt/.png` | Segment34mkII | 8 moon phases (chars 0-7) | 8-bit grayscale |
-| `seg34-icons.fnt/.png` | Segment34mkII | Bluetooth (L), arrows (0-7), etc. | 8-bit grayscale |
-| `surfer-icons.fnt/.png` | MDI webfont (Apache 2.0), rasterized with our pipeline | Umbrella (U=85), waves-arrow-up (H=72) | 8-bit grayscale 256x256 |
-| `heart-icon.fnt/.png` | Garmin Connect Icons (sunpazed/garmin-iconfonts), rasterized at 27px | Heart outline (h=104) | 8-bit grayscale 256x256 |
+| `weather-icons.fnt/.png` | Erik Flowers Weather Icons (SIL OFL), rasterized at 17px via fontbm | 29 weather glyphs: day (A-V) + night (a-g) | 8-bit grayscale 256x256 |
+| `crystal-icons.fnt/.png` | Crystal Face (custom pixel-art) | Notifications (5), sunrise (>), sunset (?) | 8-bit colormap 256x256 |
+| `moon.fnt/.png` | Erik Flowers Weather Icons (SIL OFL), rasterized at 24px via fontbm | 28 moon phases (mapped to ASCII chars) | 8-bit grayscale 256x256 |
+| `seg34-icons.fnt/.png` | Segment34mkII | Bluetooth (L) | 8-bit grayscale |
+| `surfer-icons.fnt/.png` | MDI webfont (Apache 2.0), rasterized at 17px via fontbm | Umbrella (U=85), tide high (H=72), tide low (L=76) | 8-bit grayscale 256x256 |
+| `heart-icon.fnt/.png` | Garmin Connect Icons (sunpazed/garmin-iconfonts), rasterized at 27px via fontbm | Heart outline (h=104) | 8-bit grayscale 256x256 |
+| `clock-SairaCondensed-Bold-40.fnt/.png` | Google Fonts (SIL OFL), rasterized at 40px | Digits 0-9, colon | Default clock font |
+| `clock-Rajdhani-Bold-40.fnt/.png` | Google Fonts (SIL OFL), rasterized at 40px | Digits 0-9, colon | Alternative clock font (via ClockFont setting) |
 
 **Heart icon size testing**: Tested sizes 18-30px from garmin-connect-icons.ttf. Best results at 27px (winner), 24px, 28px, 21px. Even sizes tend to rasterize cleaner due to font em-size alignment. Alternatives can be regenerated by changing `--font-size` in the pipeline command.
 
@@ -402,44 +406,62 @@ Saved at: `/tmp/materialdesignicons-webfont.ttf`
 | Tide high | waves-arrow-up | F185B | 989275 | H (72) |
 | Tide low | (not in MDI) | — | — | L (76) — needs flip or alternative |
 
-### 5.2b Crystal Face Weather Icons Glyph Mapping
+### 5.2b Weather Icons Glyph Mapping (Erik Flowers, rasterized at 17px)
 
-Unicode → ASCII remapping used by Crystal Face:
+29 glyphs total. Unicode codepoints from Weather Icons TTF, remapped to ASCII in .fnt file:
+
+Day glyphs (A-V, ASCII 65-86):
 ```
-61441 (wi-day-cloudy)             → A (65)
-61442 (wi-day-cloudy-gusts)       → B (66)
-61445 (wi-day-lightning)          → C (67)
-61448 (wi-day-rain)               → D (68)
-61449 (wi-day-showers)            → E (69)
-61450 (wi-day-snow)               → F (70)
-61452 (wi-day-sunny-overcast)     → G (71)
-61453 (wi-day-sunny)              → H (72)
-61459 (wi-cloudy)                 → I (73)
-61475 (wi-night-alt-cloudy-gusts) → a (97)
-61477 (wi-night-alt-rain)         → b (98)
-61480 (wi-night-alt-showers)      → c (99)
-61481 (wi-night-alt-snow)         → d (100)
-61482 (wi-night-alt-thunderstorm) → e (101)
-61486 (wi-night-clear)            → f (102)
-61569 (wi-tornado)                → g (103)
-61574 (wi-night-alt-cloudy)       → h (104)
+0xF00D (wi-day-sunny)              → A (65)
+0xF002 (wi-day-cloudy)             → B (66)  — also used for C
+0xF002 (wi-day-cloudy)             → C (67)
+0xF013 (wi-cloudy)                 → D (68)
+0xF014 (wi-fog)                    → E (69)
+0xF01E (wi-thunderstorm)           → F (70)
+0xF01C (wi-sprinkle)               → G (71)
+0xF019 (wi-rain)                   → H (72)
+0xF01A (wi-showers)                → I (73)
+0xF01B (wi-snow)                   → J (74)
+0xF017 (wi-rain-mix)               → K (75)
+0xF01D (wi-storm-showers)          → L (76)
+0xF0B5 (wi-sleet)                  → M (77)
+0xF062 (wi-smoke)                  → N (78)
+0xF0B6 (wi-day-haze)               → O (79)
+0xF063 (wi-dust)                   → P (80)
+0xF011 (wi-cloudy-gusts)           → Q (81)
+0xF056 (wi-tornado)                → R (82)
+0xF073 (wi-hurricane)              → S (83)
+0xF076 (wi-snowflake-cold)         → T (84)
+0xF072 (wi-hot)                    → U (85)
+0xF021 (wi-windy)                  → V (86)
+```
+
+Night glyphs (a-g, ASCII 97-103):
+```
+0xF02E (wi-night-clear)            → a (97)
+0xF086 (wi-night-alt-cloudy)       → b (98)
+0xF028 (wi-night-alt-rain)         → c (99)
+0xF029 (wi-night-alt-showers)      → d (100)
+0xF02A (wi-night-alt-thunderstorm) → e (101)
+0xF02C (wi-night-alt-snow)         → f (102)
+0xF022 (wi-night-alt-cloudy-gusts) → g (103)
 ```
 
 ### 5.3 Icon Sources by Category
 
 | Category | Source | Status |
 |----------|--------|--------|
-| Weather conditions (17) | Crystal Face weather-icons.fnt | ✅ Wired |
-| Heart | Crystal Face crystal-icons.fnt, char `3` | ✅ Wired |
+| Weather conditions (29) | Erik Flowers Weather Icons, rasterized at 17px (day A-V, night a-g) | ✅ Wired |
+| Heart | Garmin Connect Icons (sunpazed/garmin-iconfonts), rasterized at 27px, char `h` | ✅ Wired |
 | Notifications | Crystal Face crystal-icons.fnt, char `5` | ✅ Wired |
 | Sunrise/sunset | Crystal Face crystal-icons.fnt, chars `>` / `?` | ✅ Wired |
 | Bluetooth | Segment34mkII seg34-icons.fnt, char `L` | ✅ Wired |
-| Moon phases (8) | Segment34mkII moon.fnt, chars `0`-`7` | ✅ Wired |
+| Moon phases (28) | Erik Flowers Weather Icons, rasterized at 24px | ✅ Wired |
 | Wind direction | Procedural `dc.fillPolygon()` — swallow-tail arrow rotated to exact degree | ✅ Wired |
 | Umbrella | MDI surfer-icons.fnt, char `U` (rasterized with our pipeline) | ✅ Wired |
-| Tide high | MDI surfer-icons.fnt, char `H` (waves-arrow-up) | Rasterized, not yet wired |
-| Tide low | Not in MDI — need to flip waves-arrow-up or find alternative | Not started |
-| Battery | Code-drawn fill bar | ✅ Wired |
+| Tide high | MDI surfer-icons.fnt, char `H` (waves-arrow-up) | ✅ Wired |
+| Tide low | MDI surfer-icons.fnt, char `L` (wave-arrow-down) | ✅ Wired |
+| Battery | Code-drawn fill bar (18x10 rectangle + proportional fill) | ✅ Wired |
 
 ### 5.4 Code Patterns
 
@@ -465,67 +487,70 @@ private function drawTextAligned(dc, x, y, font, text, justify) {
 
 ## 6. OWM Weather Condition Code → Weather Icons Mapping
 
-Uses the official erikflowers OWM mapping (https://erikflowers.github.io/weather-icons/api-list.html):
+Uses Erik Flowers Weather Icons rasterized at 17px. 29 glyphs total: 22 day (A-V) + 7 night (a-g).
+Night variants are selected when current time is before sunrise or after sunset.
+
+Based on the official erikflowers OWM mapping (https://erikflowers.github.io/weather-icons/api-list.html):
 
 ```
-200-202, 230-232  → wi-thunderstorm (0xF01E)
-210-212, 221      → wi-lightning (0xF016)
-300, 301, 321     → wi-sprinkle (0xF01C)
-302, 311, 312, 314→ wi-rain (0xF019)
-310, 511          → wi-rain-mix (0xF017)
-313, 520-522      → wi-showers (0xF01A)
-500               → wi-sprinkle (0xF01C)
-501-504           → wi-rain (0xF019)
-531               → wi-storm-showers (0xF01D)
-600, 601, 621, 622→ wi-snow (0xF01B)
-602               → wi-sleet (0xF0B5)
-611-616, 620      → wi-rain-mix (0xF017)
-701 (mist)        → wi-showers (0xF01A)
-711               → wi-smoke (0xF062)
-721               → wi-day-haze (0xF0B6)
-731, 761, 762     → wi-dust (0xF063)
-741               → wi-fog (0xF014)
-771               → wi-cloudy-gusts (0xF011)
-781               → wi-tornado (0xF056)
-800               → wi-day-sunny (0xF00D)
-801-803           → wi-cloudy-gusts (0xF011)
-804               → wi-cloudy (0xF013)
-900               → wi-tornado (0xF056)
-901               → wi-storm-showers (0xF01D)
-902               → wi-hurricane (0xF073)
-903               → wi-snowflake-cold (0xF076)
-904               → wi-hot (0xF072)
-905               → wi-windy (0xF021)
+Day glyphs (A-V):
+  A = wi-day-sunny (clear, 800)
+  B = wi-day-cloudy (few/scattered clouds, 801-802) — night: b
+  C = wi-day-cloudy (same as B, used for 801-802) — night: b
+  D = wi-cloudy (overcast, 804) — same day/night
+  E = wi-fog (741)
+  F = wi-thunderstorm (200-232) — night: e
+  G = wi-sprinkle (300, 301, 321, 500) — night: d
+  H = wi-rain (302-314, 501-504) — night: c
+  I = wi-showers (520-522, 701 mist) — night: d
+  J = wi-snow (600, 601, 621, 622) — night: f
+  K = wi-rain-mix (511, 611-620)
+  L = wi-storm-showers (531, 901)
+  M = wi-sleet (602)
+  N = wi-smoke (711)
+  O = wi-day-haze (721)
+  P = wi-dust (731, 761, 762)
+  Q = wi-cloudy-gusts (771, 803) — night: g
+  R = wi-tornado (781, 900)
+  S = wi-hurricane (902)
+  T = wi-snowflake-cold (903)
+  U = wi-hot (904)
+  V = wi-windy (905)
+
+Night glyphs (a-g):
+  a = wi-night-clear (800 at night)
+  b = wi-night-alt-cloudy (801-802 at night)
+  c = wi-night-alt-rain (302-314, 501-504 at night)
+  d = wi-night-alt-showers (300-321, 500, 520-522, 701 at night)
+  e = wi-night-alt-thunderstorm (200-232 at night)
+  f = wi-night-alt-snow (600-622 at night)
+  g = wi-night-alt-cloudy-gusts (771, 803 at night)
 ```
 
 ---
 
-## 7. Moon Phase Mapping (16 phases)
+## 7. Moon Phase Mapping (28 phases)
+
+Moon phase is computed locally via synodic period in `DataManager.computeMoonPhase()`. The 0.0–1.0 float is mapped to 28 glyphs from Erik Flowers Weather Icons, rasterized at 24px.
 
 ```
-phase == 0.0 or >= 0.96875     → wi-moon-new (0xF095)
-0.0 < phase < 0.0625           → wi-moon-new (0xF095)
-0.0625 <= phase < 0.125        → wi-moon-waxing-crescent-2 (0xF097)
-0.125 <= phase < 0.1875        → wi-moon-waxing-crescent-4 (0xF099)
-0.1875 <= phase < 0.25         → wi-moon-waxing-crescent-6 (0xF09B)
-phase == 0.25                  → wi-moon-first-quarter (0xF09C)
-0.25 < phase < 0.3125          → wi-moon-first-quarter (0xF09C)
-0.3125 <= phase < 0.375        → wi-moon-waxing-gibbous-2 (0xF09E)
-0.375 <= phase < 0.4375        → wi-moon-waxing-gibbous-4 (0xF0A0)
-0.4375 <= phase < 0.5          → wi-moon-waxing-gibbous-6 (0xF0A2)
-phase == 0.5                   → wi-moon-full (0xF0A3)
-0.5 < phase < 0.5625           → wi-moon-full (0xF0A3)
-0.5625 <= phase < 0.625        → wi-moon-waning-gibbous-2 (0xF0A5)
-0.625 <= phase < 0.6875        → wi-moon-waning-gibbous-4 (0xF0A7)
-0.6875 <= phase < 0.75         → wi-moon-waning-gibbous-6 (0xF0A9)
-phase == 0.75                  → wi-moon-third-quarter (0xF0AA)
-0.75 < phase < 0.8125          → wi-moon-third-quarter (0xF0AA)
-0.8125 <= phase < 0.875        → wi-moon-waning-crescent-2 (0xF0AC)
-0.875 <= phase < 0.9375        → wi-moon-waning-crescent-4 (0xF0AE)
-0.9375 <= phase < 0.96875      → wi-moon-waning-crescent-6 (0xF0B0)
+Mapping: Math.round(moonPhase * 28) % 28 → ASCII char (48 + index)
+Index 0  (char '0') = new moon
+Index 1  (char '1') = waxing crescent 1
+Index 2  (char '2') = waxing crescent 2
+...
+Index 7  (char '7') = first quarter
+...
+Index 14 (char '>') = full moon
+...
+Index 21 (char 'E') = last quarter
+...
+Index 27 (char 'K') = waning crescent 6
 ```
 
-Illumination %: `Math.round(Math.sin(moonPhase * Math.PI) * 100)`
+Source codepoints: `0xF095` (wi-moon-new) through `0xF0B0` (wi-moon-waning-crescent-6), remapped to ASCII 48-75 in the .fnt file.
+
+Note: `Math.round()` is used instead of truncation to avoid the new moon glyph appearing for too wide a range. Illumination % is NOT displayed (removed — overlaps with moon icon at this size).
 
 ---
 
@@ -539,6 +564,7 @@ Valid `settingConfig` types in Connect IQ: `alphaNumeric`, `numeric`, `list`, `b
 | `StormGlassApiKey` | `string` | `alphaNumeric` | Free-text string input |
 | `HomeLat` | `string` | `alphaNumeric` | Property must be `string` (not `float`) because `alphaNumeric` is only valid for string properties. Parse to float in code via `toFloat()`. |
 | `HomeLng` | `string` | `alphaNumeric` | Same as HomeLat |
+| `ClockFont` | `number` | `list` | 0 = Saira Condensed Bold (default), 1 = Rajdhani Bold |
 
 ---
 

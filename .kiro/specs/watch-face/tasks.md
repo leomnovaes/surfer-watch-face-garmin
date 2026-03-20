@@ -448,6 +448,22 @@ Key findings from rasterization testing:
 - Key finding: BMFont via Wine doesn't support negative fontSize (Wine GDI limitation) — fontbm direct is our pipeline
 - Key finding: Downscale methods (2x render → shift → downscale) add too much AA noise vs fontbm direct
 
+### Task 43c: Spec/code reconciliation (GPT code review)
+- [x] Analyzed GPT's findings against actual codebase
+- [x] GPT's "biggest problem" (OWM metadata not persisted) was wrong — `WeatherService.mc` writes `owmFetchedAt`, `owmFetchLat`, `owmFetchLon` to `Application.Storage` on success
+- [x] Updated requirements.md: tide height "current" → "predicted height of next event", MSL → MLLW datum
+- [x] Updated requirements.md: OWM exclude parameter to match code (`exclude=minutely,hourly,daily,alerts`)
+- [x] Updated requirements.md: moon phase sourced locally via synodic period, not from OWM `daily[0].moon_phase`
+- [x] Updated requirements.md: moon illumination % removed (overlaps with icon)
+- [x] Updated design.md: removed `precipPop` from DataManager field list (dead code — OWM excludes hourly/daily, `pop` is always null; view uses Garmin built-in `precipitationChance`)
+- [x] Updated design.md: weather icons table from 17 Crystal Face glyphs to 29 Erik Flowers glyphs (A-V day, a-g night)
+- [x] Updated design.md: moon phase mapping from 16-phase to 28-phase with `Math.round()` and ASCII char mapping
+- [x] Updated design.md: icon sources table to reflect final state (heart=Garmin Connect 27px, moon=Erik Flowers 28-phase 24px, tide high+low both wired)
+- [x] Updated design.md: added `stress` field to DataManager, `computeMoonPhase()` method, `ClockFont` setting, clock font files
+- [x] Updated design.md: documented that `WeatherService` persists OWM fetch metadata to Storage (not DataManager)
+- [x] Identified `precipPop` as dead field in DataManager.mc — populated but never read (view uses Garmin built-in). Flagged for cleanup.
+- Note: `precipPop` field remains in DataManager.mc code for now — removal is a code change, deferred to user decision.
+
 ### Task 44: Tune wind arrow rendering
 - [x] Extracted arrow params as constants: WIND_ARROW_SIZE, WIND_ARROW_WIDTH, WIND_ARROW_NOTCH, WIND_ARROW_Y_OFFSET
 - [x] Tuned to size=9, width=0.8, notch=0.5 (bigger, wider, shallower tail than original 7/0.6/0.4)

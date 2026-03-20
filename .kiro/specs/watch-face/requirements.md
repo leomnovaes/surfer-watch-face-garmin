@@ -18,13 +18,13 @@ A surfer-focused watch face for the Garmin Instinct 2X Solar displaying time, fi
 - The system SHALL display notification count and a notification icon on the second row
 - The system SHALL display tide information on the third row:
   - Left column: a directional icon (↑ for next high tide, ↓ for next low tide) and the time of the next tide event
-  - Right column: current tide height value in meters or feet (MSL datum, per device unit setting)
+  - Right column: predicted height of the next tide event in meters or feet (MLLW datum, per device unit setting)
 
 ### 1.3 Middle Section
 - The system SHALL display three columns:
   - Left: next sunrise or sunset time with a directional icon (↑ sunrise, ↓ sunset)
   - Center: current time in large font
-  - Right: moon phase icon, moon illumination % (from `daily[0].moon_phase`), AM/PM indicator, and seconds (hidden by default)
+  - Right: moon phase icon, AM/PM indicator, and seconds (hidden by default)
 
 ### 1.4 Date Row
 - The system SHALL display the current date as: `DayOfWeek Mon DD` (e.g., `Wed Mar 18`)
@@ -34,7 +34,7 @@ A surfer-focused watch face for the Garmin Instinct 2X Solar displaying time, fi
 - The system SHALL display three columns:
   - Left: weather condition icon (mapped from `current.weather[0].id`) and temperature below it (°C or °F per device setting)
   - Center: wind direction arrow icon (derived from `current.wind_deg`) and wind speed below it (km/h or mph per device setting, converted from OWM's m/s)
-  - Right: umbrella icon and precipitation chance % below it (from `Toybox.Weather.getCurrentConditions().precipitationChance` — Garmin built-in current weather, not OWM, due to OWM hourly response exceeding background memory limits)
+  - Right: umbrella icon and precipitation chance % below it (from `Toybox.Weather.getCurrentConditions().precipitationChance` — Garmin built-in current weather, not OWM, because OWM hourly/daily data is excluded from the API call to fit within background memory limits)
 
 ---
 
@@ -56,15 +56,16 @@ A surfer-focused watch face for the Garmin Instinct 2X Solar displaying time, fi
 
 ### 2.3 OpenWeatherMap One Call API 3.0
 - Endpoint: `GET https://api.openweathermap.org/data/3.0/onecall`
-- Required parameters: `lat`, `lon`, `appid`, `units` (`metric` or `imperial` based on device setting), `exclude=minutely,alerts`
+- Required parameters: `lat`, `lon`, `appid`, `units` (`metric` or `imperial` based on device setting), `exclude=minutely,hourly,daily,alerts`
 - The system SHALL extract from the response:
   - `current.temp` — temperature
   - `current.weather[0].id` — weather condition code (mapped to icon)
   - `current.wind_speed` — wind speed
   - `current.wind_deg` — wind direction in degrees (converted to cardinal/arrow)
   - `current.sunrise` and `current.sunset` — Unix timestamps, compared to now to determine next event
-  - `hourly[0].pop` — NOT used (OWM hourly array exceeds background memory ~28KB). Precipitation sourced from `Toybox.Weather.getHourlyForecast()` instead.
-  - `daily[0].moon_phase` — NOT used (daily excluded to fit in background memory). Moon phase calculated from date using synodic period in `DataManager.computeMoonPhase()`.
+- Fields NOT sourced from OWM (excluded to fit in background memory ~28KB):
+  - Precipitation: sourced from `Toybox.Weather.getCurrentConditions().precipitationChance` (Garmin built-in current weather)
+  - Moon phase: calculated locally from current date using synodic period in `DataManager.computeMoonPhase()`
 - The system SHALL refresh OWM data when phone connection is available AND at least one of:
   - At least 30 minutes have elapsed since the last successful fetch
   - The GPS position has changed by more than 5km since the last fetch
@@ -74,12 +75,13 @@ A surfer-focused watch face for the Garmin Instinct 2X Solar displaying time, fi
 
 ### 2.4 StormGlass Tide Extremes API
 - Endpoint: `GET https://api.stormglass.io/v2/tide/extremes/point`
-- Required parameters: `lat`, `lng` (note: `lng` not `lon`), `start` (Unix UTC), `end` (Unix UTC)
+- Required parameters: `lat`, `lng` (note: `lng` not `lon`), `start` (Unix UTC), `end` (Unix UTC), `datum=MLLW`
 - Auth: `Authorization` header with API key
+- Datum: `MLLW` (Mean Lower Low Water) — heights are always positive and match what tide websites and surfers expect. Default MSL datum produces small values around 0 which are confusing.
 - The system SHALL request a 48-hour window (`start` = start of current day UTC, `end` = end of next day UTC) to cover midnight transitions
 - The response contains an array of `{ height: float, time: string (UTC ISO), type: "high"|"low" }`
 - The system SHALL determine "next tide" by finding the first event in the array where `time` is after current time
-- The system SHALL determine "current tide height" by interpolating between the previous and next extreme events
+- The system SHALL display the predicted height of the next tide event (not interpolated current height — more useful for surfers planning around tide events)
 - The system SHALL refresh StormGlass data when ALL of the following are true:
   - A phone connection is available
   - The cached data is from a previous calendar day (UTC)
@@ -90,17 +92,11 @@ A surfer-focused watch face for the Garmin Instinct 2X Solar displaying time, fi
 - When StormGlass data is unavailable, the system SHALL display `--` for tide fields
 
 ### 2.5 Moon Phase
-- The system SHALL derive moon phase from `daily[0].moon_phase` in the OWM response (0.0–1.0 float)
-- The system SHALL map the float to one of 8 named phases for icon selection:
-  - 0.0 / 1.0 = New Moon
-  - 0.0–0.25 = Waxing Crescent
-  - 0.25 = First Quarter
-  - 0.25–0.5 = Waxing Gibbous
-  - 0.5 = Full Moon
-  - 0.5–0.75 = Waning Gibbous
-  - 0.75 = Last Quarter
-  - 0.75–1.0 = Waning Crescent
-- The system SHALL display illumination % as `round(sin(moon_phase * π) * 100)` when OWM data is available
+- The system SHALL compute moon phase locally from the current date using the synodic period (29.53058867 days) relative to a known new moon epoch (Jan 6, 2000 18:14 UTC)
+- The result is a 0.0–1.0 float matching OWM convention: 0=new, 0.25=first quarter, 0.5=full, 0.75=last quarter
+- The system SHALL map the float to one of 28 phases for icon selection (using Erik Flowers Weather Icons moon glyphs)
+- Moon phase is always available (computed locally, no API dependency)
+- Moon illumination % is NOT displayed (removed — overlaps with moon icon at this size)
 
 ---
 
