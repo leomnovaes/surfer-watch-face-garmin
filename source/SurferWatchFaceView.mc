@@ -30,8 +30,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private static const MID_CENTER_X = 88;
     // Right column 2x2 grid
     private static const MID_RIGHT_LEFT_X = 128;
-    private static const MID_RIGHT_RIGHT_X = 168;
-    private static const MID_RIGHT_TOP_Y = MID_Y;
+    private static const MID_RIGHT_RIGHT_X = 170;
+    private static const MID_RIGHT_TOP_Y = MID_Y - 2;
     private static const MID_RIGHT_BOTTOM_Y = MID_Y + 18;
     private static const MID_ICON_Y = MID_Y;
     private static const MID_TEXT_Y = MID_Y + 18;
@@ -43,7 +43,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     // --- Layout constants — Date Row ---
     private static const DATE_Y = 112;
-    private static const DATE_BT_X = TOP_COL1_X;
     private static const DATE_TEXT_X = 88;
 
     // --- Layout constants — Weather Widget ---
@@ -197,7 +196,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     private function drawIconBluetooth(dc as Dc, x as Number, y as Number) as Void {
         if (seg34IconsFont != null) {
-            drawTextAligned(dc, x, y, seg34IconsFont, "L", Graphics.TEXT_JUSTIFY_LEFT);
+            drawTextAligned(dc, x, y, seg34IconsFont, "L", Graphics.TEXT_JUSTIFY_CENTER);
         }
     }
 
@@ -329,7 +328,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     // Text left, icon right — x is the anchor between them
     private function drawNotificationWithCount(dc as Dc, x as Number, y as Number, count as Number) as Void {
         drawTextAligned(dc, x - SPACER, y, Graphics.FONT_XTINY, count.toString(), Graphics.TEXT_JUSTIFY_RIGHT);
-        drawIconNotification(dc, x, y);
+        drawIconNotification(dc, x, y-4);
     }
 
     // Icon left, text right — x is the left edge
@@ -355,7 +354,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     //   bottom-left: AM/PM     bottom-right: seconds (hidden by default)
     private function drawRightColumn(dc as Dc, ampm as String, seconds as String) as Void {
         // Top-left: moon icon (illumination % removed — overlaps with moon icon)
-        drawIconMoon(dc, MID_RIGHT_LEFT_X, MID_RIGHT_TOP_Y);
+        drawIconMoon(dc, MID_RIGHT_LEFT_X+2, MID_RIGHT_TOP_Y);
         // Bottom-left: AM/PM
         drawTextAligned(dc, MID_RIGHT_LEFT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, ampm, Graphics.TEXT_JUSTIFY_LEFT);
         // Bottom-right: seconds (only when awake — wrist gesture active)
@@ -406,9 +405,12 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var batteryPercent = dm != null ? dm.battery : 0;
         drawBatteryWithPercent(dc, TOP_COL2_X, TOP_ROW1_Y, batteryPercent);
 
-        // Row 2 — Notifications (live)
+        // Row 2 — Bluetooth + Notifications (live)
+        if (dm != null && dm.bluetoothConnected) {
+            drawIconBluetooth(dc, TOP_COL1_X+32, TOP_ROW2_Y-2);
+        }
         var notifCount = dm != null ? dm.notificationCount : 0;
-        drawNotificationWithCount(dc, TOP_COL2_X, TOP_ROW2_Y, notifCount);
+        drawNotificationWithCount(dc, TOP_COL2_X-6, TOP_ROW2_Y, notifCount);
 
         // Row 3 — Tide (live)
         var tideIsHigh = true;
@@ -456,7 +458,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 sunTime = formatUnixTime(dm.sunrise);
             }
         }
-        drawSunInfo(dc, MID_LEFT_X, MID_ICON_Y, MID_TEXT_Y, isSunrise, sunTime);
+        drawSunInfo(dc, MID_LEFT_X, MID_ICON_Y-4, MID_TEXT_Y, isSunrise, sunTime);
 
         // Center — current time
         var clockTime = System.getClockTime();
@@ -477,14 +479,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     private function drawDateRow(dc as Dc) as Void {
-        var app = Application.getApp() as SurferWatchFaceApp;
-        var dm = app.getDataManager();
-
-        // Bluetooth icon — only show when connected
-        if (dm != null && dm.bluetoothConnected) {
-            drawIconBluetooth(dc, DATE_BT_X, DATE_Y);
-        }
-
         // Live date: "Wed Mar 18"
         var now = Time.now();
         var info = Gregorian.info(now, Time.FORMAT_MEDIUM);

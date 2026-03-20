@@ -412,11 +412,31 @@ Key findings from rasterization testing:
 - Satisfies: requirements §4.2
 
 ### Task 39: Pixel-tune full layout with real icons
-- [ ] Run in simulator with all icons rendered
-- [ ] Adjust icon font sizes if needed (regenerate at different px)
-- [ ] Adjust coordinates until layout matches reference
+- [-] Run in simulator with all icons rendered
+- [-] Adjust coordinates until layout matches reference
 - [ ] Verify no content is clipped by semi-octagon corners
+- Note: User has pixel-tuned most elements. Bluetooth moved to notification row. Ongoing.
 - Satisfies: design §1.1, §1.2
+
+### Task 42: Add stress arc indicator to HR circle
+- [ ] Read stress via `SensorHistory.getStressHistory({:period=>1})` — returns 0-100, available since API 3.3
+- [ ] Add `stress` field to DataManager, update in `updateSensorData()`
+- [ ] Draw arc around HR circle using `dc.setPenWidth(5)` + `dc.drawArc()`
+- [ ] Arc spans from 2 o'clock (60°) to 10 o'clock (300°) = 240° total, going clockwise through the bottom
+- [ ] At 0% stress: entire arc is white (blends with circle)
+- [ ] At 100% stress: entire arc is black (filled clockwise from 2 o'clock to 10 o'clock)
+- [ ] Partial stress: white arc drawn first (full 240°), then black arc overlaid from 2 o'clock clockwise proportional to stress %
+- [ ] When stress data unavailable (null): show as 0% (fully white arc)
+- [ ] Arc is always visible (not gated by sleep state)
+- Note: `drawArc` angles: 0°=3 o'clock, counter-clockwise. 2 o'clock = 60°, 10 o'clock = 300°. Radius = HR_RADIUS adjusted by half pen width so arc sits on the circle edge.
+
+### Task 43: Experiment with clock fonts
+- [ ] Research available Garmin system fonts and custom BMFont options for the main time display
+- [ ] Current font: `FONT_NUMBER_HOT` — need alternatives that are same height but slightly wider
+- [ ] Generate comparison: render time with different fonts on the watch face for visual comparison
+- [ ] Candidates to try: `FONT_NUMBER_MILD`, `FONT_NUMBER_THAI_HOT`, custom BMFont from open source (e.g., DSEG, Roboto Condensed)
+- [ ] If custom font wins: rasterize using proven pipeline (design §5.1) and wire in
+- [ ] May need to adjust seconds font if new clock font looks out of place
 
 ### Task 40: Sideload to physical watch
 - [ ] Build `.prg` file via `Monkey C: Build for Device`
