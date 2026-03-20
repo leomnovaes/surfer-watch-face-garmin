@@ -517,21 +517,16 @@ Key findings from rasterization testing:
 - [x] Note which assets lack explicit licenses and link to sources
 
 ### Task 47: Write README.md
-- [ ] Project description: what it is, who it's for
-- [ ] Screenshot of the watch face on the simulator
-- [ ] User Guide section:
-  - Annotated screenshot explaining each element (time, tide, weather, stress arc, etc.)
-  - What each icon means (weather conditions, tide high/low, moon phases)
-  - How stress arc works (fills clockwise with stress level)
-  - How seconds show/hide (automatic on wrist raise)
-  - How to get API keys (OWM, StormGlass) with links
-  - How to configure settings via Garmin Connect app
-- [ ] How to install (Connect IQ store link + sideload instructions)
-- [ ] How to build from source (SDK, VS Code, F5)
-- [ ] How to customize with AI (point agent at specs + steering files)
-- [ ] Rasterization pipeline reference (design §5.1)
-- [ ] Credits and license info
-- [ ] Note: "Built by a surfer for his own wrist, spec-driven with AI assistance"
+- [ ] 47a: Header and project description — what it is, who it's for, "built by a surfer for his own wrist"
+- [ ] 47b: Screenshot — simulator screenshot of the watch face (user provides image, agent writes markdown)
+- [ ] 47c: Features list — concise bullet list of what the watch face shows
+- [ ] 47d: User Guide — annotated explanation of each element (time, tide, weather, stress arc, moon, seconds, etc.)
+- [ ] 47e: Setup instructions — how to get API keys (OWM, StormGlass) with links, how to configure via Garmin Connect app
+- [ ] 47f: Installation — Connect IQ store link + sideload instructions
+- [ ] 47g: Build from source — SDK, VS Code extension, F5 to run
+- [ ] 47h: Customize with AI — point agent at specs + steering files, explain the spec-driven pattern
+- [ ] 47i: Rasterization pipeline reference — how to add/change icons (link to design §5.1)
+- [ ] 47j: Credits, license, and repo info
 
 ### Task 48: Generate store assets and description
 - [ ] Take clean simulator screenshot for store listing (176x176)
