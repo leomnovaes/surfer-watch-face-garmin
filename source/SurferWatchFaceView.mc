@@ -215,16 +215,17 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     // Maps OWM condition code to Crystal Face Weather Icons glyph character
     // Day icons: A-I, Night icons: a-h
+    // Note: Crystal Face set has no pure "overcast rain" — rain codes show sun/moon + rain
     private function owmToWeatherGlyph(code as Number, isNight as Boolean) as String {
         if (code == 800) { return isNight ? "f" : "H"; }                    // clear
-        if (code >= 801 && code <= 803) { return isNight ? "h" : "A"; }     // cloudy
-        if (code == 804) { return "I"; }                                     // overcast (same day/night)
+        if (code >= 801 && code <= 802) { return isNight ? "h" : "A"; }     // few/scattered clouds
+        if (code == 803 || code == 804) { return "I"; }                     // broken/overcast (same day/night)
         if (code >= 200 && code <= 232) { return isNight ? "e" : "C"; }     // thunderstorm
-        if (code >= 300 && code <= 321) { return isNight ? "c" : "E"; }     // showers
+        if (code >= 300 && code <= 321) { return isNight ? "c" : "E"; }     // drizzle
         if (code >= 500 && code <= 531) { return isNight ? "b" : "D"; }     // rain
         if (code >= 600 && code <= 622) { return isNight ? "d" : "F"; }     // snow
-        if (code >= 700 && code <= 781) { return isNight ? "h" : "G"; }     // fog/haze
-        if (code == 900 || code == 781) { return "g"; }                      // tornado (same day/night)
+        if (code >= 700 && code <= 781) { return "I"; }                     // fog/haze/mist → cloudy
+        if (code == 900) { return "g"; }                                     // tornado
         return isNight ? "f" : "H"; // fallback: clear
     }
 
@@ -239,7 +240,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     // Arrow points in the direction wind blows FROM.
     // size = half-height of the arrow.
     private function drawWindArrow(dc as Dc, cx as Number, cy as Number, degrees as Number, size as Number) as Void {
-        var rad = degrees * Math.PI / 180.0;
+        // Meteorological convention: degrees is where wind comes FROM
+        // 0=N, 90=E, 180=S, 270=W (clockwise)
+        // Screen: Y increases downward. Standard rotation is counter-clockwise.
+        // Negate angle to convert clockwise meteorological to counter-clockwise math.
+        var rad = -degrees * Math.PI / 180.0;
         var sinA = Math.sin(rad);
         var cosA = Math.cos(rad);
 
@@ -384,7 +389,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     // Draws the heart icon at (x, y) — black, centered
     private function drawHrHeart(dc as Dc, x as Number, y as Number) as Void {
         if (seg34IconsFont != null) {
-            dc.drawText(x, y, seg34IconsFont, "h", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.drawText(x, y, seg34IconsFont, "H", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
     }
 
@@ -404,7 +409,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var totalArcDeg = 300;   // clockwise from 60° through bottom to 120°
 
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        dc.setPenWidth(1);
+        dc.setPenWidth(2);
 
         // Outer and inner borders
         dc.drawArc(cx, cy, arcOuterR, Graphics.ARC_CLOCKWISE, arcStartAngle, arcEndAngle);
@@ -414,6 +419,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var capOuterR = arcOuterR + 1;
         var startRad = arcStartAngle * Math.PI / 180.0;
         var endRad = arcEndAngle * Math.PI / 180.0;
+        dc.setPenWidth(2);
         dc.drawLine(
             cx + (arcInnerR * Math.cos(startRad)).toNumber(), cy - (arcInnerR * Math.sin(startRad)).toNumber(),
             cx + (capOuterR * Math.cos(startRad)).toNumber(), cy - (capOuterR * Math.sin(startRad)).toNumber());
