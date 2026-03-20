@@ -465,14 +465,62 @@ Key findings from rasterization testing:
 - Note: Font TTFs from Google Fonts (SIL OFL). Rasterized at 40px to match HOT digit height.
 
 ### Task 40: Sideload to physical watch
-- [ ] Build `.prg` file via `Monkey C: Build for Device`
-- [ ] Copy to watch via USB: `GARMIN/APPS/`
-- [ ] Validate all fields render correctly on real hardware
-- [ ] Validate MIP display (confirm no color artifacts)
-- Satisfies: requirements §5.1
+- [x] Build `.prg` file via `Monkey C: Build for Device`
+- [x] Uploaded as beta to Connect IQ store
+- [x] Installed on physical Instinct 2X Solar
+- [x] Validated all fields render correctly on real hardware
+- [x] Found and fixed bugs: weather mapping, moon resolution, wind mirror, heart thickness, stress arc
 
 ### Task 41: Final layout tuning on device
-- [ ] Compare physical watch rendering against reference-design.png
-- [ ] Adjust font sizes, spacing, divider positions as needed
-- [ ] Add dividing lines if needed for readability
-- Satisfies: design §1.3
+- [x] Tuned layout based on real-watch testing
+- [x] All icons, fonts, and data rendering verified on MIP display
+
+---
+
+## Phase 8 — Public Launch
+
+### Task 45: Add LICENSE file
+- [ ] Create MIT LICENSE file in repo root
+- [ ] Add copyright line with year and author (leomnovaes)
+
+### Task 46: Create LICENSES.md (third-party credits)
+- [ ] Document all third-party assets and their licenses:
+  - Erik Flowers Weather Icons (SIL OFL 1.1) — weather + moon icons
+  - Material Design Icons (Apache 2.0) — umbrella, tide icons
+  - Garmin Connect Icons (sunpazed/garmin-iconfonts, no explicit license) — heart, bluetooth
+  - Crystal Face (warmsound/crystal-face, GPL v3 code) — notification, sunrise, sunset icons
+  - Segment34mkII (ludw, no explicit license) — bluetooth icon
+  - Saira Condensed Bold / Rajdhani Bold (Google Fonts, SIL OFL 1.1) — clock fonts
+- [ ] Note which assets lack explicit licenses and link to sources
+
+### Task 47: Write README.md
+- [ ] Project description: what it is, who it's for
+- [ ] Screenshot of the watch face on the simulator
+- [ ] Features list
+- [ ] How to install (Connect IQ store link + sideload instructions)
+- [ ] How to configure (API keys, home location, clock font)
+- [ ] How to build from source (SDK, VS Code, F5)
+- [ ] How to customize with AI (point agent at specs + steering files)
+- [ ] Rasterization pipeline reference (design §5.1)
+- [ ] Credits and license info
+- [ ] Note: "Built by a surfer for his own wrist, spec-driven with AI assistance"
+
+### Task 48: Generate store assets
+- [ ] Take clean simulator screenshot for store listing (176x176)
+- [ ] Create cover image (400x300) with watch face preview
+- [ ] Write store description (features, API key requirements, open source link)
+
+### Task 49: Publish to Connect IQ store (public)
+- [ ] Change beta listing to public
+- [ ] Upload final .iq package
+- [ ] Upload store screenshots and cover image
+- [ ] Add store description with GitHub link
+- [ ] Verify installation works from store
+
+### Task 50: Make GitHub repo public
+- [ ] Rename repo to `shore-watch` (optional)
+- [ ] Ensure no API keys or PII in code or git history
+- [ ] Add LICENSE and LICENSES.md
+- [ ] Add README.md
+- [ ] Set repo to public
+- [ ] Add topics: garmin, connect-iq, watch-face, instinct-2x, monkey-c, open-source
