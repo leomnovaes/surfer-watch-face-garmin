@@ -16,6 +16,14 @@ Technical design for the Surfer Watch Face. Translates requirements into concret
 - Safe drawing area: approximately x=8–168, y=20–166 (top-left and top-right corners are clipped by the semi-octagon; the first safe y for left-aligned text is ~y=22)
 - Colors: black (0x000000) background, white (0xFFFFFF) foreground only
 
+### 1.1b Sub-screen (HR Circle) — from simulator.json
+The Instinct 2X has a physical sub-screen circle in the top-right corner. From `simulator.json` datafield layouts:
+- Canvas position: x=113, y=1, width=62, height=62
+- Center: **(144, 32)**
+- Radius: **31**
+- This is the built-in circular cutout — our white HR circle should match these coordinates exactly
+- Source: `Devices/instinct2x/simulator.json` → datafields → field with `"x": 113, "y": 1, "width": 62, "height": 62`
+
 ### 1.1a Font Sizes (Instinct 2X, from simulator.json)
 | Constant | Font file | Nominal size |
 |----------|-----------|-------------|
@@ -48,8 +56,8 @@ Row spacing must exceed the font's nominal size to avoid overlap. For `FONT_XTIN
 ### 1.3 Precise Coordinates
 
 **Heart Rate Circle**
-- Center: x=146, y=33
-- Radius: 35px
+- Center: x=144, y=32 (from simulator.json sub-screen geometry)
+- Radius: 31px (matches sub-screen: 62x62 at x=113, y=1)
 - Drawn as filled white circle, then heart icon + BPM text on top in black
 - Heart icon and BPM use `TEXT_JUSTIFY_CENTER | TEXT_JUSTIFY_VCENTER` for centering within the circle
 

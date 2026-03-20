@@ -20,9 +20,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private static const SPACER = 4;
 
     // --- Layout constants — Heart Rate Circle ---
-    private static const HR_CENTER_X = 146;
-    private static const HR_CENTER_Y = 33;
-    private static const HR_RADIUS = 35;
+    // Sub-screen circle from simulator.json: x=113, y=1, 62x62
+    // Center = (144, 32), radius = 31
+    private static const HR_CENTER_X = 144;
+    private static const HR_CENTER_Y = 32;
+    private static const HR_RADIUS = 31;
 
     // --- Layout constants — Middle Section ---
     private static const MID_Y = 76;
@@ -376,6 +378,29 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         // Filled white circle
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.fillCircle(HR_CENTER_X, HR_CENTER_Y, HR_RADIUS);
+
+        // Stress arc gauge — temporarily disabled while tuning circle position
+        /*
+        var stressVal = 0;
+        if (dm != null && dm.stress != null) {
+            stressVal = dm.stress;
+        }
+        var arcWidth = 6;
+        var arcOuterR = HR_RADIUS - 1;
+        var arcInnerR = arcOuterR - arcWidth;
+        var arcMidR = arcOuterR - (arcWidth / 2);
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        dc.setPenWidth(1);
+        dc.drawArc(HR_CENTER_X, HR_CENTER_Y, arcOuterR, Graphics.ARC_CLOCKWISE, 60, 120);
+        dc.drawArc(HR_CENTER_X, HR_CENTER_Y, arcInnerR, Graphics.ARC_CLOCKWISE, 60, 120);
+        if (stressVal > 0) {
+            var blackDegrees = (240 * stressVal / 100);
+            var endAngle = 60 - blackDegrees;
+            dc.setPenWidth(arcWidth - 2);
+            dc.drawArc(HR_CENTER_X, HR_CENTER_Y, arcMidR, Graphics.ARC_CLOCKWISE, 60, endAngle);
+        }
+        dc.setPenWidth(1);
+        */
 
         // Heart icon + BPM in black, vertically centered in circle
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);

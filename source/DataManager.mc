@@ -2,6 +2,7 @@ import Toybox.Activity;
 import Toybox.Application;
 import Toybox.Lang;
 import Toybox.Position;
+import Toybox.SensorHistory;
 import Toybox.System;
 import Toybox.Time;
 import Toybox.Time.Gregorian;
@@ -30,6 +31,7 @@ class DataManager {
 
     // --- Device/sensor data (updated each onUpdate()) ---
     var heartRate as Number or Null;
+    var stress as Number or Null;
     var battery as Number;
     var notificationCount as Number;
     var bluetoothConnected as Boolean;
@@ -59,6 +61,28 @@ class DataManager {
             heartRate = activityInfo.currentHeartRate;
         } else {
             heartRate = null;
+        }
+
+        // Stress (from SensorHistory, updates every ~3 min)
+        if (SensorHistory has :getStressHistory) {
+            var stressIter = SensorHistory.getStressHistory({:period => 1});
+            if (stressIter != null) {
+                var sample = stressIter.next();
+                if (sample != null && sample.data != null) {
+                    var val = sample.data;
+                    if (val >= 0 && val <= 100) {
+                        stress = val.toNumber();
+                    } else {
+                        stress = null;
+                    }
+                } else {
+                    stress = null;
+                }
+            } else {
+                stress = null;
+            }
+        } else {
+            stress = null;
         }
 
         // Battery
