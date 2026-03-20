@@ -68,35 +68,33 @@ Row spacing must exceed the font's nominal size to avoid overlap. For `FONT_XTIN
 - Row 1 (battery): y=2
   - Battery %: right-justified to x=81 (anchor), font=FONT_XTINY
   - Battery icon: left-justified from x=85
-- Row 2 (notifications): y=25
-  - Notification count: right-justified to x=81 (anchor), font=FONT_XTINY
-  - Notification icon: left-justified from x=85
+- Row 2 (bluetooth + notifications): y=25
+  - Bluetooth icon: x=21, center-justified (only when connected)
+  - Notification count: right-justified to x=75, font=FONT_XTINY
+  - Notification icon: left-justified from x=79
 - Row 3 (tide): y=48
-  - Tide direction icon: x=1, left-justified
-  - Next tide time: x=1 + iconWidth + 4, font=FONT_XTINY
-  - Tide height: right-justified to x=101, font=FONT_XTINY
+  - Tide direction icon: x=1, left-justified (surfer-icons font)
+  - Next tide time: x=1 + iconWidth, font=FONT_XTINY
+  - Tide height: right-justified to x=106, font=FONT_XTINY
 
 **Middle Section** (y=76 to y=94)
-- Left column (sun): center-justified on x=26
-  - Sun icon: y=78, centered
-  - Sun time + a/p suffix: y=96, centered
-- Center column (time): x=88 (center)
-  - Time: font=FONT_NUMBER_HOT, center + vcenter justified
+- Left column (sun): center-justified on x=22
+  - Sun icon: y=72, centered
+  - Sun time: y=94, centered
+- Center column (time): x=88, y=90 (center + vcenter)
+  - Font: Saira Condensed Bold 40px (default) or Rajdhani Bold 40px (via ClockFont setting)
 - Right column: 2x2 grid
-  - Left edge x=128, right edge x=168
-  - Top row y=78, bottom row y=96
-  - Top-left: moon phase icon (from Segment34mkII moon font, chars 0-7)
-  - Top-right: empty (illumination % removed — overlaps with moon icon at this size)
+  - Left edge x=132, right edge x=174
+  - Top row y=74, bottom row y=94
+  - Top-left: moon phase icon (Segment34mkII, chars 0-7)
   - Bottom-left: am/pm, left-justified
-  - Bottom-right: seconds (visible for layout, hidden by default in Task 38)
+  - Bottom-right: seconds (only when awake — wrist gesture active)
 
 **Divider Lines** (single line)
-- Top divider: drawLine(x=8, y=68, x=160, y=68) — right side clipped to avoid HR circle area
+- Top divider: drawLine(x=8, y=68, x=160, y=68)
 
-**Date Row** (y=112)
-- Bluetooth icon: x=TOP_COL1_X (aligned with tide icon), y=112
-- Date string: x=88, y=112, font=FONT_XTINY, center-justified
-- Note: bluetooth icon placement may move to top section row 2 in a future revision
+**Date Row** (y=114)
+- Date string: x=88, y=114, font=FONT_XTINY, center-justified, month uppercase (e.g., "Wed MAR 19")
 
 **Weather Widget** (y=130–156, three columns)
 - Edge columns (1 and 3) use WX_Y_EDGE=130 to account for semi-octagon bottom corners

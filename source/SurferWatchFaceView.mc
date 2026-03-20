@@ -310,7 +310,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private function drawTideInfo(dc as Dc, x as Number, y as Number, isHigh as Boolean, time as String, height as String) as Void {
         drawIconTide(dc, x, y, isHigh);
         var iconWidth = surferIconsFont != null ? dc.getTextWidthInPixels("H", surferIconsFont) : 15;
-        drawTextAligned(dc, x + iconWidth + SPACER-4, y, Graphics.FONT_XTINY, time, Graphics.TEXT_JUSTIFY_LEFT);
+        drawTextAligned(dc, x + iconWidth + SPACER-5, y, Graphics.FONT_XTINY, time, Graphics.TEXT_JUSTIFY_LEFT);
         drawTextAligned(dc, x + 105, y, Graphics.FONT_XTINY, height, Graphics.TEXT_JUSTIFY_RIGHT);
     }
 
