@@ -503,18 +503,18 @@ Key findings from rasterization testing:
 ## Phase 8 — Public Launch
 
 ### Task 45: Add LICENSE file
-- [ ] Create MIT LICENSE file in repo root
-- [ ] Add copyright line with year and author (leomnovaes)
+- [x] Create MIT LICENSE file in repo root
+- [x] Add copyright line with year and author (leomnovaes)
 
 ### Task 46: Create LICENSES.md (third-party credits)
-- [ ] Document all third-party assets and their licenses:
+- [x] Document all third-party assets and their licenses:
   - Erik Flowers Weather Icons (SIL OFL 1.1) — weather + moon icons
   - Material Design Icons (Apache 2.0) — umbrella, tide icons
   - Garmin Connect Icons (sunpazed/garmin-iconfonts, no explicit license) — heart, bluetooth
   - Crystal Face (warmsound/crystal-face, GPL v3 code) — notification, sunrise, sunset icons
   - Segment34mkII (ludw, no explicit license) — bluetooth icon
   - Saira Condensed Bold / Rajdhani Bold (Google Fonts, SIL OFL 1.1) — clock fonts
-- [ ] Note which assets lack explicit licenses and link to sources
+- [x] Note which assets lack explicit licenses and link to sources
 
 ### Task 47: Write README.md
 - [ ] Project description: what it is, who it's for
