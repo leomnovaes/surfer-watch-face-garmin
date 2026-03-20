@@ -1,0 +1,1365 @@
+[ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 1; @symbol_importdef<0> = [Toybox,1,7,13]; @symbol_importdef<1> = [Application,1,14,25]; ]
+import Toybox.Application;
+[ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 2; @symbol_importdef<0> = [Toybox,2,7,13]; @symbol_importdef<1> = [Background,2,14,24]; ]
+import Toybox.Background;
+[ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 3; @symbol_importdef<0> = [Toybox,3,7,13]; @symbol_importdef<1> = [Communications,3,14,28]; ]
+import Toybox.Communications;
+[ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 4; @symbol_importdef<0> = [Toybox,4,7,13]; @symbol_importdef<1> = [Lang,4,14,18]; ]
+import Toybox.Lang;
+[ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 5; @symbol_importdef<0> = [Toybox,5,7,13]; @symbol_importdef<1> = [Math,5,14,18]; ]
+import Toybox.Math;
+[ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 6; @symbol_importdef<0> = [Toybox,6,7,13]; @symbol_importdef<1> = [System,6,14,20]; ]
+import Toybox.System;
+[ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 7; @symbol_importdef<0> = [Toybox,7,7,13]; @symbol_importdef<1> = [Time,7,14,18]; ]
+import Toybox.Time;
+[ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 8; @symbol_importdef<0> = [Toybox,8,7,13]; @symbol_importdef<1> = [Time,8,14,18]; @symbol_importdef<2> = [Gregorian,8,19,28]; ]
+import Toybox.Time.Gregorian;
+[ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 11; background = true; @symbol_classdef = [SurferWatchFaceDelegate,11,6,29]; @symbol_extends<0> = [System,11,38,44]; @symbol_extends<1> = [ServiceDelegate,11,45,60]; ]
+class SurferWatchFaceDelegate extends System.ServiceDelegate {
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 11; ]
+    <init> {
+    }
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 11; ]
+    static
+    <init> {
+    }
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 14; @position = 16; @symbol_vardef = [_weatherResult,14,16,30]; @symbol_type<0> = [Dictionary,14,34,44]; ]
+    private
+    var _weatherResult as Dictionary or Null;
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 16; @position = 16; @symbol_vardef = [_tideNeeded,16,16,27]; @symbol_type<0> = [Boolean,16,31,38]; ]
+    private
+    var _tideNeeded as Boolean;
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 18; @position = 16; @symbol_vardef = [_lat,18,16,20]; @symbol_type<0> = [Float,18,24,29]; ]
+    private
+    var _lat as Float;
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 19; @position = 16; @symbol_vardef = [_lng,19,16,20]; @symbol_type<0> = [Float,19,24,29]; ]
+    private
+    var _lng as Float;
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 21; @symbol_functiondef = [initialize,21,13,23]; ]
+    function initialize() as Void {
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_21_26_27_4_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 22 8 ]
+        symbol [ ServiceDelegate %tmp.2 22 8 23 ];
+        %tmp.2 = getv ? :ServiceDelegate;
+        symbol [ initialize %tmp.3 22 24 34 ];
+        %tmp.3 = getv function %tmp.2 :initialize;
+        invoke %tmp.2 %tmp.3();
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 23 8 ]
+        %tmp.4 = null;
+        symbol [ _weatherResult ? 23 8 22 ];
+        putv self :_weatherResult %tmp.4;
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 24 8 ]
+        %tmp.5 = false;
+        symbol [ _tideNeeded ? 24 8 19 ];
+        putv self :_tideNeeded %tmp.5;
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 25 8 ]
+        %tmp.6 = 0.0f;
+        symbol [ _lat ? 25 8 12 ];
+        putv self :_lat %tmp.6;
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 26 8 ]
+        %tmp.7 = 0.0f;
+        symbol [ _lng ? 26 8 12 ];
+        putv self :_lng %tmp.7;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_21_26_27_4_stop:
+    }
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 30; @symbol_functiondef = [distanceBetween,30,13,28]; @symbol_param<0> = [lat1,30,29,33]; @symbol_param<0>_type<0> = [Float,30,37,42]; @symbol_param<1> = [lon1,30,44,48]; @symbol_param<1>_type<0> = [Float,30,52,57]; @symbol_param<2> = [lat2,30,59,63]; @symbol_param<2>_type<0> = [Float,30,67,72]; @symbol_param<3> = [lon2,30,74,78]; @symbol_param<3>_type<0> = [Float,30,82,87]; @symbol_return<0> = [Float,30,92,97]; ]
+    function distanceBetween(lat1 as Float, lon1 as Float, lat2 as Float, lon2 as Float) as Float {
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_30_98_39_4_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 31 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_30_98_39_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_30_98_39_4_stop" ]
+        %R.1 = local;
+        symbol [ R %R.1 31 12 13 ];
+        %tmp.1 = 6371000.0f;
+        lputv %R.1 %tmp.1;
+        symbol [ R %R.1 31 12 13 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 32 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_30_98_39_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_30_98_39_4_stop" ]
+        %dLat.2 = local;
+        symbol [ dLat %dLat.2 32 12 16 ];
+        %tmp.2 = lgetv %lat2;
+        symbol [ lat2 %tmp.2 32 20 24 ];
+        %tmp.3 = lgetv %lat1;
+        symbol [ lat1 %tmp.3 32 27 31 ];
+        %tmp.4 = sub %tmp.2 %tmp.3;
+        symbol [ Math %tmp.5 32 35 39 ];
+        %tmp.5 = getm $.Toybox.Math;
+        symbol [ PI %tmp.6 32 40 42 ];
+        %tmp.6 = getv %tmp.5 :PI;
+        %tmp.7 = mul %tmp.4 %tmp.6;
+        %tmp.8 = 180.0f;
+        %tmp.9 = div %tmp.7 %tmp.8;
+        lputv %dLat.2 %tmp.9;
+        symbol [ dLat %dLat.2 32 12 16 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 33 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_30_98_39_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_30_98_39_4_stop" ]
+        %dLon.3 = local;
+        symbol [ dLon %dLon.3 33 12 16 ];
+        %tmp.10 = lgetv %lon2;
+        symbol [ lon2 %tmp.10 33 20 24 ];
+        %tmp.11 = lgetv %lon1;
+        symbol [ lon1 %tmp.11 33 27 31 ];
+        %tmp.12 = sub %tmp.10 %tmp.11;
+        symbol [ Math %tmp.13 33 35 39 ];
+        %tmp.13 = getm $.Toybox.Math;
+        symbol [ PI %tmp.14 33 40 42 ];
+        %tmp.14 = getv %tmp.13 :PI;
+        %tmp.15 = mul %tmp.12 %tmp.14;
+        %tmp.16 = 180.0f;
+        %tmp.17 = div %tmp.15 %tmp.16;
+        lputv %dLon.3 %tmp.17;
+        symbol [ dLon %dLon.3 33 12 16 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 34 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_30_98_39_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_30_98_39_4_stop" ]
+        %a.4 = local;
+        symbol [ a %a.4 34 12 13 ];
+        symbol [ Math %tmp.18 34 16 20 ];
+        %tmp.18 = getm $.Toybox.Math;
+        symbol [ sin %tmp.19 34 21 24 ];
+        %tmp.19 = getv function %tmp.18 :sin;
+        %tmp.20 = lgetv %dLat.2;
+        symbol [ dLat %tmp.20 34 25 29 ];
+        %tmp.21 = 2.0f;
+        %tmp.22 = div %tmp.20 %tmp.21;
+        %tmp.23 = invoke %tmp.18 %tmp.19(%tmp.22);
+        symbol [ Math %tmp.24 34 40 44 ];
+        %tmp.24 = getm $.Toybox.Math;
+        symbol [ sin %tmp.25 34 45 48 ];
+        %tmp.25 = getv function %tmp.24 :sin;
+        %tmp.26 = lgetv %dLat.2;
+        symbol [ dLat %tmp.26 34 49 53 ];
+        %tmp.27 = 2.0f;
+        %tmp.28 = div %tmp.26 %tmp.27;
+        %tmp.29 = invoke %tmp.24 %tmp.25(%tmp.28);
+        %tmp.30 = mul %tmp.23 %tmp.29;
+        symbol [ Math %tmp.31 35 16 20 ];
+        %tmp.31 = getm $.Toybox.Math;
+        symbol [ cos %tmp.32 35 21 24 ];
+        %tmp.32 = getv function %tmp.31 :cos;
+        %tmp.33 = lgetv %lat1;
+        symbol [ lat1 %tmp.33 35 25 29 ];
+        symbol [ Math %tmp.34 35 32 36 ];
+        %tmp.34 = getm $.Toybox.Math;
+        symbol [ PI %tmp.35 35 37 39 ];
+        %tmp.35 = getv %tmp.34 :PI;
+        %tmp.36 = mul %tmp.33 %tmp.35;
+        %tmp.37 = 180.0f;
+        %tmp.38 = div %tmp.36 %tmp.37;
+        %tmp.39 = invoke %tmp.31 %tmp.32(%tmp.38);
+        symbol [ Math %tmp.40 35 52 56 ];
+        %tmp.40 = getm $.Toybox.Math;
+        symbol [ cos %tmp.41 35 57 60 ];
+        %tmp.41 = getv function %tmp.40 :cos;
+        %tmp.42 = lgetv %lat2;
+        symbol [ lat2 %tmp.42 35 61 65 ];
+        symbol [ Math %tmp.43 35 68 72 ];
+        %tmp.43 = getm $.Toybox.Math;
+        symbol [ PI %tmp.44 35 73 75 ];
+        %tmp.44 = getv %tmp.43 :PI;
+        %tmp.45 = mul %tmp.42 %tmp.44;
+        %tmp.46 = 180.0f;
+        %tmp.47 = div %tmp.45 %tmp.46;
+        %tmp.48 = invoke %tmp.40 %tmp.41(%tmp.47);
+        %tmp.49 = mul %tmp.39 %tmp.48;
+        symbol [ Math %tmp.50 36 16 20 ];
+        %tmp.50 = getm $.Toybox.Math;
+        symbol [ sin %tmp.51 36 21 24 ];
+        %tmp.51 = getv function %tmp.50 :sin;
+        %tmp.52 = lgetv %dLon.3;
+        symbol [ dLon %tmp.52 36 25 29 ];
+        %tmp.53 = 2.0f;
+        %tmp.54 = div %tmp.52 %tmp.53;
+        %tmp.55 = invoke %tmp.50 %tmp.51(%tmp.54);
+        %tmp.56 = mul %tmp.49 %tmp.55;
+        symbol [ Math %tmp.57 36 40 44 ];
+        %tmp.57 = getm $.Toybox.Math;
+        symbol [ sin %tmp.58 36 45 48 ];
+        %tmp.58 = getv function %tmp.57 :sin;
+        %tmp.59 = lgetv %dLon.3;
+        symbol [ dLon %tmp.59 36 49 53 ];
+        %tmp.60 = 2.0f;
+        %tmp.61 = div %tmp.59 %tmp.60;
+        %tmp.62 = invoke %tmp.57 %tmp.58(%tmp.61);
+        %tmp.63 = mul %tmp.56 %tmp.62;
+        %tmp.64 = add %tmp.30 %tmp.63;
+        lputv %a.4 %tmp.64;
+        symbol [ a %a.4 34 12 13 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 37 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_30_98_39_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_30_98_39_4_stop" ]
+        %c.5 = local;
+        symbol [ c %c.5 37 12 13 ];
+        %tmp.65 = 2.0f;
+        symbol [ Math %tmp.66 37 23 27 ];
+        %tmp.66 = getm $.Toybox.Math;
+        symbol [ atan2 %tmp.67 37 28 33 ];
+        %tmp.67 = getv function %tmp.66 :atan2;
+        symbol [ Math %tmp.68 37 34 38 ];
+        %tmp.68 = getm $.Toybox.Math;
+        symbol [ sqrt %tmp.69 37 39 43 ];
+        %tmp.69 = getv function %tmp.68 :sqrt;
+        %tmp.70 = lgetv %a.4;
+        symbol [ a %tmp.70 37 44 45 ];
+        %tmp.71 = invoke %tmp.68 %tmp.69(%tmp.70);
+        symbol [ Math %tmp.72 37 48 52 ];
+        %tmp.72 = getm $.Toybox.Math;
+        symbol [ sqrt %tmp.73 37 53 57 ];
+        %tmp.73 = getv function %tmp.72 :sqrt;
+        %tmp.74 = 1.0f;
+        %tmp.75 = lgetv %a.4;
+        symbol [ a %tmp.75 37 65 66 ];
+        %tmp.76 = sub %tmp.74 %tmp.75;
+        %tmp.77 = invoke %tmp.72 %tmp.73(%tmp.76);
+        %tmp.78 = invoke %tmp.66 %tmp.67(%tmp.71, %tmp.77);
+        %tmp.79 = mul %tmp.65 %tmp.78;
+        lputv %c.5 %tmp.79;
+        symbol [ c %c.5 37 12 13 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 38 8 ]
+        %tmp.80 = lgetv %R.1;
+        symbol [ R %tmp.80 38 15 16 ];
+        %tmp.81 = lgetv %c.5;
+        symbol [ c %tmp.81 38 19 20 ];
+        %tmp.82 = mul %tmp.80 %tmp.81;
+        ret %tmp.82;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_30_98_39_4_stop:
+    }
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 42; @symbol_functiondef = [todayUTC,42,21,29]; @symbol_return<0> = [String,42,35,41]; ]
+    private
+    function todayUTC() as String {
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_42_42_48_4_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 43 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_42_42_48_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_42_42_48_4_stop" ]
+        %now.1 = local;
+        symbol [ now %now.1 43 12 15 ];
+        symbol [ Time %tmp.1 43 18 22 ];
+        %tmp.1 = getm $.Toybox.Time;
+        symbol [ now %tmp.2 43 23 26 ];
+        %tmp.2 = getv function %tmp.1 :now;
+        %tmp.3 = invoke %tmp.1 %tmp.2();
+        lputv %now.1 %tmp.3;
+        symbol [ now %now.1 43 12 15 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 44 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_42_42_48_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_42_42_48_4_stop" ]
+        %today.2 = local;
+        symbol [ today %today.2 44 12 17 ];
+        symbol [ Gregorian %tmp.4 44 20 29 ];
+        %tmp.4 = getm $.Toybox.Time.Gregorian;
+        symbol [ info %tmp.5 44 30 34 ];
+        %tmp.5 = getv function %tmp.4 :info;
+        %tmp.6 = lgetv %now.1;
+        symbol [ now %tmp.6 44 35 38 ];
+        symbol [ Time %tmp.7 44 40 44 ];
+        %tmp.7 = getm $.Toybox.Time;
+        symbol [ FORMAT_SHORT %tmp.8 44 45 57 ];
+        %tmp.8 = getv %tmp.7 :FORMAT_SHORT;
+        %tmp.9 = invoke %tmp.4 %tmp.5(%tmp.6, %tmp.8);
+        lputv %today.2 %tmp.9;
+        symbol [ today %today.2 44 12 17 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 45 8 ]
+        %tmp.10 = lgetv %today.2;
+        symbol [ today %tmp.10 45 15 20 ];
+        symbol [ year %tmp.11 45 21 25 ];
+        %tmp.11 = getv %tmp.10 :year;
+        symbol [ format %tmp.12 45 26 32 ];
+        %tmp.12 = getv function %tmp.11 :format;
+        %tmp.13 = "%04d";
+        %tmp.14 = invoke %tmp.11 %tmp.12(%tmp.13);
+        %tmp.15 = "-";
+        %tmp.16 = add %tmp.14 %tmp.15;
+        %tmp.17 = lgetv %today.2;
+        symbol [ today %tmp.17 46 15 20 ];
+        symbol [ month %tmp.18 46 21 26 ];
+        %tmp.18 = getv %tmp.17 :month;
+        symbol [ format %tmp.19 46 27 33 ];
+        %tmp.19 = getv function %tmp.18 :format;
+        %tmp.20 = "%02d";
+        %tmp.21 = invoke %tmp.18 %tmp.19(%tmp.20);
+        %tmp.22 = add %tmp.16 %tmp.21;
+        %tmp.23 = "-";
+        %tmp.24 = add %tmp.22 %tmp.23;
+        %tmp.25 = lgetv %today.2;
+        symbol [ today %tmp.25 47 15 20 ];
+        symbol [ day %tmp.26 47 21 24 ];
+        %tmp.26 = getv %tmp.25 :day;
+        symbol [ format %tmp.27 47 25 31 ];
+        %tmp.27 = getv function %tmp.26 :format;
+        %tmp.28 = "%02d";
+        %tmp.29 = invoke %tmp.26 %tmp.27(%tmp.28);
+        %tmp.30 = add %tmp.24 %tmp.29;
+        ret %tmp.30;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_42_42_48_4_stop:
+    }
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 51; @symbol_functiondef = [isTideRefreshNeeded,51,21,40]; @symbol_param<0> = [lat,51,41,44]; @symbol_param<0>_type<0> = [Float,51,48,53]; @symbol_param<1> = [lng,51,55,58]; @symbol_param<1>_type<0> = [Float,51,62,67]; @symbol_return<0> = [Boolean,51,72,79]; ]
+    private
+    function isTideRefreshNeeded(lat as Float, lng as Float) as Boolean {
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 52 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_stop" ]
+        %tideFetchedDay.1 = local;
+        symbol [ tideFetchedDay %tideFetchedDay.1 52 12 26 ];
+        symbol [ Application %tmp.1 52 29 40 ];
+        %tmp.1 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.2 52 41 48 ];
+        %tmp.2 = getv %tmp.1 :Storage;
+        symbol [ getValue %tmp.3 52 49 57 ];
+        %tmp.3 = getv function %tmp.2 :getValue;
+        %tmp.4 = "tideFetchedDay";
+        %tmp.5 = invoke %tmp.2 %tmp.3(%tmp.4);
+        %tmp.6 = as %tmp.5 String or Null;
+        symbol [ String %tmp.6 52 79 85 ];
+        lputv %tideFetchedDay.1 %tmp.6;
+        symbol [ tideFetchedDay %tideFetchedDay.1 52 12 26 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 53 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_stop" ]
+        %today.2 = local;
+        symbol [ today %today.2 53 12 17 ];
+        %tmp.7 = self;
+        symbol [ todayUTC %tmp.8 53 20 28 ];
+        %tmp.8 = getv function %tmp.7 :todayUTC;
+        %tmp.9 = invoke %tmp.7 %tmp.8();
+        lputv %today.2 %tmp.9;
+        symbol [ today %today.2 53 12 17 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 56 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_stop" ]
+        %quotaExhausted.3 = local;
+        symbol [ quotaExhausted %quotaExhausted.3 56 12 26 ];
+        symbol [ Application %tmp.10 56 29 40 ];
+        %tmp.10 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.11 56 41 48 ];
+        %tmp.11 = getv %tmp.10 :Storage;
+        symbol [ getValue %tmp.12 56 49 57 ];
+        %tmp.12 = getv function %tmp.11 :getValue;
+        %tmp.13 = "stormGlassQuotaExhausted";
+        %tmp.14 = invoke %tmp.11 %tmp.12(%tmp.13);
+        lputv %quotaExhausted.3 %tmp.14;
+        symbol [ quotaExhausted %quotaExhausted.3 56 12 26 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 57 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_8_65_8_if_stmt:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_12_57_56_begin:
+        %tmp.15 = lgetv %quotaExhausted.3;
+        symbol [ quotaExhausted %tmp.15 57 12 26 ];
+        %tmp.16 = null;
+        %tmp.17 = ne %tmp.15 %tmp.16;
+        bf %tmp.17 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_8_65_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_38_57_56_true:
+        %tmp.18 = lgetv %quotaExhausted.3;
+        symbol [ quotaExhausted %tmp.18 57 38 52 ];
+        %tmp.19 = as %tmp.18 { (!Null) };
+        %tmp.20 = true;
+        %tmp.21 = eq %tmp.19 %tmp.20;
+        push %tmp.21;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_38_57_56_end:
+        %tmp.22 = phi [%tmp.17 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_12_57_56_begin] [%tmp.21 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_38_57_56_true] [%tmp.22 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_38_57_56_end];
+        bf %tmp.22 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_8_65_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_8_65_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_62_65_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 59 12 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_12_64_12_if_stmt:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_16_59_70_begin:
+        %tmp.23 = lgetv %tideFetchedDay.1;
+        symbol [ tideFetchedDay %tmp.23 59 16 30 ];
+        %tmp.24 = null;
+        %tmp.25 = ne %tmp.23 %tmp.24;
+        bf %tmp.25 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_12_64_12_if_else_false;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_42_59_70_true:
+        %tmp.26 = lgetv %tideFetchedDay.1;
+        symbol [ tideFetchedDay %tmp.26 59 43 57 ];
+        %tmp.27 = as %tmp.26 { (!Null) };
+        symbol [ equals %tmp.28 59 58 64 ];
+        %tmp.28 = getv function %tmp.27 :equals;
+        %tmp.29 = lgetv %today.2;
+        symbol [ today %tmp.29 59 65 70 ];
+        %tmp.30 = invoke %tmp.27 %tmp.28(%tmp.29);
+        %tmp.31 = not %tmp.30;
+        push %tmp.31;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_42_59_70_end:
+        %tmp.32 = phi [%tmp.25 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_16_59_70_begin] [%tmp.31 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_42_59_70_true] [%tmp.32 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_42_59_70_end];
+        bf %tmp.32 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_12_64_12_if_else_false;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_12_64_12_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_73_62_12_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 61 16 ]
+        symbol [ Application %tmp.33 61 16 27 ];
+        %tmp.33 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.34 61 28 35 ];
+        %tmp.34 = getv %tmp.33 :Storage;
+        symbol [ setValue %tmp.35 61 36 44 ];
+        %tmp.35 = getv function %tmp.34 :setValue;
+        %tmp.36 = "stormGlassQuotaExhausted";
+        %tmp.37 = false;
+        invoke %tmp.34 %tmp.35(%tmp.36, %tmp.37);
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_73_62_12_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_12_64_12_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_12_64_12_if_else_false:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_62_19_64_12_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 63 16 ]
+        %tmp.38 = false;
+        ret %tmp.38;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_62_19_64_12_stop:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_59_12_64_12_if_end:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_62_65_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_8_65_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_57_8_65_8_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 68 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_68_8_70_8_if_stmt:
+        %tmp.39 = lgetv %tideFetchedDay.1;
+        symbol [ tideFetchedDay %tmp.39 68 12 26 ];
+        %tmp.40 = null;
+        %tmp.41 = eq %tmp.39 %tmp.40;
+        bf %tmp.41 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_68_8_70_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_68_8_70_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_68_36_70_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 69 12 ]
+        %tmp.42 = true;
+        ret %tmp.42;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_68_36_70_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_68_8_70_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_68_8_70_8_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 73 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_73_8_75_8_if_stmt:
+        %tmp.43 = lgetv %tideFetchedDay.1;
+        symbol [ tideFetchedDay %tmp.43 73 13 27 ];
+        symbol [ equals %tmp.44 73 28 34 ];
+        %tmp.44 = getv function %tmp.43 :equals;
+        %tmp.45 = lgetv %today.2;
+        symbol [ today %tmp.45 73 35 40 ];
+        %tmp.46 = invoke %tmp.43 %tmp.44(%tmp.45);
+        %tmp.47 = not %tmp.46;
+        bf %tmp.47 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_73_8_75_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_73_8_75_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_73_43_75_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 74 12 ]
+        %tmp.48 = true;
+        ret %tmp.48;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_73_43_75_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_73_8_75_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_73_8_75_8_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 78 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_stop" ]
+        %tideFetchLat.4 = local;
+        symbol [ tideFetchLat %tideFetchLat.4 78 12 24 ];
+        symbol [ Application %tmp.49 78 27 38 ];
+        %tmp.49 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.50 78 39 46 ];
+        %tmp.50 = getv %tmp.49 :Storage;
+        symbol [ getValue %tmp.51 78 47 55 ];
+        %tmp.51 = getv function %tmp.50 :getValue;
+        %tmp.52 = "tideFetchLat";
+        %tmp.53 = invoke %tmp.50 %tmp.51(%tmp.52);
+        %tmp.54 = as %tmp.53 Float or Null;
+        symbol [ Float %tmp.54 78 75 80 ];
+        lputv %tideFetchLat.4 %tmp.54;
+        symbol [ tideFetchLat %tideFetchLat.4 78 12 24 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 79 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_stop" ]
+        %tideFetchLng.5 = local;
+        symbol [ tideFetchLng %tideFetchLng.5 79 12 24 ];
+        symbol [ Application %tmp.55 79 27 38 ];
+        %tmp.55 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.56 79 39 46 ];
+        %tmp.56 = getv %tmp.55 :Storage;
+        symbol [ getValue %tmp.57 79 47 55 ];
+        %tmp.57 = getv function %tmp.56 :getValue;
+        %tmp.58 = "tideFetchLng";
+        %tmp.59 = invoke %tmp.56 %tmp.57(%tmp.58);
+        %tmp.60 = as %tmp.59 Float or Null;
+        symbol [ Float %tmp.60 79 75 80 ];
+        lputv %tideFetchLng.5 %tmp.60;
+        symbol [ tideFetchLng %tideFetchLng.5 79 12 24 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 80 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_8_84_8_if_stmt:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_12_80_52_begin:
+        %tmp.61 = lgetv %tideFetchLat.4;
+        symbol [ tideFetchLat %tmp.61 80 12 24 ];
+        %tmp.62 = null;
+        %tmp.63 = ne %tmp.61 %tmp.62;
+        bf %tmp.63 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_8_84_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_36_80_52_true:
+        %tmp.64 = lgetv %tideFetchLng.5;
+        symbol [ tideFetchLng %tmp.64 80 36 48 ];
+        %tmp.65 = null;
+        %tmp.66 = ne %tmp.64 %tmp.65;
+        push %tmp.66;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_36_80_52_end:
+        %tmp.67 = phi [%tmp.63 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_12_80_52_begin] [%tmp.66 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_36_80_52_true] [%tmp.67 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_36_80_52_end];
+        bf %tmp.67 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_8_84_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_8_84_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_58_84_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 81 12 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_81_12_83_12_if_stmt:
+        %tmp.68 = self;
+        symbol [ distanceBetween %tmp.69 81 16 31 ];
+        %tmp.69 = getv function %tmp.68 :distanceBetween;
+        %tmp.70 = lgetv %lat;
+        symbol [ lat %tmp.70 81 32 35 ];
+        %tmp.71 = lgetv %lng;
+        symbol [ lng %tmp.71 81 37 40 ];
+        %tmp.72 = lgetv %tideFetchLat.4;
+        symbol [ tideFetchLat %tmp.72 81 42 54 ];
+        %tmp.73 = as %tmp.72 { (!Null) };
+        %tmp.74 = lgetv %tideFetchLng.5;
+        symbol [ tideFetchLng %tmp.74 81 56 68 ];
+        %tmp.75 = as %tmp.74 { (!Null) };
+        %tmp.76 = invoke %tmp.68 %tmp.69(%tmp.70, %tmp.71, %tmp.73, %tmp.75);
+        %tmp.77 = 50000.0f;
+        %tmp.78 = gt %tmp.76 %tmp.77;
+        bf %tmp.78 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_81_12_83_12_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_81_12_83_12_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_81_82_83_12_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 82 16 ]
+        %tmp.79 = true;
+        ret %tmp.79;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_81_82_83_12_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_81_12_83_12_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_81_12_83_12_if_end:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_58_84_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_8_84_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_80_8_84_8_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 87 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_stop" ]
+        %tideDataExpired.6 = local;
+        symbol [ tideDataExpired %tideDataExpired.6 87 12 27 ];
+        symbol [ Application %tmp.80 87 30 41 ];
+        %tmp.80 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.81 87 42 49 ];
+        %tmp.81 = getv %tmp.80 :Storage;
+        symbol [ getValue %tmp.82 87 50 58 ];
+        %tmp.82 = getv function %tmp.81 :getValue;
+        %tmp.83 = "tideDataExpired";
+        %tmp.84 = invoke %tmp.81 %tmp.82(%tmp.83);
+        lputv %tideDataExpired.6 %tmp.84;
+        symbol [ tideDataExpired %tideDataExpired.6 87 12 27 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 88 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_8_90_8_if_stmt:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_12_88_58_begin:
+        %tmp.85 = lgetv %tideDataExpired.6;
+        symbol [ tideDataExpired %tmp.85 88 12 27 ];
+        %tmp.86 = null;
+        %tmp.87 = ne %tmp.85 %tmp.86;
+        bf %tmp.87 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_8_90_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_39_88_58_true:
+        %tmp.88 = lgetv %tideDataExpired.6;
+        symbol [ tideDataExpired %tmp.88 88 39 54 ];
+        %tmp.89 = as %tmp.88 { (!Null) };
+        %tmp.90 = true;
+        %tmp.91 = eq %tmp.89 %tmp.90;
+        push %tmp.91;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_39_88_58_end:
+        %tmp.92 = phi [%tmp.87 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_12_88_58_begin] [%tmp.91 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_39_88_58_true] [%tmp.92 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_39_88_58_end];
+        bf %tmp.92 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_8_90_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_8_90_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_64_90_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 89 12 ]
+        %tmp.93 = true;
+        ret %tmp.93;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_64_90_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_8_90_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_88_8_90_8_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 92 8 ]
+        %tmp.94 = false;
+        ret %tmp.94;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_51_80_93_4_stop:
+    }
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 95; @symbol_functiondef = [onTemporalEvent,95,13,28]; ]
+    function onTemporalEvent() as Void {
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_95_39_168_4_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 97 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_95_39_168_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_95_39_168_4_stop" ]
+        %btConnected.1 = local;
+        symbol [ btConnected %btConnected.1 97 12 23 ];
+        symbol [ Application %tmp.1 97 26 37 ];
+        %tmp.1 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.2 97 38 45 ];
+        %tmp.2 = getv %tmp.1 :Storage;
+        symbol [ getValue %tmp.3 97 46 54 ];
+        %tmp.3 = getv function %tmp.2 :getValue;
+        %tmp.4 = "bluetoothConnected";
+        %tmp.5 = invoke %tmp.2 %tmp.3(%tmp.4);
+        lputv %btConnected.1 %tmp.5;
+        symbol [ btConnected %btConnected.1 97 12 23 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 98 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_8_101_8_if_stmt:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_12_98_50_begin:
+        %tmp.6 = lgetv %btConnected.1;
+        symbol [ btConnected %tmp.6 98 12 23 ];
+        %tmp.7 = null;
+        %tmp.8 = eq %tmp.6 %tmp.7;
+        bt %tmp.8 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_8_101_8_if_true;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_35_98_50_false:
+        %tmp.9 = lgetv %btConnected.1;
+        symbol [ btConnected %tmp.9 98 35 46 ];
+        %tmp.10 = as %tmp.9 { (!Null) };
+        %tmp.11 = false;
+        %tmp.12 = eq %tmp.10 %tmp.11;
+        push %tmp.12;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_35_98_50_end:
+        %tmp.13 = phi [%tmp.8 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_12_98_50_begin] [%tmp.12 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_35_98_50_false] [%tmp.13 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_35_98_50_end];
+        bf %tmp.13 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_8_101_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_8_101_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_57_101_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 99 12 ]
+        symbol [ Background %tmp.14 99 12 22 ];
+        %tmp.14 = getm $.Toybox.Background;
+        symbol [ exit %tmp.15 99 23 27 ];
+        %tmp.15 = getv function %tmp.14 :exit;
+        %tmp.16 = null;
+        invoke %tmp.14 %tmp.15(%tmp.16);
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 100 12 ]
+        ret ?;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_57_101_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_8_101_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_98_8_101_8_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 104 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_95_39_168_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_95_39_168_4_stop" ]
+        %lat.2 = local;
+        symbol [ lat %lat.2 104 12 15 ];
+        symbol [ Application %tmp.17 104 18 29 ];
+        %tmp.17 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.18 104 30 37 ];
+        %tmp.18 = getv %tmp.17 :Storage;
+        symbol [ getValue %tmp.19 104 38 46 ];
+        %tmp.19 = getv function %tmp.18 :getValue;
+        %tmp.20 = "lastKnownLat";
+        %tmp.21 = invoke %tmp.18 %tmp.19(%tmp.20);
+        %tmp.22 = as %tmp.21 Float or Null;
+        symbol [ Float %tmp.22 104 66 71 ];
+        lputv %lat.2 %tmp.22;
+        symbol [ lat %lat.2 104 12 15 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 105 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_95_39_168_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_95_39_168_4_stop" ]
+        %lng.3 = local;
+        symbol [ lng %lng.3 105 12 15 ];
+        symbol [ Application %tmp.23 105 18 29 ];
+        %tmp.23 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.24 105 30 37 ];
+        %tmp.24 = getv %tmp.23 :Storage;
+        symbol [ getValue %tmp.25 105 38 46 ];
+        %tmp.25 = getv function %tmp.24 :getValue;
+        %tmp.26 = "lastKnownLng";
+        %tmp.27 = invoke %tmp.24 %tmp.25(%tmp.26);
+        %tmp.28 = as %tmp.27 Float or Null;
+        symbol [ Float %tmp.28 105 66 71 ];
+        lputv %lng.3 %tmp.28;
+        symbol [ lng %lng.3 105 12 15 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 108 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_8_111_8_if_stmt:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_12_108_34_begin:
+        %tmp.29 = lgetv %lat.2;
+        symbol [ lat %tmp.29 108 12 15 ];
+        %tmp.30 = null;
+        %tmp.31 = eq %tmp.29 %tmp.30;
+        bt %tmp.31 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_8_111_8_if_true;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_27_108_34_false:
+        %tmp.32 = lgetv %lng.3;
+        symbol [ lng %tmp.32 108 27 30 ];
+        %tmp.33 = null;
+        %tmp.34 = eq %tmp.32 %tmp.33;
+        push %tmp.34;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_27_108_34_end:
+        %tmp.35 = phi [%tmp.31 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_12_108_34_begin] [%tmp.34 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_27_108_34_false] [%tmp.35 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_27_108_34_end];
+        bf %tmp.35 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_8_111_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_8_111_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_40_111_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 109 12 ]
+        symbol [ Background %tmp.36 109 12 22 ];
+        %tmp.36 = getm $.Toybox.Background;
+        symbol [ exit %tmp.37 109 23 27 ];
+        %tmp.37 = getv function %tmp.36 :exit;
+        %tmp.38 = null;
+        invoke %tmp.36 %tmp.37(%tmp.38);
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 110 12 ]
+        ret ?;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_40_111_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_8_111_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_108_8_111_8_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 113 8 ]
+        %tmp.39 = lgetv %lat.2;
+        symbol [ lat %tmp.39 113 15 18 ];
+        symbol [ _lat ? 113 8 12 ];
+        putv self :_lat %tmp.39;
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 114 8 ]
+        %tmp.40 = lgetv %lng.3;
+        symbol [ lng %tmp.40 114 15 18 ];
+        symbol [ _lng ? 114 8 12 ];
+        putv self :_lng %tmp.40;
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 117 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_95_39_168_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_95_39_168_4_stop" ]
+        %owmNeeded.4 = local;
+        symbol [ owmNeeded %owmNeeded.4 117 12 21 ];
+        %tmp.41 = false;
+        lputv %owmNeeded.4 %tmp.41;
+        symbol [ owmNeeded %owmNeeded.4 117 12 21 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 118 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_95_39_168_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_95_39_168_4_stop" ]
+        %owmFetchedAt.5 = local;
+        symbol [ owmFetchedAt %owmFetchedAt.5 118 12 24 ];
+        symbol [ Application %tmp.42 118 27 38 ];
+        %tmp.42 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.43 118 39 46 ];
+        %tmp.43 = getv %tmp.42 :Storage;
+        symbol [ getValue %tmp.44 118 47 55 ];
+        %tmp.44 = getv function %tmp.43 :getValue;
+        %tmp.45 = "owmFetchedAt";
+        %tmp.46 = invoke %tmp.43 %tmp.44(%tmp.45);
+        %tmp.47 = as %tmp.46 Number or Null;
+        symbol [ Number %tmp.47 118 75 81 ];
+        lputv %owmFetchedAt.5 %tmp.47;
+        symbol [ owmFetchedAt %owmFetchedAt.5 118 12 24 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 120 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_120_8_137_8_if_stmt:
+        %tmp.48 = lgetv %owmFetchedAt.5;
+        symbol [ owmFetchedAt %tmp.48 120 12 24 ];
+        %tmp.49 = null;
+        %tmp.50 = eq %tmp.48 %tmp.49;
+        bf %tmp.50 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_120_8_137_8_if_else_false;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_120_8_137_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_120_34_122_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 121 12 ]
+        %tmp.51 = true;
+        lputv %owmNeeded.4 %tmp.51;
+        symbol [ owmNeeded %owmNeeded.4 121 12 21 ];
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_120_34_122_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_120_8_137_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_120_8_137_8_if_else_false:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_122_15_137_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 123 12 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_122_15_137_8_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_122_15_137_8_stop" ]
+        %now.6 = local;
+        symbol [ now %now.6 123 16 19 ];
+        symbol [ Time %tmp.52 123 22 26 ];
+        %tmp.52 = getm $.Toybox.Time;
+        symbol [ now %tmp.53 123 27 30 ];
+        %tmp.53 = getv function %tmp.52 :now;
+        %tmp.54 = invoke %tmp.52 %tmp.53();
+        symbol [ value %tmp.55 123 33 38 ];
+        %tmp.55 = getv function %tmp.54 :value;
+        %tmp.56 = invoke %tmp.54 %tmp.55();
+        lputv %now.6 %tmp.56;
+        symbol [ now %now.6 123 16 19 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 124 12 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_124_12_126_12_if_stmt:
+        %tmp.57 = lgetv %now.6;
+        symbol [ now %tmp.57 124 16 19 ];
+        %tmp.58 = lgetv %owmFetchedAt.5;
+        symbol [ owmFetchedAt %tmp.58 124 22 34 ];
+        %tmp.59 = as %tmp.58 { (!Null) };
+        %tmp.60 = sub %tmp.57 %tmp.59;
+        %tmp.61 = 30;
+        %tmp.62 = 60;
+        %tmp.63 = mul %tmp.61 %tmp.62;
+        %tmp.64 = gte %tmp.60 %tmp.63;
+        bf %tmp.64 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_124_12_126_12_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_124_12_126_12_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_124_47_126_12_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 125 16 ]
+        %tmp.65 = true;
+        lputv %owmNeeded.4 %tmp.65;
+        symbol [ owmNeeded %owmNeeded.4 125 16 25 ];
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_124_47_126_12_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_124_12_126_12_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_124_12_126_12_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 128 12 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_128_12_136_12_if_stmt:
+        %tmp.66 = lgetv %owmNeeded.4;
+        symbol [ owmNeeded %tmp.66 128 17 26 ];
+        %tmp.67 = not %tmp.66;
+        bf %tmp.67 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_128_12_136_12_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_128_12_136_12_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_128_28_136_12_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 129 16 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_128_28_136_12_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_128_28_136_12_stop" ]
+        %owmLat.7 = local;
+        symbol [ owmLat %owmLat.7 129 20 26 ];
+        symbol [ Application %tmp.68 129 29 40 ];
+        %tmp.68 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.69 129 41 48 ];
+        %tmp.69 = getv %tmp.68 :Storage;
+        symbol [ getValue %tmp.70 129 49 57 ];
+        %tmp.70 = getv function %tmp.69 :getValue;
+        %tmp.71 = "owmFetchLat";
+        %tmp.72 = invoke %tmp.69 %tmp.70(%tmp.71);
+        %tmp.73 = as %tmp.72 Float or Null;
+        symbol [ Float %tmp.73 129 76 81 ];
+        lputv %owmLat.7 %tmp.73;
+        symbol [ owmLat %owmLat.7 129 20 26 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 130 16 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_128_28_136_12_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_128_28_136_12_stop" ]
+        %owmLon.8 = local;
+        symbol [ owmLon %owmLon.8 130 20 26 ];
+        symbol [ Application %tmp.74 130 29 40 ];
+        %tmp.74 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.75 130 41 48 ];
+        %tmp.75 = getv %tmp.74 :Storage;
+        symbol [ getValue %tmp.76 130 49 57 ];
+        %tmp.76 = getv function %tmp.75 :getValue;
+        %tmp.77 = "owmFetchLon";
+        %tmp.78 = invoke %tmp.75 %tmp.76(%tmp.77);
+        %tmp.79 = as %tmp.78 Float or Null;
+        symbol [ Float %tmp.79 130 76 81 ];
+        lputv %owmLon.8 %tmp.79;
+        symbol [ owmLon %owmLon.8 130 20 26 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 131 16 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_16_135_16_if_stmt:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_20_131_48_begin:
+        %tmp.80 = lgetv %owmLat.7;
+        symbol [ owmLat %tmp.80 131 20 26 ];
+        %tmp.81 = null;
+        %tmp.82 = ne %tmp.80 %tmp.81;
+        bf %tmp.82 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_16_135_16_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_38_131_48_true:
+        %tmp.83 = lgetv %owmLon.8;
+        symbol [ owmLon %tmp.83 131 38 44 ];
+        %tmp.84 = null;
+        %tmp.85 = ne %tmp.83 %tmp.84;
+        push %tmp.85;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_38_131_48_end:
+        %tmp.86 = phi [%tmp.82 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_20_131_48_begin] [%tmp.85 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_38_131_48_true] [%tmp.86 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_38_131_48_end];
+        bf %tmp.86 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_16_135_16_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_16_135_16_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_54_135_16_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 132 20 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_132_20_134_20_if_stmt:
+        %tmp.87 = self;
+        symbol [ distanceBetween %tmp.88 132 24 39 ];
+        %tmp.88 = getv function %tmp.87 :distanceBetween;
+        %tmp.89 = lgetv %lat.2;
+        symbol [ lat %tmp.89 132 40 43 ];
+        %tmp.90 = lgetv %lng.3;
+        symbol [ lng %tmp.90 132 45 48 ];
+        %tmp.91 = lgetv %owmLat.7;
+        symbol [ owmLat %tmp.91 132 50 56 ];
+        %tmp.92 = as %tmp.91 { (!Null) };
+        %tmp.93 = lgetv %owmLon.8;
+        symbol [ owmLon %tmp.93 132 58 64 ];
+        %tmp.94 = as %tmp.93 { (!Null) };
+        %tmp.95 = invoke %tmp.87 %tmp.88(%tmp.89, %tmp.90, %tmp.92, %tmp.94);
+        %tmp.96 = 5000.0f;
+        %tmp.97 = gt %tmp.95 %tmp.96;
+        bf %tmp.97 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_132_20_134_20_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_132_20_134_20_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_132_77_134_20_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 133 24 ]
+        %tmp.98 = true;
+        lputv %owmNeeded.4 %tmp.98;
+        symbol [ owmNeeded %owmNeeded.4 133 24 33 ];
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_132_77_134_20_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_132_20_134_20_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_132_20_134_20_if_end:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_54_135_16_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_16_135_16_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_131_16_135_16_if_end:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_128_28_136_12_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_128_12_136_12_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_128_12_136_12_if_end:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_122_15_137_8_stop:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_120_8_137_8_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 140 8 ]
+        %tmp.99 = self;
+        symbol [ isTideRefreshNeeded %tmp.100 140 22 41 ];
+        %tmp.100 = getv function %tmp.99 :isTideRefreshNeeded;
+        %tmp.101 = lgetv %lat.2;
+        symbol [ lat %tmp.101 140 42 45 ];
+        %tmp.102 = lgetv %lng.3;
+        symbol [ lng %tmp.102 140 47 50 ];
+        %tmp.103 = invoke %tmp.99 %tmp.100(%tmp.101, %tmp.102);
+        symbol [ _tideNeeded ? 140 8 19 ];
+        putv self :_tideNeeded %tmp.103;
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 142 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_8_167_8_if_stmt:
+        %tmp.104 = lgetv %owmNeeded.4;
+        symbol [ owmNeeded %tmp.104 142 12 21 ];
+        bf %tmp.104 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_8_167_8_if_false;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_8_167_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_23_161_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 143 12 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_23_161_8_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_23_161_8_stop" ]
+        %apiKey.9 = local;
+        symbol [ apiKey %apiKey.9 143 16 22 ];
+        symbol [ Application %tmp.105 143 25 36 ];
+        %tmp.105 = getm $.Toybox.Application;
+        symbol [ Properties %tmp.106 143 37 47 ];
+        %tmp.106 = getv %tmp.105 :Properties;
+        symbol [ getValue %tmp.107 143 48 56 ];
+        %tmp.107 = getv function %tmp.106 :getValue;
+        %tmp.108 = "OWMApiKey";
+        %tmp.109 = invoke %tmp.106 %tmp.107(%tmp.108);
+        %tmp.110 = as %tmp.109 String or Null;
+        symbol [ String %tmp.110 143 73 79 ];
+        lputv %apiKey.9 %tmp.110;
+        symbol [ apiKey %apiKey.9 143 16 22 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 144 12 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_12_152_12_if_stmt:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_16_144_50_begin:
+        %tmp.111 = lgetv %apiKey.9;
+        symbol [ apiKey %tmp.111 144 16 22 ];
+        %tmp.112 = null;
+        %tmp.113 = eq %tmp.111 %tmp.112;
+        bt %tmp.113 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_12_152_12_if_true;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_34_144_50_false:
+        %tmp.114 = lgetv %apiKey.9;
+        symbol [ apiKey %tmp.114 144 34 40 ];
+        %tmp.115 = as %tmp.114 { (!Null) };
+        symbol [ equals %tmp.116 144 41 47 ];
+        %tmp.116 = getv function %tmp.115 :equals;
+        %tmp.117 = "";
+        %tmp.118 = invoke %tmp.115 %tmp.116(%tmp.117);
+        push %tmp.118;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_34_144_50_end:
+        %tmp.119 = phi [%tmp.113 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_16_144_50_begin] [%tmp.118 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_34_144_50_false] [%tmp.119 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_34_144_50_end];
+        bf %tmp.119 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_12_152_12_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_12_152_12_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_53_152_12_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 146 16 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_146_16_150_16_if_stmt:
+        symbol [ _tideNeeded %tmp.121 146 20 31 ];
+        %tmp.121 = getv ? :_tideNeeded;
+        bf %tmp.121 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_146_16_150_16_if_else_false;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_146_16_150_16_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_146_33_148_16_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 147 20 ]
+        %tmp.122 = self;
+        symbol [ startTideFetch %tmp.123 147 20 34 ];
+        %tmp.123 = getv function %tmp.122 :startTideFetch;
+        invoke %tmp.122 %tmp.123();
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_146_33_148_16_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_146_16_150_16_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_146_16_150_16_if_else_false:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_148_23_150_16_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 149 20 ]
+        symbol [ Background %tmp.124 149 20 30 ];
+        %tmp.124 = getm $.Toybox.Background;
+        symbol [ exit %tmp.125 149 31 35 ];
+        %tmp.125 = getv function %tmp.124 :exit;
+        %tmp.126 = null;
+        invoke %tmp.124 %tmp.125(%tmp.126);
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_148_23_150_16_stop:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_146_16_150_16_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 151 16 ]
+        ret ?;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_53_152_12_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_12_152_12_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_144_12_152_12_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 154 12 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_23_161_8_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_23_161_8_stop" ]
+        %units.10 = local;
+        symbol [ units %units.10 154 16 21 ];
+        %tmp.127 = "metric";
+        lputv %units.10 %tmp.127;
+        symbol [ units %units.10 154 16 21 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 155 12 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_155_12_157_12_if_stmt:
+        symbol [ System %tmp.128 155 16 22 ];
+        %tmp.128 = getm $.Toybox.System;
+        symbol [ getDeviceSettings %tmp.129 155 23 40 ];
+        %tmp.129 = getv function %tmp.128 :getDeviceSettings;
+        %tmp.130 = invoke %tmp.128 %tmp.129();
+        symbol [ distanceUnits %tmp.131 155 43 56 ];
+        %tmp.131 = getv %tmp.130 :distanceUnits;
+        symbol [ System %tmp.132 155 60 66 ];
+        %tmp.132 = getm $.Toybox.System;
+        symbol [ UNIT_STATUTE %tmp.133 155 67 79 ];
+        %tmp.133 = getv %tmp.132 :UNIT_STATUTE;
+        %tmp.134 = eq %tmp.131 %tmp.133;
+        bf %tmp.134 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_155_12_157_12_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_155_12_157_12_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_155_81_157_12_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 156 16 ]
+        %tmp.135 = "imperial";
+        lputv %units.10 %tmp.135;
+        symbol [ units %units.10 156 16 21 ];
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_155_81_157_12_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_155_12_157_12_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_155_12_157_12_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 159 12 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_23_161_8_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_23_161_8_stop" ]
+        %weatherService.11 = local;
+        symbol [ weatherService %weatherService.11 159 16 30 ];
+        symbol [ WeatherService %tmp.139 159 37 51 ];
+        %tmp.139 = getv ? :WeatherService;
+        %tmp.140 = self;
+        symbol [ method %tmp.141 159 52 58 ];
+        %tmp.141 = getv function %tmp.140 :method;
+        %tmp.143 = const :onWeatherComplete;
+        symbol [ onWeatherComplete %tmp.143 159 60 77 const ];
+        %tmp.144 = invoke %tmp.140 %tmp.141(%tmp.143);
+        %tmp.136 = newc %tmp.139 (%tmp.144);
+        lputv %weatherService.11 %tmp.136;
+        symbol [ weatherService %weatherService.11 159 16 30 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 160 12 ]
+        %tmp.145 = lgetv %weatherService.11;
+        symbol [ weatherService %tmp.145 160 12 26 ];
+        symbol [ fetch %tmp.146 160 27 32 ];
+        %tmp.146 = getv function %tmp.145 :fetch;
+        %tmp.147 = lgetv %lat.2;
+        symbol [ lat %tmp.147 160 33 36 ];
+        %tmp.148 = lgetv %lng.3;
+        symbol [ lng %tmp.148 160 38 41 ];
+        %tmp.149 = lgetv %apiKey.9;
+        symbol [ apiKey %tmp.149 160 43 49 ];
+        %tmp.150 = lgetv %units.10;
+        symbol [ units %tmp.150 160 51 56 ];
+        invoke %tmp.145 %tmp.146(%tmp.147, %tmp.148, %tmp.149, %tmp.150);
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_23_161_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_8_167_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_8_167_8_if_false:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 161 15 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_161_15_167_8_if_stmt:
+        symbol [ _tideNeeded %tmp.152 161 19 30 ];
+        %tmp.152 = getv ? :_tideNeeded;
+        bf %tmp.152 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_161_15_167_8_if_else_false;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_161_15_167_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_161_32_164_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 163 12 ]
+        %tmp.153 = self;
+        symbol [ startTideFetch %tmp.154 163 12 26 ];
+        %tmp.154 = getv function %tmp.153 :startTideFetch;
+        invoke %tmp.153 %tmp.154();
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_161_32_164_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_161_15_167_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_161_15_167_8_if_else_false:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_164_15_167_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 166 12 ]
+        symbol [ Background %tmp.155 166 12 22 ];
+        %tmp.155 = getm $.Toybox.Background;
+        symbol [ exit %tmp.156 166 23 27 ];
+        %tmp.156 = getv function %tmp.155 :exit;
+        %tmp.157 = null;
+        invoke %tmp.155 %tmp.156(%tmp.157);
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_164_15_167_8_stop:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_161_15_167_8_if_end:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_142_8_167_8_if_end:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_95_39_168_4_stop:
+    }
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 171; @symbol_functiondef = [onWeatherComplete,171,13,30]; @symbol_param<0> = [weatherData,171,31,42]; @symbol_param<0>_type<0> = [Dictionary,171,46,56]; ]
+    function onWeatherComplete(weatherData as Dictionary or Null) as Void {
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_171_74_179_4_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 172 8 ]
+        %tmp.1 = lgetv %weatherData;
+        symbol [ weatherData %tmp.1 172 25 36 ];
+        symbol [ _weatherResult ? 172 8 22 ];
+        putv self :_weatherResult %tmp.1;
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 174 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_174_8_178_8_if_stmt:
+        symbol [ _tideNeeded %tmp.3 174 12 23 ];
+        %tmp.3 = getv ? :_tideNeeded;
+        bf %tmp.3 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_174_8_178_8_if_else_false;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_174_8_178_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_174_25_176_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 175 12 ]
+        %tmp.4 = self;
+        symbol [ startTideFetch %tmp.5 175 12 26 ];
+        %tmp.5 = getv function %tmp.4 :startTideFetch;
+        invoke %tmp.4 %tmp.5();
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_174_25_176_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_174_8_178_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_174_8_178_8_if_else_false:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_176_15_178_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 177 12 ]
+        %tmp.6 = self;
+        symbol [ exitWithResults %tmp.7 177 12 27 ];
+        %tmp.7 = getv function %tmp.6 :exitWithResults;
+        invoke %tmp.6 %tmp.7();
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_176_15_178_8_stop:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_174_8_178_8_if_end:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_171_74_179_4_stop:
+    }
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 182; @symbol_functiondef = [onTideComplete,182,13,27]; @symbol_param<0> = [tideData,182,28,36]; @symbol_param<0>_type<0> = [Array,182,40,45]; ]
+    function onTideComplete(tideData as Array or Null) as Void {
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_182_63_207_4_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 183 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_183_8_191_8_if_stmt:
+        %tmp.1 = lgetv %tideData;
+        symbol [ tideData %tmp.1 183 12 20 ];
+        %tmp.2 = null;
+        %tmp.3 = ne %tmp.1 %tmp.2;
+        bf %tmp.3 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_183_8_191_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_183_8_191_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_183_30_191_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 185 12 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_183_30_191_8_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_183_30_191_8_stop" ]
+        %today.1 = local;
+        symbol [ today %today.1 185 16 21 ];
+        %tmp.4 = self;
+        symbol [ todayUTC %tmp.5 185 24 32 ];
+        %tmp.5 = getv function %tmp.4 :todayUTC;
+        %tmp.6 = invoke %tmp.4 %tmp.5();
+        lputv %today.1 %tmp.6;
+        symbol [ today %today.1 185 16 21 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 186 12 ]
+        symbol [ Application %tmp.7 186 12 23 ];
+        %tmp.7 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.8 186 24 31 ];
+        %tmp.8 = getv %tmp.7 :Storage;
+        symbol [ setValue %tmp.9 186 32 40 ];
+        %tmp.9 = getv function %tmp.8 :setValue;
+        %tmp.10 = "tideFetchedDay";
+        %tmp.11 = lgetv %today.1;
+        symbol [ today %tmp.11 186 59 64 ];
+        invoke %tmp.8 %tmp.9(%tmp.10, %tmp.11);
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 187 12 ]
+        symbol [ Application %tmp.12 187 12 23 ];
+        %tmp.12 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.13 187 24 31 ];
+        %tmp.13 = getv %tmp.12 :Storage;
+        symbol [ setValue %tmp.14 187 32 40 ];
+        %tmp.14 = getv function %tmp.13 :setValue;
+        %tmp.15 = "tideFetchLat";
+        symbol [ _lat %tmp.17 187 57 61 ];
+        %tmp.17 = getv ? :_lat;
+        invoke %tmp.13 %tmp.14(%tmp.15, %tmp.17);
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 188 12 ]
+        symbol [ Application %tmp.18 188 12 23 ];
+        %tmp.18 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.19 188 24 31 ];
+        %tmp.19 = getv %tmp.18 :Storage;
+        symbol [ setValue %tmp.20 188 32 40 ];
+        %tmp.20 = getv function %tmp.19 :setValue;
+        %tmp.21 = "tideFetchLng";
+        symbol [ _lng %tmp.23 188 57 61 ];
+        %tmp.23 = getv ? :_lng;
+        invoke %tmp.19 %tmp.20(%tmp.21, %tmp.23);
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 190 12 ]
+        symbol [ Application %tmp.24 190 12 23 ];
+        %tmp.24 = getm $.Toybox.Application;
+        symbol [ Storage %tmp.25 190 24 31 ];
+        %tmp.25 = getv %tmp.24 :Storage;
+        symbol [ setValue %tmp.26 190 32 40 ];
+        %tmp.26 = getv function %tmp.25 :setValue;
+        %tmp.27 = "tideDataExpired";
+        %tmp.28 = false;
+        invoke %tmp.25 %tmp.26(%tmp.27, %tmp.28);
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_183_30_191_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_183_8_191_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_183_8_191_8_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 194 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_182_63_207_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_182_63_207_4_stop" ]
+        %result.2 = local;
+        symbol [ result %result.2 194 12 18 ];
+        %tmp.29 = newd Dictionary<String, Application.PropertyValueType> 0;
+        symbol [ Dictionary %tmp.29 194 27 37 ];
+        symbol [ String %tmp.29 194 38 44 ];
+        symbol [ Application %tmp.29 194 46 57 ];
+        symbol [ PropertyValueType %tmp.29 194 58 75 ];
+        lputv %result.2 %tmp.29;
+        symbol [ result %result.2 194 12 18 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 195 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_195_8_197_8_if_stmt:
+        symbol [ _weatherResult %tmp.31 195 12 26 ];
+        %tmp.31 = getv ? :_weatherResult;
+        %tmp.32 = null;
+        %tmp.33 = ne %tmp.31 %tmp.32;
+        bf %tmp.33 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_195_8_197_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_195_8_197_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_195_36_197_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 196 12 ]
+        %tmp.34 = lgetv %result.2;
+        symbol [ result %tmp.34 196 12 18 ];
+        symbol [ _weatherResult %tmp.36 196 32 46 ];
+        %tmp.36 = getv ? :_weatherResult;
+        %tmp.37 = as %tmp.36 { (!Null) };
+        %tmp.38 = as %tmp.37 Application.PropertyValueType;
+        symbol [ Application %tmp.38 196 50 61 ];
+        symbol [ PropertyValueType %tmp.38 196 62 79 ];
+        %tmp.39 = "weather";
+        aputv %tmp.34 %tmp.39 %tmp.38;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_195_36_197_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_195_8_197_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_195_8_197_8_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 198 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_198_8_200_8_if_stmt:
+        %tmp.40 = lgetv %tideData;
+        symbol [ tideData %tmp.40 198 12 20 ];
+        %tmp.41 = null;
+        %tmp.42 = ne %tmp.40 %tmp.41;
+        bf %tmp.42 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_198_8_200_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_198_8_200_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_198_30_200_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 199 12 ]
+        %tmp.43 = lgetv %result.2;
+        symbol [ result %tmp.43 199 12 18 ];
+        %tmp.44 = lgetv %tideData;
+        symbol [ tideData %tmp.44 199 30 38 ];
+        %tmp.45 = as %tmp.44 { (!Null) };
+        %tmp.46 = as %tmp.45 Application.PropertyValueType;
+        symbol [ Application %tmp.46 199 42 53 ];
+        symbol [ PropertyValueType %tmp.46 199 54 71 ];
+        %tmp.47 = "tides";
+        aputv %tmp.43 %tmp.47 %tmp.46;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_198_30_200_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_198_8_200_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_198_8_200_8_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 202 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_202_8_206_8_if_stmt:
+        %tmp.48 = lgetv %result.2;
+        symbol [ result %tmp.48 202 12 18 ];
+        symbol [ size %tmp.49 202 19 23 ];
+        %tmp.49 = getv function %tmp.48 :size;
+        %tmp.50 = invoke %tmp.48 %tmp.49();
+        %tmp.51 = 0;
+        %tmp.52 = gt %tmp.50 %tmp.51;
+        bf %tmp.52 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_202_8_206_8_if_else_false;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_202_8_206_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_202_31_204_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 203 12 ]
+        symbol [ Background %tmp.53 203 12 22 ];
+        %tmp.53 = getm $.Toybox.Background;
+        symbol [ exit %tmp.54 203 23 27 ];
+        %tmp.54 = getv function %tmp.53 :exit;
+        %tmp.55 = lgetv %result.2;
+        symbol [ result %tmp.55 203 28 34 ];
+        invoke %tmp.53 %tmp.54(%tmp.55);
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_202_31_204_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_202_8_206_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_202_8_206_8_if_else_false:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_204_15_206_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 205 12 ]
+        symbol [ Background %tmp.56 205 12 22 ];
+        %tmp.56 = getm $.Toybox.Background;
+        symbol [ exit %tmp.57 205 23 27 ];
+        %tmp.57 = getv function %tmp.56 :exit;
+        %tmp.58 = null;
+        invoke %tmp.56 %tmp.57(%tmp.58);
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_204_15_206_8_stop:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_202_8_206_8_if_end:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_182_63_207_4_stop:
+    }
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 210; @symbol_functiondef = [startTideFetch,210,21,35]; ]
+    private
+    function startTideFetch() as Void {
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_210_46_220_4_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 211 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_210_46_220_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_210_46_220_4_stop" ]
+        %apiKey.1 = local;
+        symbol [ apiKey %apiKey.1 211 12 18 ];
+        symbol [ Application %tmp.1 211 21 32 ];
+        %tmp.1 = getm $.Toybox.Application;
+        symbol [ Properties %tmp.2 211 33 43 ];
+        %tmp.2 = getv %tmp.1 :Properties;
+        symbol [ getValue %tmp.3 211 44 52 ];
+        %tmp.3 = getv function %tmp.2 :getValue;
+        %tmp.4 = "StormGlassApiKey";
+        %tmp.5 = invoke %tmp.2 %tmp.3(%tmp.4);
+        %tmp.6 = as %tmp.5 String or Null;
+        symbol [ String %tmp.6 211 76 82 ];
+        lputv %apiKey.1 %tmp.6;
+        symbol [ apiKey %apiKey.1 211 12 18 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 212 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_8_216_8_if_stmt:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_12_212_46_begin:
+        %tmp.7 = lgetv %apiKey.1;
+        symbol [ apiKey %tmp.7 212 12 18 ];
+        %tmp.8 = null;
+        %tmp.9 = eq %tmp.7 %tmp.8;
+        bt %tmp.9 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_8_216_8_if_true;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_30_212_46_false:
+        %tmp.10 = lgetv %apiKey.1;
+        symbol [ apiKey %tmp.10 212 30 36 ];
+        %tmp.11 = as %tmp.10 { (!Null) };
+        symbol [ equals %tmp.12 212 37 43 ];
+        %tmp.12 = getv function %tmp.11 :equals;
+        %tmp.13 = "";
+        %tmp.14 = invoke %tmp.11 %tmp.12(%tmp.13);
+        push %tmp.14;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_30_212_46_end:
+        %tmp.15 = phi [%tmp.9 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_12_212_46_begin] [%tmp.14 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_30_212_46_false] [%tmp.15 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_30_212_46_end];
+        bf %tmp.15 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_8_216_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_8_216_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_49_216_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 214 12 ]
+        %tmp.16 = self;
+        symbol [ exitWithResults %tmp.17 214 12 27 ];
+        %tmp.17 = getv function %tmp.16 :exitWithResults;
+        invoke %tmp.16 %tmp.17();
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 215 12 ]
+        ret ?;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_49_216_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_8_216_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_212_8_216_8_if_end:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 218 8 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_210_46_220_4_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_210_46_220_4_stop" ]
+        %tideService.2 = local;
+        symbol [ tideService %tideService.2 218 12 23 ];
+        symbol [ TideService %tmp.21 218 30 41 ];
+        %tmp.21 = getv ? :TideService;
+        %tmp.22 = self;
+        symbol [ method %tmp.23 218 42 48 ];
+        %tmp.23 = getv function %tmp.22 :method;
+        %tmp.25 = const :onTideComplete;
+        symbol [ onTideComplete %tmp.25 218 50 64 const ];
+        %tmp.26 = invoke %tmp.22 %tmp.23(%tmp.25);
+        %tmp.18 = newc %tmp.21 (%tmp.26);
+        lputv %tideService.2 %tmp.18;
+        symbol [ tideService %tideService.2 218 12 23 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 219 8 ]
+        %tmp.27 = lgetv %tideService.2;
+        symbol [ tideService %tmp.27 219 8 19 ];
+        symbol [ fetch %tmp.28 219 20 25 ];
+        %tmp.28 = getv function %tmp.27 :fetch;
+        symbol [ _lat %tmp.30 219 26 30 ];
+        %tmp.30 = getv ? :_lat;
+        symbol [ _lng %tmp.32 219 32 36 ];
+        %tmp.32 = getv ? :_lng;
+        %tmp.33 = lgetv %apiKey.1;
+        symbol [ apiKey %tmp.33 219 38 44 ];
+        invoke %tmp.27 %tmp.28(%tmp.30, %tmp.32, %tmp.33);
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_210_46_220_4_stop:
+    }
+    [ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 223; @symbol_functiondef = [exitWithResults,223,21,36]; ]
+    private
+    function exitWithResults() as Void {
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_223_47_231_4_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 224 8 ]
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_224_8_230_8_if_stmt:
+        symbol [ _weatherResult %tmp.2 224 12 26 ];
+        %tmp.2 = getv ? :_weatherResult;
+        %tmp.3 = null;
+        %tmp.4 = ne %tmp.2 %tmp.3;
+        bf %tmp.4 @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_224_8_230_8_if_else_false;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_224_8_230_8_if_true:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_224_36_228_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 225 12 ]
+        [ "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_224_36_228_8_start" "_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_224_36_228_8_stop" ]
+        %result.1 = local;
+        symbol [ result %result.1 225 16 22 ];
+        %tmp.5 = newd Dictionary<String, Application.PropertyValueType> 0;
+        symbol [ Dictionary %tmp.5 225 31 41 ];
+        symbol [ String %tmp.5 225 42 48 ];
+        symbol [ Application %tmp.5 225 50 61 ];
+        symbol [ PropertyValueType %tmp.5 225 62 79 ];
+        lputv %result.1 %tmp.5;
+        symbol [ result %result.1 225 16 22 ];
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 226 12 ]
+        %tmp.6 = lgetv %result.1;
+        symbol [ result %tmp.6 226 12 18 ];
+        symbol [ _weatherResult %tmp.8 226 32 46 ];
+        %tmp.8 = getv ? :_weatherResult;
+        %tmp.9 = as %tmp.8 { (!Null) };
+        %tmp.10 = as %tmp.9 Application.PropertyValueType;
+        symbol [ Application %tmp.10 226 50 61 ];
+        symbol [ PropertyValueType %tmp.10 226 62 79 ];
+        %tmp.11 = "weather";
+        aputv %tmp.6 %tmp.11 %tmp.10;
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 227 12 ]
+        symbol [ Background %tmp.12 227 12 22 ];
+        %tmp.12 = getm $.Toybox.Background;
+        symbol [ exit %tmp.13 227 23 27 ];
+        %tmp.13 = getv function %tmp.12 :exit;
+        %tmp.14 = lgetv %result.1;
+        symbol [ result %tmp.14 227 28 34 ];
+        invoke %tmp.12 %tmp.13(%tmp.14);
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_224_36_228_8_stop:
+        goto @_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_224_8_230_8_if_end;
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_224_8_230_8_if_else_false:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_228_15_230_8_start:
+[ "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc" 229 12 ]
+        symbol [ Background %tmp.15 229 12 22 ];
+        %tmp.15 = getm $.Toybox.Background;
+        symbol [ exit %tmp.16 229 23 27 ];
+        %tmp.16 = getv function %tmp.15 :exit;
+        %tmp.17 = null;
+        invoke %tmp.15 %tmp.16(%tmp.17);
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_228_15_230_8_stop:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_224_8_230_8_if_end:
+_Volumes_workplace_Garmin_surfer_watch_face_instinct_2x_solar_source_SurferWatchFaceDelegate_mc_223_47_231_4_stop:
+    }
+}
+[ @file = "/Volumes/workplace/Garmin/surfer-watch-face-instinct-2x-solar/source/SurferWatchFaceDelegate.mc"; @line = 1; ]
+<init> {
+}
