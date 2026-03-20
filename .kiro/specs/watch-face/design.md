@@ -364,6 +364,7 @@ Reference: Crystal Face (warmsound/crystal-face) uses this exact format — 8-bi
 
 - **17px** — best general-purpose size, matches Crystal Face and FONT_XTINY row height
 - **19px** — viable alternative when more detail is needed
+- **Max texture size: 256x256** — Instinct 2X does not support 512x512 (causes garbled rendering)
 - Tested 14-20px; 17px and 19px produced the cleanest results on the Instinct 2X simulator
 - Monochrome (`--monochrome` flag) gives thinnest lines but loses detail vs grayscale AA
 - The Gemini 2x supersample approach (render at 2x, downscale) did not produce usable results

@@ -434,6 +434,26 @@ Key findings from rasterization testing:
 - [x] Refactored into `drawStressArc()`, `drawHrHeart()`, `drawHrText()` with tweakable position constants
 - [x] Wired to real stress data from DataManager
 - Note: Heart at (144,14), BPM text at (144,34), arc width 6px. Positions are `private static const` for easy tuning.
+- Note: Arc angles adjusted to 2:30 (45°) to 9:30 (135°) = 270° to clear filled heart icon.
+- Note: Arc borders 2px thick, end caps adjusted (capInnerR+1) to prevent inward overflow.
+
+### Task 43b: Fix weather, moon, heart, wind bugs from real-watch testing
+- [x] Weather: replaced Crystal Face 17-glyph set with full Erik Flowers 29-glyph set (fontbm 17px, 256x256 texture)
+- [x] Weather: full OWM mapping with day (A-V) and night (a-g) variants — now has pure rain, thunderstorm, fog, etc.
+- [x] Moon: replaced Segment34 8-phase with Erik Flowers 28-phase at 24px, Math.round() instead of truncate
+- [x] Heart: replaced Segment34 outline with Garmin Connect Icons outline at 27px (tested 18-30px, 27px won)
+- [x] Wind: negated rotation angle to fix clockwise/counter-clockwise mirror
+- [x] Stress arc: 2px borders, end cap inner radius +1 to prevent overflow
+- Key finding: Instinct 2X max font texture size is 256x256 — 512x512 causes garbled rendering
+- Key finding: BMFont via Wine doesn't support negative fontSize (Wine GDI limitation) — fontbm direct is our pipeline
+- Key finding: Downscale methods (2x render → shift → downscale) add too much AA noise vs fontbm direct
+
+### Task 44: Tune wind arrow rendering
+- [ ] Current arrow is 7px half-height with 0.6 width ratio and 0.4 tail notch — looks thin on watch
+- [ ] Experiment with larger size (8-10px half-height)
+- [ ] Experiment with wider base (0.7-0.8 width ratio)
+- [ ] Experiment with shallower swallow tail (0.2-0.3 notch depth)
+- [ ] Compare on simulator and pick best combination
 
 ### Task 43: Experiment with clock fonts
 - [x] Researched and tested: Bebas Neue, Barlow Condensed Bold, Rajdhani Bold, Saira Condensed Bold, Oswald
