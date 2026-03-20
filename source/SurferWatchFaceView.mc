@@ -33,7 +33,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     // Right column 2x2 grid
     private static const MID_RIGHT_LEFT_X = 132;
     private static const MID_RIGHT_RIGHT_X = 174;
-    private static const MID_RIGHT_TOP_Y = MID_Y - 2;
+    private static const MID_RIGHT_TOP_Y = MID_Y-1;
     private static const MID_RIGHT_BOTTOM_Y = MID_Y + 18;
     private static const MID_ICON_Y = MID_Y;
     private static const MID_TEXT_Y = MID_Y + 18;
@@ -196,8 +196,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (moonIconsFont != null) {
             var glyph = "0";
             if (dm.moonPhase != null) {
-                var idx = (dm.moonPhase * 8).toNumber() % 8;
-                glyph = idx.toString();
+                // Map 0.0-1.0 to 28 phases (chars '0' through 'K', ASCII 48-75)
+                var idx = Math.round(dm.moonPhase * 28).toNumber() % 28;
+                var charCode = 48 + idx;
+                glyph = charCode.toChar().toString();
             }
             drawTextAligned(dc, x, y, moonIconsFont, glyph, Graphics.TEXT_JUSTIFY_LEFT);
         }
