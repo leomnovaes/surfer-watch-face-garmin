@@ -62,6 +62,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private var moonIconsFont = null;
     private var seg34IconsFont = null;
     private var surferIconsFont = null;
+    private var heartIconFont = null;
 
     // --- Clock font resources ---
     private var clockSaira40 = null;
@@ -85,6 +86,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         moonIconsFont = WatchUi.loadResource(Rez.Fonts.MoonIcons);
         seg34IconsFont = WatchUi.loadResource(Rez.Fonts.Seg34Icons);
         surferIconsFont = WatchUi.loadResource(Rez.Fonts.SurferIcons);
+        heartIconFont = WatchUi.loadResource(Rez.Fonts.HeartIcon);
         clockSaira40 = WatchUi.loadResource(Rez.Fonts.ClockSaira40);
         clockRajdhani40 = WatchUi.loadResource(Rez.Fonts.ClockRajdhani40);
     }
@@ -388,8 +390,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     // Draws the heart icon at (x, y) — black, centered
     private function drawHrHeart(dc as Dc, x as Number, y as Number) as Void {
-        if (seg34IconsFont != null) {
-            dc.drawText(x, y, seg34IconsFont, "H", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        if (heartIconFont != null) {
+            dc.drawText(x, y, heartIconFont, "h", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
     }
 
@@ -404,9 +406,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var arcOuterR = radius;
         var arcInnerR = arcOuterR - barWidth;
         var arcMidR = arcOuterR - (barWidth / 2);
-        var arcStartAngle = 60;  // 2 o'clock
-        var arcEndAngle = 120;   // 10 o'clock
-        var totalArcDeg = 300;   // clockwise from 60° through bottom to 120°
+        var arcStartAngle = 45;  // 2:30 o'clock
+        var arcEndAngle = 135;   // 9:30 o'clock
+        var totalArcDeg = 270;   // clockwise from 45° through bottom to 135°
 
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
         dc.setPenWidth(2);

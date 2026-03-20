@@ -4,6 +4,7 @@
     <font id="MoonIcons" filename="moon.fnt" antialias="false" />
     <font id="Seg34Icons" filename="seg34-icons.fnt" antialias="false" />
     <font id="SurferIcons" filename="surfer-icons.fnt" antialias="false" />
+    <font id="HeartIcon" filename="heart-icon.fnt" antialias="false" />
     <font id="ClockSaira40" filename="clock-SairaCondensed-Bold-40.fnt" antialias="false" />
     <font id="ClockRajdhani40" filename="clock-Rajdhani-Bold-40.fnt" antialias="false" />
 </fonts>
