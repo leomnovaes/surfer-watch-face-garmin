@@ -434,12 +434,15 @@ Key findings from rasterization testing:
 - Note: Heart at (144,14), BPM text at (144,34), arc width 6px. Positions are `private static const` for easy tuning.
 
 ### Task 43: Experiment with clock fonts
-- [ ] Research available Garmin system fonts and custom BMFont options for the main time display
-- [ ] Current font: `FONT_NUMBER_HOT` — need alternatives that are same height but slightly wider
-- [ ] Generate comparison: render time with different fonts on the watch face for visual comparison
-- [ ] Candidates to try: `FONT_NUMBER_MILD`, `FONT_NUMBER_THAI_HOT`, custom BMFont from open source (e.g., DSEG, Roboto Condensed)
-- [ ] If custom font wins: rasterize using proven pipeline (design §5.1) and wire in
-- [ ] May need to adjust seconds font if new clock font looks out of place
+- [x] Researched and tested: Bebas Neue, Barlow Condensed Bold, Rajdhani Bold, Saira Condensed Bold, Oswald
+- [x] Rasterized at 40px using proven pipeline — matched FONT_NUMBER_HOT height
+- [x] Compared all on watch face via screenshots
+- [x] Finalists: Saira Condensed Bold (best fit, minimal layout change) and Rajdhani Bold (most stylish, needs layout tweaks)
+- [x] Wired Saira as default clock font, Rajdhani as alternative
+- [x] Added `ClockFont` setting (list: 0=Saira, 1=Rajdhani) to swap via Garmin Connect app
+- [x] Date format: month now uppercase (e.g., "Wed MAR 19")
+- [x] Code cleanup: removed all unused icon placeholder constants, optimized `getApp()`/`getDataManager()` to single call in `onUpdate()` passed to all section methods
+- Note: Font TTFs from Google Fonts (SIL OFL). Rasterized at 40px to match HOT digit height.
 
 ### Task 40: Sideload to physical watch
 - [ ] Build `.prg` file via `Monkey C: Build for Device`

@@ -4,5 +4,6 @@
     <property id="StormGlassApiKey" type="string"></property>
     <property id="HomeLat" type="string">0.0</property>
     <property id="HomeLng" type="string">0.0</property>
+    <property id="ClockFont" type="number">0</property>
 
 </properties>
