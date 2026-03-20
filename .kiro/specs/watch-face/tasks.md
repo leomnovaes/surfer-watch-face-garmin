@@ -517,16 +517,16 @@ Key findings from rasterization testing:
 - [x] Note which assets lack explicit licenses and link to sources
 
 ### Task 47: Write README.md
-- [ ] 47a: Header and project description — what it is, who it's for, "built by a surfer for his own wrist"
-- [ ] 47b: Screenshot — simulator screenshot of the watch face (user provides image, agent writes markdown)
-- [ ] 47c: Features list — concise bullet list of what the watch face shows
-- [ ] 47d: User Guide — annotated explanation of each element (time, tide, weather, stress arc, moon, seconds, etc.)
-- [ ] 47e: Setup instructions — how to get API keys (OWM, StormGlass) with links, how to configure via Garmin Connect app
-- [ ] 47f: Installation — Connect IQ store link + sideload instructions
-- [ ] 47g: Build from source — SDK, VS Code extension, F5 to run
-- [ ] 47h: Customize with AI — point agent at specs + steering files, explain the spec-driven pattern
-- [ ] 47i: Rasterization pipeline reference — how to add/change icons (link to design §5.1)
-- [ ] 47j: Credits, license, and repo info
+- [x] 47a: Header and project description — what it is, who it's for, "built by a surfer for his own wrist"
+- [x] 47b: Screenshot — simulator screenshot placeholder (user provides image)
+- [x] 47c: Features list — concise bullet list of what the watch face shows
+- [x] 47d: User Guide — annotated explanation of each element (time, tide, weather, stress arc, moon, seconds, etc.)
+- [x] 47e: Setup instructions — how to get API keys (OWM, StormGlass) with links, how to configure via Garmin Connect app
+- [x] 47f: Installation — Connect IQ store link + sideload instructions
+- [x] 47g: Build from source — SDK, VS Code extension, F5 to run
+- [x] 47h: Customize with AI — point agent at specs + steering files, explain the spec-driven pattern
+- [x] 47i: Rasterization pipeline reference — how to add/change icons (link to design §5.1)
+- [x] 47j: Credits, license, and repo info
 
 ### Task 48: Generate store assets and description
 - [ ] Take clean simulator screenshot for store listing (176x176)
