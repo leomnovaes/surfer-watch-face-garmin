@@ -419,16 +419,17 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         dc.drawArc(cx, cy, arcOuterR, Graphics.ARC_CLOCKWISE, arcStartAngle, arcEndAngle);
         dc.drawArc(cx, cy, arcInnerR, Graphics.ARC_CLOCKWISE, arcStartAngle, arcEndAngle);
 
-        // End caps — extend 1px past outer to close gap
+        // End caps — from inner border to just past outer border
+        var capInnerR = arcInnerR + 1;
         var capOuterR = arcOuterR + 1;
         var startRad = arcStartAngle * Math.PI / 180.0;
         var endRad = arcEndAngle * Math.PI / 180.0;
         dc.setPenWidth(2);
         dc.drawLine(
-            cx + (arcInnerR * Math.cos(startRad)).toNumber(), cy - (arcInnerR * Math.sin(startRad)).toNumber(),
+            cx + (capInnerR * Math.cos(startRad)).toNumber(), cy - (capInnerR * Math.sin(startRad)).toNumber(),
             cx + (capOuterR * Math.cos(startRad)).toNumber(), cy - (capOuterR * Math.sin(startRad)).toNumber());
         dc.drawLine(
-            cx + (arcInnerR * Math.cos(endRad)).toNumber(), cy - (arcInnerR * Math.sin(endRad)).toNumber(),
+            cx + (capInnerR * Math.cos(endRad)).toNumber(), cy - (capInnerR * Math.sin(endRad)).toNumber(),
             cx + (capOuterR * Math.cos(endRad)).toNumber(), cy - (capOuterR * Math.sin(endRad)).toNumber());
 
         // Fill: black portion proportional to stress %
