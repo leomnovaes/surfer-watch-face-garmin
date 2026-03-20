@@ -496,19 +496,28 @@ Key findings from rasterization testing:
 ### Task 47: Write README.md
 - [ ] Project description: what it is, who it's for
 - [ ] Screenshot of the watch face on the simulator
-- [ ] Features list
+- [ ] User Guide section:
+  - Annotated screenshot explaining each element (time, tide, weather, stress arc, etc.)
+  - What each icon means (weather conditions, tide high/low, moon phases)
+  - How stress arc works (fills clockwise with stress level)
+  - How seconds show/hide (automatic on wrist raise)
+  - How to get API keys (OWM, StormGlass) with links
+  - How to configure settings via Garmin Connect app
 - [ ] How to install (Connect IQ store link + sideload instructions)
-- [ ] How to configure (API keys, home location, clock font)
 - [ ] How to build from source (SDK, VS Code, F5)
 - [ ] How to customize with AI (point agent at specs + steering files)
 - [ ] Rasterization pipeline reference (design §5.1)
 - [ ] Credits and license info
 - [ ] Note: "Built by a surfer for his own wrist, spec-driven with AI assistance"
 
-### Task 48: Generate store assets
+### Task 48: Generate store assets and description
 - [ ] Take clean simulator screenshot for store listing (176x176)
 - [ ] Create cover image (400x300) with watch face preview
-- [ ] Write store description (features, API key requirements, open source link)
+- [ ] Write store description:
+  - Brief feature list
+  - Setup instructions (API keys, home location)
+  - Link to GitHub for full user guide and source code
+  - Note: free, open source, no PRO version
 
 ### Task 49: Publish to Connect IQ store (public)
 - [ ] Change beta listing to public
