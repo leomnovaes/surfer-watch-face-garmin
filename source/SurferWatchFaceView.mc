@@ -28,11 +28,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     // --- Layout constants — Middle Section ---
     private static const MID_Y = 76;
-    private static const MID_LEFT_X = 26;
+    private static const MID_LEFT_X = 22;
     private static const MID_CENTER_X = 88;
     // Right column 2x2 grid
-    private static const MID_RIGHT_LEFT_X = 128;
-    private static const MID_RIGHT_RIGHT_X = 170;
+    private static const MID_RIGHT_LEFT_X = 132;
+    private static const MID_RIGHT_RIGHT_X = 174;
     private static const MID_RIGHT_TOP_Y = MID_Y - 2;
     private static const MID_RIGHT_BOTTOM_Y = MID_Y + 18;
     private static const MID_ICON_Y = MID_Y;
@@ -44,11 +44,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private static const DIV_RIGHT_X = 160;
 
     // --- Layout constants — Date Row ---
-    private static const DATE_Y = 112;
+    private static const DATE_Y = 114;
     private static const DATE_TEXT_X = 88;
 
     // --- Layout constants — Weather Widget ---
-    private static const WX_Y = 138;
+    private static const WX_Y = 139;
     private static const WX_Y_EDGE = 130;
     private static const WX_TEXT_Y = WX_Y + 18;
     private static const WX_TEXT_Y_EDGE = WX_Y_EDGE + 18;
@@ -62,6 +62,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private var moonIconsFont = null;
     private var seg34IconsFont = null;
     private var surferIconsFont = null;
+
+    // --- Test clock fonts (temporary) ---
+    private var clockSaira40 = null;
+    private var clockRajdhani40 = null;
 
     // --- Sleep state: true when watch is in low power mode (no wrist gesture) ---
     private var isSleeping = false;
@@ -91,6 +95,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         moonIconsFont = WatchUi.loadResource(Rez.Fonts.MoonIcons);
         seg34IconsFont = WatchUi.loadResource(Rez.Fonts.Seg34Icons);
         surferIconsFont = WatchUi.loadResource(Rez.Fonts.SurferIcons);
+        clockSaira40 = WatchUi.loadResource(Rez.Fonts.ClockSaira40);
+        clockRajdhani40 = WatchUi.loadResource(Rez.Fonts.ClockRajdhani40);
     }
 
     function onShow() as Void {
@@ -337,7 +343,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private function drawTideInfo(dc as Dc, x as Number, y as Number, isHigh as Boolean, time as String, height as String) as Void {
         drawIconTide(dc, x, y, isHigh);
         var iconWidth = dc.getTextWidthInPixels(IC_TIDE_HIGH, Graphics.FONT_XTINY);
-        drawTextAligned(dc, x + iconWidth + SPACER-2, y, Graphics.FONT_XTINY, time, Graphics.TEXT_JUSTIFY_LEFT);
+        drawTextAligned(dc, x + iconWidth + SPACER-4, y, Graphics.FONT_XTINY, time, Graphics.TEXT_JUSTIFY_LEFT);
         drawTextAligned(dc, x + 105, y, Graphics.FONT_XTINY, height, Graphics.TEXT_JUSTIFY_RIGHT);
     }
 
@@ -471,7 +477,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
         // Row 2 — Bluetooth + Notifications (live)
         if (dm != null && dm.bluetoothConnected) {
-            drawIconBluetooth(dc, TOP_COL1_X+32, TOP_ROW2_Y-2);
+            drawIconBluetooth(dc, TOP_COL1_X+20, TOP_ROW2_Y-2);
         }
         var notifCount = dm != null ? dm.notificationCount : 0;
         drawNotificationWithCount(dc, TOP_COL2_X-6, TOP_ROW2_Y, notifCount);
@@ -535,7 +541,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             if (hours == 0) { hours = 12; }
         }
         var timeString = hours.toString() + ":" + clockTime.min.format("%02d");
-        dc.drawText(MID_CENTER_X, MID_Y + 10, Graphics.FONT_NUMBER_HOT, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(MID_CENTER_X, MID_Y + 14, clockSaira40, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
         // Right column — 2x2 grid: moon, AM/PM, seconds
         var seconds = clockTime.sec.format("%02d");
@@ -546,7 +552,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         // Live date: "Wed Mar 18"
         var now = Time.now();
         var info = Gregorian.info(now, Time.FORMAT_MEDIUM);
-        var dateString = Lang.format("$1$ $2$ $3$", [info.day_of_week, info.month, info.day]);
+        var dateString = Lang.format("$1$ $2$ $3$", [info.day_of_week, info.month.toUpper(), info.day]);
         drawTextAligned(dc, DATE_TEXT_X, DATE_Y, Graphics.FONT_XTINY, dateString, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
