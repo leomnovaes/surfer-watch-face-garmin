@@ -54,6 +54,18 @@ surfer-watch-face-instinct-2x-solar/
 - Placeholder values are used until a feature is fully implemented per its task
 - Any change to features, behavior, data sources, refresh rates, or user-facing functionality must also update `README.md` to keep user documentation in sync
 
+## Release Checklist (for every user-facing change)
+After any code change that affects behavior or visuals:
+1. Update spec files (requirements.md, design.md, tasks.md) to reflect the change
+2. Update `README.md` (features, user guide, data refresh table, etc.)
+3. Update `store-description.txt` if the change affects the store listing
+4. Regenerate `screenshot.png` (user takes new simulator screenshot)
+5. Regenerate `screenshot-annotated.png` (run `annotate.py` with the new screenshot)
+6. Regenerate `store-cover.png` (run `generate-cover.py` with the new screenshot)
+7. Add entry to `CHANGELOG.md` describing the change
+8. Build new `.iq` package via `Monkey C: Export Project`
+9. Upload to Connect IQ developer dashboard (new package + updated assets if visuals changed)
+
 ## Session Continuity
 - Before ending any session, mark completed tasks `[x]` and in-progress tasks `[-]` in `tasks.md`
 - At the start of a new session, read `tasks.md` to find the last completed task and resume from the next one
