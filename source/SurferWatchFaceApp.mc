@@ -26,10 +26,14 @@ class SurferWatchFaceApp extends Application.AppBase {
 
     // onStart() is called on application start up — runs in BOTH foreground and background
     function onStart(state as Dictionary?) as Void {
-        // Register background temporal event — trigger immediately on first start,
-        // then re-registered at 5-min interval in onBackgroundData()
+        // Register background temporal event
+        // Try immediate trigger first; fall back to 5-min if system enforces minimum
         if (Background has :registerForTemporalEvent) {
-            Background.registerForTemporalEvent(Time.now());
+            try {
+                Background.registerForTemporalEvent(Time.now());
+            } catch (e) {
+                Background.registerForTemporalEvent(new Time.Duration(5 * 60));
+            }
         }
     }
 
