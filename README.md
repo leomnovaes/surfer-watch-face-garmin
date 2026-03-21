@@ -20,9 +20,9 @@ Built by a surfer for his own wrist, spec-driven with AI assistance. The entire 
 - **Battery** — percentage + proportional fill bar icon
 - **Notifications** — count + speech bubble icon
 - **Tide** — next high/low time, direction icon, predicted height (via StormGlass API, MLLW datum)
-- **Sunrise/Sunset** — next event time with directional icon (via OpenWeatherMap API)
-- **Weather** — condition icon with day/night variants, temperature (via OpenWeatherMap API)
-- **Wind** — procedural arrow rotated to exact degree, speed in kph/mph (via OpenWeatherMap API)
+- **Sunrise/Sunset** — next event time with directional icon. Garmin mode: computed locally from GPS + date. OWM mode: from API response.
+- **Weather** — condition icon with day/night variants, temperature. Default: Garmin built-in (zero config). Optional: OpenWeatherMap 2.5 (free, no credit card)
+- **Wind** — procedural arrow rotated to exact degree, speed with configurable unit (auto/km/h/knots/mph/m/s)
 - **Precipitation** — umbrella icon + chance % (from Garmin built-in weather)
 - **Moon phase** — 28-phase icon computed locally from synodic period
 
@@ -78,38 +78,48 @@ Seconds are hidden by default to save battery. They appear automatically when yo
 | Time, battery, notifications, BT | Watch sensors | Every second |
 | Heart rate | Optical HR sensor | ~Every 15s at rest, up to 1s on wrist movement |
 | Stress | Garmin stress algorithm | ~Every 3 minutes |
-| Weather, wind, sunrise/sunset | OpenWeatherMap API | Every 5 min or 5km move |
+| Weather, wind, sunrise/sunset | Garmin built-in (default) | Every second (cached by OS, refreshed ~hourly via phone) |
+| Weather, wind, sunrise/sunset | OpenWeatherMap 2.5 (optional) | Every 5 min via background fetch |
 | Precipitation | Garmin built-in weather | Every second (cached by OS) |
 | Tide | StormGlass API | Once per day or 50km move |
 | Moon phase | Local computation | Every second (cheap math) |
 
 ## Setup
 
-### 1. Get API Keys
+### Quick Start (no API keys needed)
 
-**OpenWeatherMap** (weather, wind, sunrise/sunset):
-1. Sign up at [openweathermap.org](https://openweathermap.org/api)
-2. Subscribe to the **One Call API 3.0** (free tier: 1,000 calls/day)
-3. Copy your API key
+The watch face works out of the box using Garmin's built-in weather data. Just install and go — weather, wind, temperature, and precipitation are provided by your phone's Garmin Connect app.
+
+Sunrise/sunset times are computed locally from your GPS position.
+
+### Optional: OpenWeatherMap (more frequent updates)
+
+If you want weather data refreshed every 5 minutes instead of relying on Garmin's ~hourly updates:
+
+1. Sign up at [openweathermap.org](https://openweathermap.org/api) (free, no credit card)
+2. Copy your API key
+3. In Garmin Connect app settings: set Weather Source to "OpenWeatherMap" and paste your key
+
+Note: OWM 3.0 (One Call) API keys also work — the watch face uses the 2.5 endpoint which is included in all OWM accounts.
+
+### Optional: StormGlass (tide data)
 
 **StormGlass** (tide data):
-1. Sign up at [stormglass.io](https://stormglass.io/)
-2. Get your API key from the dashboard (free tier: 10 calls/day)
-3. Copy your API key
+1. Sign up at [stormglass.io](https://stormglass.io/) (free tier: 10 calls/day)
+2. Copy your API key
+3. Paste into StormGlass API Key setting
 
-### 2. Configure the Watch Face
-
-Open the **Garmin Connect** app on your phone → Devices → Instinct 2X Solar → Watch Faces → Shore Watch → Settings:
+### Settings Reference
 
 | Setting | Description |
 |---------|-------------|
-| OWM API Key | Your OpenWeatherMap API key |
-| StormGlass API Key | Your StormGlass API key |
+| Clock Font | 0 = Saira Condensed Bold (default), 1 = Rajdhani Bold |
+| Wind Speed Unit | 0 = Auto (device default), 1 = km/h, 2 = knots, 3 = mph, 4 = m/s |
+| Weather Source | 0 = Garmin built-in (default), 1 = OpenWeatherMap |
+| OWM API Key | Your OpenWeatherMap API key (only needed if Weather Source = OWM) |
+| StormGlass API Key | Your StormGlass API key (for tide data) |
 | Home Latitude | Fallback latitude if GPS is unavailable (e.g., `33.8688`) |
 | Home Longitude | Fallback longitude if GPS is unavailable (e.g., `151.2093`) |
-| Clock Font | 0 = Saira Condensed Bold (default), 1 = Rajdhani Bold |
-
-Home coordinates are optional — the watch uses GPS when available. Set them if you want tide/weather data when indoors without a GPS fix.
 
 ## Installation
 

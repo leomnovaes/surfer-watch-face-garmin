@@ -29,12 +29,21 @@
 
 ## External APIs
 
-### OpenWeatherMap One Call API 3.0
-- Endpoint: `GET https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={key}&units={metric|imperial}&exclude=minutely,alerts`
-- Returns: current weather, hourly (48h), daily (8 days) in one call
-- Fields used: `current.temp`, `current.weather[0].id`, `current.wind_speed`, `current.wind_deg`, `current.sunrise`, `current.sunset`, `hourly[0].pop`, `daily[0].moon_phase`
-- Rate limit: max 1 request per 5 minutes; refresh also triggered if GPS moves >5km
-- Free tier: 1000 calls/day
+### Weather Sources (tiered)
+The watch face supports two weather sources, configurable via `WeatherSource` setting:
+
+**Garmin Built-in (default, WeatherSource=0)**
+- Reads from `Weather.getCurrentConditions()` in the main process — no background HTTP needed
+- Fields: temperature, condition (Garmin codes 0-53), windSpeed, windBearing, precipitationChance
+- Sunrise/sunset computed locally via solar position algorithm (Weather.getSunrise requires CIQ 4.1, we target 3.4)
+- Updates: cached by OS, refreshed ~hourly via phone connection
+
+**OpenWeatherMap 2.5 (optional, WeatherSource=1)**
+- Endpoint: `GET https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={key}&units={metric|imperial}`
+- Returns: current weather in a single compact response
+- Fields used: `main.temp`, `weather[0].id`, `wind.speed`, `wind.deg`, `sys.sunrise`, `sys.sunset`
+- Rate limit: fetches on every background temporal event (~every 5 min). Free tier: 1M calls/month, no credit card
+- OWM 3.0 API keys also work with 2.5 — same account, no extra setup
 
 ### StormGlass Tide Extremes API
 - Endpoint: `GET https://api.stormglass.io/v2/tide/extremes/point?lat={lat}&lng={lng}&start={unix}&end={unix}&datum=MLLW`

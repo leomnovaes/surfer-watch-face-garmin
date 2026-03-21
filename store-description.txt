@@ -2,10 +2,12 @@ Shore Watch — a surfer-focused watch face for the Garmin Instinct 2X Solar.
 
 Tide times, weather, wind, moon phase, heart rate, stress, and more — all on one screen, no menus.
 
+WORKS OUT OF THE BOX — no API keys required for weather. Uses Garmin's built-in weather data by default.
+
 FEATURES
 • Next tide time, direction (high/low), and predicted height via StormGlass API
-• Weather condition with day/night icons and temperature via OpenWeatherMap API
-• Wind direction arrow (rotated to exact degree) and speed
+• Weather condition with day/night icons and temperature
+• Wind direction arrow (rotated to exact degree) and speed (configurable: km/h, knots, mph, m/s)
 • Precipitation chance
 • Sunrise/sunset with next event time
 • Moon phase (28 phases, computed locally)
@@ -14,15 +16,18 @@ FEATURES
 • Custom clock font (switchable via settings)
 • Seconds on wrist raise
 
-SETUP
-This watch face requires two free API keys:
-1. OpenWeatherMap — sign up at openweathermap.org, subscribe to One Call API 3.0 (free: 1,000 calls/day)
-2. StormGlass — sign up at stormglass.io (free: 10 calls/day)
+WEATHER SOURCES
+• Default: Garmin built-in weather (zero config, updates via phone)
+• Optional: OpenWeatherMap 2.5 (free, no credit card, updates every 5 min)
 
-Enter your API keys in the watch face settings via the Garmin Connect app. Optionally set Home Latitude/Longitude as a GPS fallback for indoor use.
+SETUP
+• Weather works immediately — no setup needed
+• For tide data: get a free StormGlass API key at stormglass.io
+• For OWM weather: get a free key at openweathermap.org (optional)
+• Enter keys in watch face settings via Garmin Connect app
 
 OPEN SOURCE
-Free, no PRO version, no ads. Full source code, specs, and documentation available on GitHub:
+Free, no PRO version, no ads. Full source code, specs, and documentation:
 https://github.com/leomnovaes/surfer-watch-face-garmin
 
 Built by a surfer for his own wrist, spec-driven with AI assistance.
