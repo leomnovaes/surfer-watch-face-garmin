@@ -529,9 +529,9 @@ Key findings from rasterization testing:
 - [x] 47j: Credits, license, and repo info
 
 ### Task 48: Generate store assets and description
-- [ ] Take clean simulator screenshot for store listing (176x176)
-- [ ] Create cover image (400x300) with watch face preview
-- [ ] Write store description:
+- [x] Take clean simulator screenshot for store listing (176x176)
+- [x] Create cover image (400x300) with watch face preview
+- [x] Write store description:
   - Brief feature list
   - Setup instructions (API keys, home location)
   - Link to GitHub for full user guide and source code

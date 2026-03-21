@@ -13,3 +13,4 @@ source/internal-mir/
 *-settings.json
 .DS_Store
 annotate.py
+generate-cover.py
