@@ -1,5 +1,19 @@
 <settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
 
+    <setting propertyKey="@Properties.ClockFont" title="@Strings.ClockFontTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.FontSaira</listEntry>
+            <listEntry value="1">@Strings.FontRajdhani</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.WeatherSource" title="@Strings.WeatherSourceTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.WeatherSourceGarmin</listEntry>
+            <listEntry value="1">@Strings.WeatherSourceOWM</listEntry>
+        </settingConfig>
+    </setting>
+
     <setting propertyKey="@Properties.OWMApiKey" title="@Strings.OWMApiKeyTitle">
         <settingConfig type="alphaNumeric"/>
     </setting>
@@ -14,20 +28,6 @@
 
     <setting propertyKey="@Properties.HomeLng" title="@Strings.HomeLngTitle">
         <settingConfig type="alphaNumeric"/>
-    </setting>
-
-    <setting propertyKey="@Properties.ClockFont" title="@Strings.ClockFontTitle">
-        <settingConfig type="list">
-            <listEntry value="0">@Strings.FontSaira</listEntry>
-            <listEntry value="1">@Strings.FontRajdhani</listEntry>
-        </settingConfig>
-    </setting>
-
-    <setting propertyKey="@Properties.WeatherSource" title="@Strings.WeatherSourceTitle">
-        <settingConfig type="list">
-            <listEntry value="0">@Strings.WeatherSourceGarmin</listEntry>
-            <listEntry value="1">@Strings.WeatherSourceOWM</listEntry>
-        </settingConfig>
     </setting>
 
 </settings>
