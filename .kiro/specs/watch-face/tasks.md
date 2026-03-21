@@ -627,3 +627,12 @@ Key findings from rasterization testing:
 - [ ] Regenerate `store-cover.png` (run `generate-cover.py`)
 - [ ] Build `.iq` package
 - [ ] Upload to Connect IQ developer dashboard
+
+### Task 58: Spec cleanup — make specs reproducible from scratch
+- [ ] Review and rewrite requirements.md as a clean current-state document (remove historical notes, "was changed from X to Y" language, make it read as if written fresh)
+- [ ] Review and rewrite design.md as a clean current-state document (remove abandoned approaches, historical experiments, keep only the final architecture)
+- [ ] Review tasks.md — ensure every completed task accurately describes what was built (not the journey to get there)
+- [ ] Remove references to Crystal Face, Segment34mkII, and other repos that were explored but not used in the final implementation
+- [ ] Verify that an agent given only the steering files + spec files + source code could understand the entire project without conversation history
+- [ ] Test: read the specs cold and check if any section is ambiguous, contradictory, or references something that no longer exists
+- Note: The goal is that someone can fork the repo, point an AI agent at `.kiro/steering/` and `.kiro/specs/watch-face/`, and the agent can either reproduce the watch face from scratch or modify it confidently.
