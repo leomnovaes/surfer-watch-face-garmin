@@ -42,7 +42,7 @@ surfer-watch-face-instinct-2x-solar/
 - `SurferWatchFaceView` owns all rendering — single `onUpdate()` draws everything
 - `DataManager` is a singleton accessed via `(Application.getApp() as SurferWatchFaceApp).getDataManager()`
 - ALL HTTP requests run in `SurferWatchFaceDelegate` (Background.ServiceDelegate) via `onTemporalEvent()` — this is a hard platform requirement for watch faces
-- Background fires at most every 5 minutes; refresh rate limits (OWM 30min, StormGlass daily) enforced via timestamps in `Application.Storage`
+- Background fires at most every 5 minutes; refresh rate limits (OWM 5min, StormGlass daily) enforced via timestamps in `Application.Storage`
 - Data flows: background → `Background.exit(data)` → `onBackgroundData(data)` → DataManager → `onUpdate()` renders
 - All drawing uses absolute pixel coordinates based on the 176x176 grid
 - Screen layout constants defined at top of `SurferWatchFaceView.mc` (e.g., `TOP_SECTION_Y = 10`)

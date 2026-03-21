@@ -67,9 +67,9 @@ A surfer-focused watch face for the Garmin Instinct 2X Solar displaying time, fi
   - Precipitation: sourced from `Toybox.Weather.getCurrentConditions().precipitationChance` (Garmin built-in current weather)
   - Moon phase: calculated locally from current date using synodic period in `DataManager.computeMoonPhase()`
 - The system SHALL refresh OWM data when phone connection is available AND at least one of:
-  - At least 30 minutes have elapsed since the last successful fetch
+  - At least 5 minutes have elapsed since the last successful fetch
   - The GPS position has changed by more than 5km since the last fetch
-- The system SHALL NOT call OWM more than once per 30 minutes under any circumstances
+- The system SHALL NOT call OWM more than once per 5 minutes under any circumstances
 - The system SHALL cache the last successful OWM response in memory
 - When OWM data is unavailable or stale (>2 hours old), the system SHALL display `--` for affected fields
 
@@ -146,6 +146,6 @@ A surfer-focused watch face for the Garmin Instinct 2X Solar displaying time, fi
 - The system SHALL persist StormGlass data to `Application.Storage`
 
 ### 5.3 API Rate Limits
-- OWM: maximum 1 request per 30 minutes (free tier: 1000/day)
+- OWM: maximum 1 request per 5 minutes (free tier: 1000/day; at 5-min intervals ≈ 288/day max)
 - StormGlass: maximum 1 request per calendar day (free tier: 10/day)
 - The system SHALL track `meta.requestCount` and `meta.dailyQuota` from StormGlass responses and cease requests if quota is exhausted

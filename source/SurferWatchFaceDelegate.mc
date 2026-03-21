@@ -121,7 +121,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             owmNeeded = true;
         } else {
             var now = Time.now().value();
-            if (now - owmFetchedAt >= 30 * 60) {
+            if (now - owmFetchedAt >= 5 * 60) {
                 owmNeeded = true;
             }
             // Distance check: moved >5km since last fetch

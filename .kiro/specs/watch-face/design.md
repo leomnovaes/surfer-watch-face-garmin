@@ -262,7 +262,7 @@ Background.ServiceDelegate.onTemporalEvent() (background process, every 5 min)
 
 ### 4.1 OWM Refresh Conditions (any one triggers fetch)
 1. `owmFetchedAt == null` (never fetched)
-2. `now - owmFetchedAt >= 30 * 60` (30 minutes elapsed)
+2. `now - owmFetchedAt >= 5 * 60` (5 minutes elapsed)
 3. `distanceBetween(lastKnownLat, lastKnownLng, owmFetchLat, owmFetchLon) > 5000` (moved >5km)
 
 Guard: skip if no phone connection (`bluetoothConnected == false`)

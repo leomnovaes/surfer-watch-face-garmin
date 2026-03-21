@@ -78,7 +78,7 @@ Seconds are hidden by default to save battery. They appear automatically when yo
 | Time, battery, notifications, BT | Watch sensors | Every second |
 | Heart rate | Optical HR sensor | ~Every 15s at rest, up to 1s on wrist movement |
 | Stress | Garmin stress algorithm | ~Every 3 minutes |
-| Weather, wind, sunrise/sunset | OpenWeatherMap API | Every 30 min or 5km move |
+| Weather, wind, sunrise/sunset | OpenWeatherMap API | Every 5 min or 5km move |
 | Precipitation | Garmin built-in weather | Every second (cached by OS) |
 | Tide | StormGlass API | Once per day or 50km move |
 | Moon phase | Local computation | Every second (cheap math) |

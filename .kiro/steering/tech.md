@@ -33,7 +33,7 @@
 - Endpoint: `GET https://api.openweathermap.org/data/3.0/onecall?lat={lat}&lon={lon}&appid={key}&units={metric|imperial}&exclude=minutely,alerts`
 - Returns: current weather, hourly (48h), daily (8 days) in one call
 - Fields used: `current.temp`, `current.weather[0].id`, `current.wind_speed`, `current.wind_deg`, `current.sunrise`, `current.sunset`, `hourly[0].pop`, `daily[0].moon_phase`
-- Rate limit: max 1 request per 30 minutes; refresh also triggered if GPS moves >5km
+- Rate limit: max 1 request per 5 minutes; refresh also triggered if GPS moves >5km
 - Free tier: 1000 calls/day
 
 ### StormGlass Tide Extremes API
@@ -91,7 +91,7 @@ This means:
 - `WeatherService` and `TideService` live in `ServiceDelegate.mc`, not in the main process
 - All classes/functions used in the background MUST be annotated with `:background`
 - Minimum refresh interval is 5 minutes (system enforced)
-- OWM 30-minute and StormGlass daily limits are enforced by storing last-fetch timestamps in `Application.Storage`
+- OWM 5-minute and StormGlass daily limits are enforced by storing last-fetch timestamps in `Application.Storage`
 - Background process has its own memory budget (~28KB on Instinct 2X) — keep response parsing minimal
 
 ### App Settings (Connect IQ Configurable Properties)
