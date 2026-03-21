@@ -52,6 +52,7 @@ surfer-watch-face-instinct-2x-solar/
 - `tasks.md` is the single source of truth for what has been built and what remains
 - Each task maps to one or more acceptance criteria in `requirements.md`
 - Placeholder values are used until a feature is fully implemented per its task
+- Any change to features, behavior, data sources, refresh rates, or user-facing functionality must also update `README.md` to keep user documentation in sync
 
 ## Session Continuity
 - Before ending any session, mark completed tasks `[x]` and in-progress tasks `[-]` in `tasks.md`
