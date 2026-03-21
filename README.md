@@ -132,7 +132,7 @@ Search for **"Shore Watch"** in the [Connect IQ Store](https://apps.garmin.com/)
 
 - [Connect IQ SDK](https://developer.garmin.com/connect-iq/sdk/) (9.1.0 or later)
 - [VS Code](https://code.visualstudio.com/) with the [Monkey C extension](https://marketplace.visualstudio.com/items?itemName=garmin.monkey-c)
-- Java 17 (e.g., Amazon Corretto)
+- Java 17
 
 ### Build and Run
 
@@ -162,6 +162,8 @@ This repo is designed to be a starting point for your own watch face. The spec-d
 The agent can modify the specs first, then implement against them. This is the same workflow used to build the original watch face.
 
 ### What you can customize
+
+You have the full source — you can change anything. Here are some easy starting points:
 
 - Layout positions (all coordinates are constants at the top of `SurferWatchFaceView.mc`)
 - Clock font (add your own via the rasterization pipeline)
