@@ -12,3 +12,4 @@ source/internal-mir/
 *.debug.xml
 *-settings.json
 .DS_Store
+annotate.py

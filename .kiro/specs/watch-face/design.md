@@ -40,7 +40,7 @@ Row spacing must exceed the font's nominal size to avoid overlap. For `FONT_XTIN
 ```
 ┌─────────────────────────────────────┐  y=0
 │  [BAT%] [BAT_ICON]    ┌──────────┐  │  y=12  TOP SECTION
-│  [NOTIF_COUNT] [BELL] │  ♥       │  │  y=24
+│  [NOTIF_COUNT] [💬]   │  ♥       │  │  y=24
 │  [↑↓][TIDE_TIME] [HT] │  [BPM]   │  │  y=36
 ├───────────────────────│          │  │  y=48  DIVIDER
 │ [☀↑↓]  [HH:MM]  [🌙%] │          │  │  y=60  MIDDLE SECTION

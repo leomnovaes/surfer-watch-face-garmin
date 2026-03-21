@@ -16,6 +16,7 @@ A surfer-focused watch face for the Garmin Instinct 2X Solar displaying time, fi
 - The system SHALL display battery percentage and a dynamic battery icon on the first row
 - The battery icon SHALL visually reflect charge level (full, high, medium, low, critical)
 - The system SHALL display notification count and a notification icon on the second row
+- The system SHALL display a Bluetooth connectivity icon on the second row (visible when phone is paired and connected)
 - The system SHALL display tide information on the third row:
   - Left column: a directional icon (↑ for next high tide, ↓ for next low tide) and the time of the next tide event
   - Right column: predicted height of the next tide event in meters or feet (MLLW datum, per device unit setting)
@@ -28,7 +29,6 @@ A surfer-focused watch face for the Garmin Instinct 2X Solar displaying time, fi
 
 ### 1.4 Date Row
 - The system SHALL display the current date as: `DayOfWeek Mon DD` (e.g., `Wed Mar 18`)
-- The system SHALL display a Bluetooth connectivity icon to the left of the date
 
 ### 1.5 Weather Widget
 - The system SHALL display three columns:

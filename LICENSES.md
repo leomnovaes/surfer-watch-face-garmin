@@ -17,7 +17,7 @@ This project uses the following third-party assets and libraries.
 - **Files:** `resources/fonts/surfer-icons.*`
 
 ### Crystal Face Icons
-- **Used for:** Notification bell, sunrise/sunset icons
+- **Used for:** Notification icon (speech bubble), sunrise/sunset icons
 - **License:** Code is GPL v3; icons are custom pixel art (no separate license specified)
 - **Source:** https://github.com/warmsound/crystal-face
 - **Files:** `resources/fonts/crystal-icons.*`

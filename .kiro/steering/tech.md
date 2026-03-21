@@ -140,7 +140,7 @@ Icons use a custom bitmap font (`.fnt` + `.png`) generated from the **Weather Ic
 
 ### What Uses Fonts vs Code
 - **Font glyphs (weather-icons.fnt):** weather conditions, moon phases, tide arrows, sunrise/sunset, wind direction, umbrella
-- **Drawn in code (like battery):** heart (HR circle), bluetooth icon, notification bell
+- **Drawn in code (like battery):** heart (HR circle), bluetooth icon, notification icon
 - **BMP files in `resources/drawables/`:** generated earlier from Weather Icons TTF — will be removed once font wiring is complete in Tasks 29-35
 
 ### Weather Icons Unicode Codepoints Used

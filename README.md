@@ -13,10 +13,12 @@ Built by a surfer for his own wrist, spec-driven with AI assistance. The entire 
 ## Features
 
 - **Time** — large custom font (Saira Condensed Bold or Rajdhani Bold, switchable via settings), seconds on wrist raise
-- **Date** — day of week + month + day, Bluetooth icon
-- **Heart rate** — live BPM with heart icon, stress arc gauge around the HR circle
+- **Date** — day of week + month + day
+- **Bluetooth** — connectivity icon, visible when phone is paired and connected
+- **Heart rate** — BPM with heart icon. Sampled by the optical sensor every ~15 seconds at rest; up to every second during wrist movement (high-power mode)
+- **Stress** — arc gauge around the HR circle, fills clockwise as stress increases (0-100%). Updated every ~3 minutes from Garmin's stress algorithm
 - **Battery** — percentage + proportional fill bar icon
-- **Notifications** — count + bell icon
+- **Notifications** — count + speech bubble icon
 - **Tide** — next high/low time, direction icon, predicted height (via StormGlass API, MLLW datum)
 - **Sunrise/Sunset** — next event time with directional icon (via OpenWeatherMap API)
 - **Weather** — condition icon with day/night variants, temperature (via OpenWeatherMap API)
@@ -28,11 +30,13 @@ Built by a surfer for his own wrist, spec-driven with AI assistance. The entire 
 
 ### Screen Layout
 
+![Annotated watch face](screenshot-annotated.png)
+
 The watch face is divided into four zones:
 
 **Top section** (left of HR circle)
 - Row 1: Battery percentage + fill bar icon
-- Row 2: Bluetooth icon (when connected) + notification count + bell icon
+- Row 2: Bluetooth icon (visible when phone is connected) + notification count + speech bubble icon
 - Row 3: Tide direction icon (waves-up for high, waves-down for low) + next tide time + predicted height
 
 **HR circle** (top-right, aligned with the physical sub-screen)
@@ -71,8 +75,9 @@ Seconds are hidden by default to save battery. They appear automatically when yo
 
 | Data | Source | Refresh |
 |------|--------|---------|
-| Time, HR, battery, notifications, BT | Watch sensors | Every second |
-| Stress | Watch sensor history | ~Every 3 minutes |
+| Time, battery, notifications, BT | Watch sensors | Every second |
+| Heart rate | Optical HR sensor | ~Every 15s at rest, up to 1s on wrist movement |
+| Stress | Garmin stress algorithm | ~Every 3 minutes |
 | Weather, wind, sunrise/sunset | OpenWeatherMap API | Every 30 min or 5km move |
 | Precipitation | Garmin built-in weather | Every second (cached by OS) |
 | Tide | StormGlass API | Once per day or 50km move |
