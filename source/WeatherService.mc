@@ -18,17 +18,16 @@ class WeatherService {
         _callback = callback;
     }
 
-    // Builds OWM One Call 3.0 URL, makes async request
+    // Builds OWM 2.5 Current Weather URL, makes async request
     function fetch(lat as Float, lon as Float, apiKey as String, units as String) as Void {
         _lat = lat;
         _lon = lon;
 
-        var url = "https://api.openweathermap.org/data/3.0/onecall"
+        var url = "https://api.openweathermap.org/data/2.5/weather"
             + "?lat=" + lat.toString()
             + "&lon=" + lon.toString()
             + "&appid=" + apiKey
-            + "&units=" + units
-            + "&exclude=minutely,hourly,daily,alerts";
+            + "&units=" + units;
 
         var options = {
             :method => Communications.HTTP_REQUEST_METHOD_GET,
@@ -38,7 +37,7 @@ class WeatherService {
         Communications.makeWebRequest(url, null, options, method(:onOWMResponse));
     }
 
-    // Callback for OWM response
+    // Callback for OWM 2.5 response
     function onOWMResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
         if (responseCode != 200 || data == null || !(data instanceof Dictionary)) {
             _callback.invoke(null);
@@ -47,23 +46,33 @@ class WeatherService {
 
         var weatherDict = {} as Dictionary<String, Application.PropertyValueType>;
 
-        // Parse current weather fields
-        var current = data["current"];
-        if (current != null && current instanceof Dictionary) {
-            weatherDict["temp"] = current["temp"] as Application.PropertyValueType;
-            weatherDict["windSpeed"] = current["wind_speed"] as Application.PropertyValueType;
-            weatherDict["windDeg"] = current["wind_deg"] as Application.PropertyValueType;
-            weatherDict["sunrise"] = current["sunrise"] as Application.PropertyValueType;
-            weatherDict["sunset"] = current["sunset"] as Application.PropertyValueType;
+        // Parse main fields
+        var main = data["main"];
+        if (main != null && main instanceof Dictionary) {
+            weatherDict["temp"] = main["temp"] as Application.PropertyValueType;
+        }
 
-            // current.weather[0].id
-            var weatherArr = current["weather"];
-            if (weatherArr != null && weatherArr instanceof Array && weatherArr.size() > 0) {
-                var firstWeather = weatherArr[0];
-                if (firstWeather != null && firstWeather instanceof Dictionary) {
-                    weatherDict["conditionId"] = firstWeather["id"] as Application.PropertyValueType;
-                }
+        // Parse weather condition
+        var weatherArr = data["weather"];
+        if (weatherArr != null && weatherArr instanceof Array && weatherArr.size() > 0) {
+            var firstWeather = weatherArr[0];
+            if (firstWeather != null && firstWeather instanceof Dictionary) {
+                weatherDict["conditionId"] = firstWeather["id"] as Application.PropertyValueType;
             }
+        }
+
+        // Parse wind
+        var wind = data["wind"];
+        if (wind != null && wind instanceof Dictionary) {
+            weatherDict["windSpeed"] = wind["speed"] as Application.PropertyValueType;
+            weatherDict["windDeg"] = wind["deg"] as Application.PropertyValueType;
+        }
+
+        // Parse sunrise/sunset from sys
+        var sys = data["sys"];
+        if (sys != null && sys instanceof Dictionary) {
+            weatherDict["sunrise"] = sys["sunrise"] as Application.PropertyValueType;
+            weatherDict["sunset"] = sys["sunset"] as Application.PropertyValueType;
         }
 
         // Write fetch metadata to Application.Storage on success

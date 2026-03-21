@@ -26,9 +26,10 @@ class SurferWatchFaceApp extends Application.AppBase {
 
     // onStart() is called on application start up — runs in BOTH foreground and background
     function onStart(state as Dictionary?) as Void {
-        // Register background temporal event — fires every 5 minutes
+        // Register background temporal event — trigger immediately on first start,
+        // then re-registered at 5-min interval in onBackgroundData()
         if (Background has :registerForTemporalEvent) {
-            Background.registerForTemporalEvent(new Time.Duration(5 * 60));
+            Background.registerForTemporalEvent(Time.now());
         }
     }
 
@@ -60,6 +61,10 @@ class SurferWatchFaceApp extends Application.AppBase {
                     dataManager.onTideData(tideData as Array);
                 }
             }
+        }
+        // Re-register for next background event in 5 minutes
+        if (Background has :registerForTemporalEvent) {
+            Background.registerForTemporalEvent(new Time.Duration(5 * 60));
         }
         WatchUi.requestUpdate();
     }

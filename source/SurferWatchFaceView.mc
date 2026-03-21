@@ -105,6 +105,13 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             dm.updateSensorData();
             dm.computeMoonPhase();
             dm.computeNextTide();
+
+            // Update weather from Garmin built-in if WeatherSource=0
+            var weatherSource = Application.Properties.getValue("WeatherSource");
+            if (weatherSource == null || weatherSource == 0) {
+                dm.updateGarminWeather();
+                dm.computeSunriseSunset();
+            }
         }
 
         drawHrCircle(dc, dm);
@@ -212,7 +219,13 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 var now = Time.now().value();
                 isNight = (now < dm.sunrise || now >= dm.sunset);
             }
-            var glyph = owmToWeatherGlyph(dm.weatherConditionId, isNight);
+            var weatherSource = Application.Properties.getValue("WeatherSource");
+            var glyph;
+            if (weatherSource != null && weatherSource == 1) {
+                glyph = owmToWeatherGlyph(dm.weatherConditionId, isNight);
+            } else {
+                glyph = garminToWeatherGlyph(dm.weatherConditionId, isNight);
+            }
             drawTextAligned(dc, x, y, weatherIconsFont, glyph, Graphics.TEXT_JUSTIFY_CENTER);
         }
     }
@@ -258,6 +271,63 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (code == 903) { return "T"; }                                      // cold
         if (code == 904) { return "U"; }                                      // hot
         if (code == 905) { return "V"; }                                      // windy
+        return isNight ? "a" : "A"; // fallback: clear
+    }
+
+    // Maps Garmin Weather.CONDITION_* codes to weather icon glyphs
+    // Garmin codes 0-53, mapped to same glyph set as OWM
+    private function garminToWeatherGlyph(code as Number, isNight as Boolean) as String {
+        // Clear/fair
+        if (code == 0 || code == 40) { return isNight ? "a" : "A"; }
+        // Partly cloudy/clear
+        if (code == 1 || code == 22 || code == 23 || code == 52) { return isNight ? "b" : "B"; }
+        // Mostly/fully cloudy
+        if (code == 2 || code == 20) { return "D"; }
+        // Rain
+        if (code == 3 || code == 15) { return isNight ? "c" : "H"; }
+        // Light rain
+        if (code == 14 || code == 45) { return isNight ? "d" : "G"; }
+        // Snow
+        if (code == 4 || code == 17 || code == 43 || code == 46) { return isNight ? "f" : "J"; }
+        // Light snow / flurries
+        if (code == 16 || code == 48) { return isNight ? "f" : "J"; }
+        // Windy
+        if (code == 5) { return "V"; }
+        // Thunderstorms
+        if (code == 6 || code == 12 || code == 28) { return isNight ? "e" : "F"; }
+        // Wintry mix / rain-snow
+        if (code == 7 || code == 18 || code == 19 || code == 21 || code == 44 || code == 47 || code == 51) { return "K"; }
+        // Fog
+        if (code == 8) { return "E"; }
+        // Hazy / haze
+        if (code == 9 || code == 39) { return "O"; }
+        // Hail / ice
+        if (code == 10 || code == 34) { return "M"; }
+        // Showers
+        if (code == 11 || code == 24 || code == 25 || code == 26 || code == 27) { return isNight ? "d" : "I"; }
+        // Unknown precipitation
+        if (code == 13) { return isNight ? "c" : "H"; }
+        // Mist
+        if (code == 29) { return isNight ? "d" : "I"; }
+        // Dust / sand / sandstorm
+        if (code == 30 || code == 35 || code == 37) { return "P"; }
+        // Drizzle
+        if (code == 31) { return isNight ? "d" : "G"; }
+        // Tornado
+        if (code == 32) { return "R"; }
+        // Smoke
+        if (code == 33) { return "N"; }
+        // Squall
+        if (code == 36) { return "Q"; }
+        // Volcanic ash
+        if (code == 38) { return "P"; }
+        // Hurricane / tropical storm
+        if (code == 41) { return "S"; }
+        if (code == 42) { return "L"; }
+        // Freezing rain
+        if (code == 49) { return "K"; }
+        // Sleet
+        if (code == 50) { return "M"; }
         return isNight ? "a" : "A"; // fallback: clear
     }
 
@@ -381,10 +451,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     // --- Layout constants — Wind Arrow (tweak these) ---
-    private static const WIND_ARROW_SIZE =9;       // half-height in pixels (total height = size * 2)
+    private static const WIND_ARROW_SIZE =7;       // half-height in pixels (total height = size * 2)
     private static const WIND_ARROW_WIDTH = 0.8;    // half-width of base as fraction of size (1.0 = as wide as tall)
     private static const WIND_ARROW_NOTCH = 0.5;    // tail notch Y (1.0 = no tail/triangle, 0.0 = center, negative = deep tail)
-    private static const WIND_ARROW_Y_OFFSET = 7;   // vertical offset from icon position
+    private static const WIND_ARROW_Y_OFFSET = 5;   // vertical offset from icon position
 
     // --- Layout constants — HR Circle content positions (tweak these) ---
     private static const HR_HEART_X = 144;
@@ -565,13 +635,20 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     private function drawWeatherWidget(dc as Dc, dm as DataManager) as Void {
-        // Check if weather data is available and not stale (>2h)
+        // Check if weather data is available
         var hasWeather = false;
-        if (dm.owmFetchedAt != null) {
-            var age = Time.now().value() - dm.owmFetchedAt;
-            if (age < 7200) { // 2 hours
-                hasWeather = true;
+        var weatherSource = Application.Properties.getValue("WeatherSource");
+        if (weatherSource != null && weatherSource == 1) {
+            // OWM mode: check staleness (>2h)
+            if (dm.owmFetchedAt != null) {
+                var age = Time.now().value() - dm.owmFetchedAt;
+                if (age < 7200) {
+                    hasWeather = true;
+                }
             }
+        } else {
+            // Garmin mode: always fresh if data exists
+            hasWeather = (dm.temperature != null);
         }
 
         // Col 1: weather icon + temperature

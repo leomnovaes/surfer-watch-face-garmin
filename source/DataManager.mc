@@ -6,6 +6,7 @@ import Toybox.SensorHistory;
 import Toybox.System;
 import Toybox.Time;
 import Toybox.Time.Gregorian;
+import Toybox.Weather;
 
 class DataManager {
 
@@ -124,6 +125,100 @@ class DataManager {
         Application.Storage.setValue("lastKnownLat", lastKnownLat);
         Application.Storage.setValue("lastKnownLng", lastKnownLng);
         Application.Storage.setValue("bluetoothConnected", bluetoothConnected);
+    }
+
+    // =========================================================
+    // updateGarminWeather() — reads weather from Garmin built-in
+    // Weather.getCurrentConditions(). Called from onUpdate() when
+    // WeatherSource=0 (Garmin). No background HTTP needed.
+    // =========================================================
+    function updateGarminWeather() as Void {
+        if (Weather has :getCurrentConditions) {
+            var conditions = Weather.getCurrentConditions();
+            if (conditions != null) {
+                temperature = conditions.temperature != null ? conditions.temperature.toFloat() : null;
+                weatherConditionId = conditions.condition;
+                windSpeed = conditions.windSpeed != null ? conditions.windSpeed.toFloat() : null;
+                windDeg = conditions.windBearing != null ? conditions.windBearing.toNumber() : null;
+                owmFetchedAt = Time.now().value();
+            }
+        }
+    }
+
+    // =========================================================
+    // computeSunriseSunset() — calculates sunrise/sunset from
+    // lat/lon + current date using simplified solar position.
+    // Used when WeatherSource=0 (Garmin) since Weather.getSunrise()
+    // requires CIQ 4.1 and we target 3.4.
+    // =========================================================
+    function computeSunriseSunset() as Void {
+        if (lastKnownLat == null || lastKnownLng == null) {
+            return;
+        }
+        var lat = lastKnownLat;
+        var lng = lastKnownLng;
+
+        var now = Time.now();
+        var info = Gregorian.info(now, Time.FORMAT_SHORT);
+
+        // Day of year
+        var N = dayOfYear(info.year, info.month, info.day);
+
+        // Solar declination (radians)
+        var decl = -23.45 * Math.PI / 180.0 * Math.cos(2.0 * Math.PI / 365.0 * (N + 10));
+
+        // Hour angle at sunrise/sunset
+        var latRad = lat * Math.PI / 180.0;
+        var cosH = -Math.tan(latRad) * Math.tan(decl);
+
+        // Clamp for polar regions
+        if (cosH < -1.0) {
+            // Midnight sun — no sunset
+            sunrise = null;
+            sunset = null;
+            return;
+        }
+        if (cosH > 1.0) {
+            // Polar night — no sunrise
+            sunrise = null;
+            sunset = null;
+            return;
+        }
+
+        var H = Math.acos(cosH) * 180.0 / Math.PI; // hour angle in degrees
+
+        // Solar noon (hours UTC)
+        var solarNoon = 12.0 - lng / 15.0;
+
+        var sunriseHour = solarNoon - H / 15.0;
+        var sunsetHour = solarNoon + H / 15.0;
+
+        // Convert to unix timestamps for today
+        var startOfDay = Gregorian.moment({
+            :year => info.year,
+            :month => info.month,
+            :day => info.day,
+            :hour => 0,
+            :minute => 0,
+            :second => 0
+        });
+        var dayStart = startOfDay.value();
+
+        sunrise = dayStart + (sunriseHour * 3600).toNumber();
+        sunset = dayStart + (sunsetHour * 3600).toNumber();
+    }
+
+    // Helper: day of year (1-366)
+    private function dayOfYear(year as Number, month as Number, day as Number) as Number {
+        var daysInMonth = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) {
+            daysInMonth[2] = 29;
+        }
+        var doy = 0;
+        for (var m = 1; m < month; m++) {
+            doy += daysInMonth[m];
+        }
+        return doy + day;
     }
 
     // =========================================================

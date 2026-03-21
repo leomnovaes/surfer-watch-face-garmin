@@ -113,26 +113,13 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         _lat = lat;
         _lng = lng;
 
-        // Check if OWM refresh is needed (design §4.1)
+        // Check weather source setting — only fetch OWM if WeatherSource=1
+        var weatherSource = Application.Properties.getValue("WeatherSource");
         var owmNeeded = false;
-        var owmFetchedAt = Application.Storage.getValue("owmFetchedAt") as Number or Null;
-
-        if (owmFetchedAt == null) {
-            owmNeeded = true;
-        } else {
-            var now = Time.now().value();
-            if (now - owmFetchedAt >= 5 * 60) {
+        if (weatherSource != null && weatherSource == 1) {
+            var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
+            if (apiKey != null && !apiKey.equals("")) {
                 owmNeeded = true;
-            }
-            // Distance check: moved >5km since last fetch
-            if (!owmNeeded) {
-                var owmLat = Application.Storage.getValue("owmFetchLat") as Float or Null;
-                var owmLon = Application.Storage.getValue("owmFetchLon") as Float or Null;
-                if (owmLat != null && owmLon != null) {
-                    if (distanceBetween(lat, lng, owmLat, owmLon) > 5000.0f) {
-                        owmNeeded = true;
-                    }
-                }
             }
         }
 
@@ -140,16 +127,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         _tideNeeded = isTideRefreshNeeded(lat, lng);
 
         if (owmNeeded) {
-            var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
-            if (apiKey == null || apiKey.equals("")) {
-                // No OWM key — skip weather, try tide
-                if (_tideNeeded) {
-                    startTideFetch();
-                } else {
-                    Background.exit(null);
-                }
-                return;
-            }
+            var apiKey = Application.Properties.getValue("OWMApiKey") as String;
 
             var units = "metric";
             if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) {
