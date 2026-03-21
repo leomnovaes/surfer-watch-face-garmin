@@ -12,5 +12,11 @@
     <string id="WeatherSourceTitle">Weather Source</string>
     <string id="WeatherSourceGarmin">Garmin (default)</string>
     <string id="WeatherSourceOWM">OpenWeatherMap</string>
+    <string id="WindSpeedUnitTitle">Wind Speed Unit</string>
+    <string id="WindSpeedAuto">Auto (device)</string>
+    <string id="WindSpeedKph">km/h</string>
+    <string id="WindSpeedKnots">knots</string>
+    <string id="WindSpeedMph">mph</string>
+    <string id="WindSpeedMs">m/s</string>
 
 </strings>

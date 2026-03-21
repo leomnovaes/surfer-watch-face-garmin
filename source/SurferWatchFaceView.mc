@@ -664,19 +664,39 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         // Col 2: wind icon + speed
         var windText = "--";
         if (hasWeather && dm.windSpeed != null) {
-            var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
+            var windUnit = Application.Properties.getValue("WindSpeedUnit");
             var speed;
-            var unit;
-            if (isMetric) {
-                // OWM metric returns m/s, convert to km/h
-                speed = (dm.windSpeed * 3.6).toNumber();
-                unit = "kph";
-            } else {
-                // OWM imperial returns mph directly
-                speed = dm.windSpeed.toNumber();
-                unit = "mph";
+            var rawSpeed = dm.windSpeed;
+
+            // OWM metric returns m/s, OWM imperial returns mph, Garmin returns m/s
+            // Normalize to m/s first
+            var speedMs = rawSpeed;
+            if (weatherSource != null && weatherSource == 1) {
+                // OWM mode
+                var isImperial = System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE;
+                if (isImperial) {
+                    speedMs = rawSpeed / 2.237; // mph back to m/s
+                }
             }
-            windText = speed.toString() + unit;
+
+            if (windUnit == null || windUnit == 0) {
+                // Auto: km/h for metric, mph for imperial
+                var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
+                if (isMetric) {
+                    speed = speedMs * 3.6;
+                } else {
+                    speed = speedMs * 2.237;
+                }
+            } else if (windUnit == 1) {
+                speed = speedMs * 3.6;       // km/h
+            } else if (windUnit == 2) {
+                speed = speedMs * 1.944;     // knots
+            } else if (windUnit == 3) {
+                speed = speedMs * 2.237;     // mph
+            } else {
+                speed = speedMs;             // m/s
+            }
+            windText = speed.format("%.1f");
         }
         drawIconWind(dc, WX_COL2_X, WX_Y, dm);
         drawTextAligned(dc, WX_COL2_X, WX_TEXT_Y, Graphics.FONT_XTINY, windText, Graphics.TEXT_JUSTIFY_CENTER);

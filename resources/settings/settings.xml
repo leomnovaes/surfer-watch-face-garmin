@@ -14,6 +14,16 @@
         </settingConfig>
     </setting>
 
+    <setting propertyKey="@Properties.WindSpeedUnit" title="@Strings.WindSpeedUnitTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.WindSpeedAuto</listEntry>
+            <listEntry value="1">@Strings.WindSpeedKph</listEntry>
+            <listEntry value="2">@Strings.WindSpeedKnots</listEntry>
+            <listEntry value="3">@Strings.WindSpeedMph</listEntry>
+            <listEntry value="4">@Strings.WindSpeedMs</listEntry>
+        </settingConfig>
+    </setting>
+
     <setting propertyKey="@Properties.OWMApiKey" title="@Strings.OWMApiKeyTitle">
         <settingConfig type="alphaNumeric"/>
     </setting>
