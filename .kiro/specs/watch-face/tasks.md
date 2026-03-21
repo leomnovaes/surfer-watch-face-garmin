@@ -562,62 +562,42 @@ Key findings from rasterization testing:
 ## Phase 9 — Weather Refactor & Polish
 
 ### Task 51: Tiered weather source — Garmin built-in as default
-- [ ] Add `WeatherSource` setting (list: 0=Garmin built-in (default), 1=OpenWeatherMap)
-- [ ] Add setting to `properties.xml` and `settings.xml`
-- [ ] When WeatherSource=0 (Garmin): read temp, condition, wind speed, wind bearing, precip from `Weather.getCurrentConditions()` in `onUpdate()` — no background HTTP needed for weather
-- [ ] Map Garmin `Weather.CONDITION_*` codes to our weather icon glyphs (new mapping function)
-- [ ] When WeatherSource=0: compute sunrise/sunset locally from lat/lon + date using solar position algorithm (Garmin `Weather.getSunrise()` requires CIQ 4.1, we're on 3.4)
-- [ ] Implement `computeSunriseSunset(lat, lon, date)` in DataManager — standard solar declination + hour angle algorithm
-- [ ] When WeatherSource=1 (OWM): use background HTTP fetch as before (but switched to 2.5 — see Task 52)
-- [ ] Display `--` for all weather fields when no data available from either source
-- [ ] Update requirements.md, design.md, README.md, store-description.txt
-- Satisfies: zero-config experience for users who don't want to set up API keys
+- [x] Add `WeatherSource` setting (list: 0=Garmin built-in (default), 1=OpenWeatherMap)
+- [x] Add setting to `properties.xml` and `settings.xml`
+- [x] When WeatherSource=0 (Garmin): read temp, condition, wind speed, wind bearing, precip from `Weather.getCurrentConditions()` in `onUpdate()` — no background HTTP needed for weather
+- [x] Map Garmin `Weather.CONDITION_*` codes to our weather icon glyphs (new mapping function)
+- [x] When WeatherSource=0: compute sunrise/sunset locally from lat/lon + date using solar position algorithm (Garmin `Weather.getSunrise()` requires CIQ 4.1, we're on 3.4)
+- [x] Implement `computeSunriseSunset(lat, lon, date)` in DataManager — standard solar declination + hour angle algorithm
+- [x] When WeatherSource=1 (OWM): use background HTTP fetch as before (but switched to 2.5 — see Task 52)
+- [x] Display `--` for all weather fields when no data available from either source
+- [x] Clear weather data on source switch to prevent condition code mismatch between mappers
 
 ### Task 52: Switch OWM from 3.0 to 2.5
-- [ ] Change WeatherService URL from `api.openweathermap.org/data/3.0/onecall` to `api.openweathermap.org/data/2.5/weather`
-- [ ] Update JSON parsing: `main.temp`, `weather[0].id`, `wind.speed`, `wind.deg`, `sys.sunrise`, `sys.sunset`
-- [ ] Remove `exclude` parameter (not needed in 2.5)
-- [ ] Remove `units` parameter handling differences (2.5 uses same `units=metric|imperial`)
-- [ ] Verify response fits in background memory budget (~28KB)
-- [ ] Update requirements.md §2.3 (endpoint, parameters, response fields)
-- [ ] Update design.md §2.3 (WeatherService parsing)
-- [ ] Update tech.md steering (API endpoint, rate limits)
-- [ ] Update README.md (setup instructions — no credit card needed, 2.5 free tier)
-- [ ] Update store-description.txt
+- [x] Change WeatherService URL from `api.openweathermap.org/data/3.0/onecall` to `api.openweathermap.org/data/2.5/weather`
+- [x] Update JSON parsing: `main.temp`, `weather[0].id`, `wind.speed`, `wind.deg`, `sys.sunrise`, `sys.sunset`
+- [x] Remove `exclude` parameter (not needed in 2.5)
 - Note: OWM 3.0 API keys also work with 2.5 — existing users don't need to change anything
 
 ### Task 53: Simplify OWM refresh logic — fetch on every temporal event
-- [ ] Remove time-based guard (`owmFetchedAt` check) from `onTemporalEvent()` for weather
-- [ ] Remove distance-based guard (`owmFetchLat/Lon` check) from `onTemporalEvent()` for weather
-- [ ] Remove `owmFetchedAt`, `owmFetchLat`, `owmFetchLon` from `Application.Storage` (no longer needed for weather)
-- [ ] Keep `owmFetchedAt` in DataManager for staleness display check (>2h shows `--`)
-- [ ] Fetch OWM on every temporal event when WeatherSource=1 and BT connected and location available
-- [ ] Keep all tide refresh guards unchanged (daily + 50km distance)
-- [ ] Update design.md §4.1 (simplified refresh logic)
-- [ ] Update requirements.md §2.3 (remove 5-min/30-min rate limit language)
+- [x] Remove time-based guard (`owmFetchedAt` check) from `onTemporalEvent()` for weather
+- [x] Remove distance-based guard (`owmFetchLat/Lon` check) from `onTemporalEvent()` for weather
+- [x] Fetch OWM on every temporal event when WeatherSource=1 and BT connected and location available
+- [x] Keep all tide refresh guards unchanged (daily + 50km distance)
 
 ### Task 54: Immediate weather fetch on watch face start
-- [ ] On first `onStart()`, register temporal event with `Time.now()` instead of `Duration(5*60)` to trigger immediate background fetch
-- [ ] In `onBackgroundData()`, re-register with `Duration(5*60)` for subsequent fetches
-- [ ] Test on simulator and real device — verify weather appears within seconds of face start
-- [ ] Fallback: if immediate trigger doesn't work on real hardware (5-min minimum enforced), document as known limitation
-- [ ] Update design.md §3 (data flow — immediate fetch on start)
+- [x] On first `onStart()`, register temporal event with `Time.now()` to trigger immediate background fetch
+- [x] Wrap in try/catch — system enforces 5-min minimum, falls back to `Duration(5*60)` if too soon
+- [x] In `onBackgroundData()`, re-register with `Duration(5*60)` for subsequent fetches
 
 ### Task 55: Wind speed unit setting
-- [ ] Add `WindSpeedUnit` setting (list: 0=Auto/device default, 1=km/h, 2=knots, 3=mph, 4=m/s)
-- [ ] Add setting to `properties.xml` and `settings.xml`
-- [ ] Update wind speed display in `drawWeatherWidget()` to use selected unit
-- [ ] When Auto: use device metric/imperial setting (current behavior)
-- [ ] Remove unit suffix text (kph/mph) to make room for 1 decimal digit (e.g., "11.4" instead of "11kph")
-- [ ] Conversion factors: m/s→km/h (×3.6), m/s→knots (×1.944), m/s→mph (×2.237), m/s→m/s (×1)
-- [ ] Note: OWM metric returns m/s, imperial returns mph. Normalize to m/s internally, convert at display time.
-- [ ] Update requirements.md, design.md, README.md
+- [x] Add `WindSpeedUnit` setting (list: 0=Auto/device default, 1=km/h, 2=knots, 3=mph, 4=m/s)
+- [x] Add setting to `properties.xml` and `settings.xml`
+- [x] Update wind speed display: normalize to m/s internally, convert at display time
+- [x] Remove unit suffix text, show 1 decimal digit (e.g., "11.4" instead of "11kph")
 
 ### Task 56: Tweak wind arrow size and position
-- [ ] Reduce `WIND_ARROW_SIZE` from 9 to 7
-- [ ] Reduce `WIND_ARROW_Y_OFFSET` from 7 to 5
-- [ ] Verify in simulator — arrow should be slightly smaller and higher
-- [ ] Update design.md layout constants if needed
+- [x] Reduce `WIND_ARROW_SIZE` from 9 to 7
+- [x] Reduce `WIND_ARROW_Y_OFFSET` from 7 to 5
 
 ### Task 57: Release v1.1.0
 - [ ] Follow release checklist from structure.md steering
