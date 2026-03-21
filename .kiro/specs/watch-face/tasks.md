@@ -538,11 +538,15 @@ Key findings from rasterization testing:
   - Note: free, open source, no PRO version
 
 ### Task 49: Publish to Connect IQ store (public)
-- [ ] Change beta listing to public
-- [ ] Upload final .iq package
-- [ ] Upload store screenshots and cover image
-- [ ] Add store description with GitHub link
-- [ ] Verify installation works from store
+- [ ] Generate a new UUID for `manifest.xml` (beta and public apps need different IDs on Connect IQ)
+- [ ] Export `.iq` package via `Monkey C: Export Project` in VS Code
+- [ ] Create a NEW app listing on the Connect IQ developer dashboard (not the beta one — beta apps cannot be converted to public)
+- [ ] Upload the `.iq` package
+- [ ] Upload `store-cover.png` as cover image and `screenshot.png` as store screenshot
+- [ ] Paste `store-description.txt` content into the description field
+- [ ] Submit for approval
+- [ ] Verify installation works from store once approved
+- Note: The beta app stays as a separate listing on your dashboard. The public app is a new entry with a new manifest UUID.
 
 ### Task 50: Make GitHub repo public
 - [ ] Rename repo to `shore-watch` (optional)
