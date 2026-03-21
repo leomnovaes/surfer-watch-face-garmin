@@ -49,6 +49,11 @@ class SurferWatchFaceApp extends Application.AppBase {
 
     // New app settings have been received so trigger a UI update
     function onSettingsChanged() as Void {
+        // Clear weather fields when source changes so stale data from
+        // the previous source doesn't get misinterpreted by the wrong mapper
+        if (dataManager != null) {
+            dataManager.clearWeatherData();
+        }
         WatchUi.requestUpdate();
     }
 

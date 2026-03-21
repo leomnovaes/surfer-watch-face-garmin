@@ -128,6 +128,22 @@ class DataManager {
     }
 
     // =========================================================
+    // clearWeatherData() — resets all weather fields to null.
+    // Called when weather source setting changes to prevent
+    // stale data from one source being rendered by the other's
+    // condition code mapper.
+    // =========================================================
+    function clearWeatherData() as Void {
+        temperature = null;
+        weatherConditionId = null;
+        windSpeed = null;
+        windDeg = null;
+        sunrise = null;
+        sunset = null;
+        owmFetchedAt = null;
+    }
+
+    // =========================================================
     // updateGarminWeather() — reads weather from Garmin built-in
     // Weather.getCurrentConditions(). Called from onUpdate() when
     // WeatherSource=0 (Garmin). No background HTTP needed.
