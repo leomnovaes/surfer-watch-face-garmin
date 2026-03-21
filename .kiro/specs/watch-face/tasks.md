@@ -536,6 +536,7 @@ Key findings from rasterization testing:
   - Setup instructions (API keys, home location)
   - Link to GitHub for full user guide and source code
   - Note: free, open source, no PRO version
+- [ ] Create hero image (1440x720, JPG/GIF/PNG, max 2048KB) — optional, for mobile store banner
 
 ### Task 49: Publish to Connect IQ store (public)
 - [ ] Generate a new UUID for `manifest.xml` (beta and public apps need different IDs on Connect IQ)
