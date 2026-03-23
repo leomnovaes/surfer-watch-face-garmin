@@ -76,11 +76,55 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 - [ ] 17. Final checkpoint — Ensure all tests pass
 
 ## Remaining polish tasks (not blocking release)
-- [ ] Rasterize proper tide direction icon for subscreen circle (currently "^"/"v" text)
-- [ ] Rasterize proper thermometer icon for water temp (currently "T" text)
-- [ ] Rasterize proper wave icon for swell height (currently "~" text)
+- [ ] Rasterize proper tide direction icon for subscreen circle (currently tide H/L icons)
+- [ ] Rasterize proper thermometer icon for water temp (currently surfer-icons "T")
 - [ ] Tune double-gesture window from 10s to 4-5s after real watch testing
-- [ ] Test swell data fetching with real StormGlass API key and SurfSpotLat/Lng
+
+## Phase 2 — API Refactor (data sources optimization)
+
+### Task 18: Switch swell from StormGlass to Open-Meteo Marine API
+- [ ] Replace `TideService.fetchSwell()` StormGlass call with Open-Meteo Marine API
+  - Endpoint: `https://marine-api.open-meteo.com/v1/marine?latitude={lat}&longitude={lon}&hourly=swell_wave_height,swell_wave_period,swell_wave_direction&forecast_days=1`
+  - Free, no API key, no quota, flat array response (~1.2KB for 24h)
+  - Response format: `{hourly: {time: [...], swell_wave_height: [...], swell_wave_period: [...], swell_wave_direction: [...]}}`
+- [ ] Parse response into flat array of `{time, height, period, direction}` entries
+- [ ] Store full 24h hourly array in DataManager (not just closest entry)
+- [ ] On each `onUpdate()`, pick the entry closest to current time for display
+- [ ] As time passes, display advances through the forecast automatically
+- [ ] Remove StormGlass swell fetch code and `surf_swell*` storage keys
+- [ ] Update surf mode chain: Open-Meteo swell → SG tide → OWM wind
+
+### Task 19: Store swell forecast array for offline use
+- [ ] Persist full swell hourly array to `Application.Storage` (surf_swellForecast key)
+- [ ] Load on startup / mode switch
+- [ ] DataManager.getCurrentSwell() picks closest-to-now entry from stored array
+- [ ] Works offline — display advances through forecast without phone connection
+
+### Task 20: Verify StormGlass usage is tide-only
+- [ ] Confirm StormGlass is only called for tide extremes (1 call/day)
+- [ ] Remove any remaining StormGlass swell-related code
+- [ ] Update backup key logic — only needed for tide now
+- [ ] Update specs, README, store description
+
+### Task 21: Research hourly wind forecast source for offline use
+- [ ] Evaluate options:
+  - Open-Meteo Weather API (free, no key, has hourly wind forecast)
+  - OWM One Call 3.0 (hourly but requires credit card)
+  - Other sources
+- [ ] Test response size and memory fit
+- [ ] If viable: store hourly wind forecast array, advance with time offline
+- [ ] If not viable: document limitation (wind freezes when offline)
+
+### Task 22: Clean up debug println statements
+- [ ] Remove all `System.println()` debug statements from delegate, TideService, view
+- [ ] Keep code clean for production
+
+### Task 23: Release v2.0.0 (surf mode)
+- [ ] Follow release checklist from structure.md
+- [ ] Update all specs, README, CHANGELOG, store description
+- [ ] Regenerate screenshots (shore + surf mode)
+- [ ] Regenerate annotated diagrams for both modes
+- [ ] Build and upload to Connect IQ
 
 ## Notes
 
