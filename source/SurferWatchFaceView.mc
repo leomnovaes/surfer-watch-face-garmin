@@ -781,7 +781,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         // Row 1 — Battery (same as shore)
         drawBatteryWithPercent(dc, TOP_COL2_X, TOP_ROW1_Y, dm.battery, dm);
 
-        // Row 2 — Water temperature
+        // Row 2 — Water temperature (icon where notification icon was, text where count was)
         var tempText = "--";
         if (dm.waterTemp != null) {
             var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
@@ -791,7 +791,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 tempText = (dm.waterTemp * 1.8 + 32).toNumber().toString() + "°F";
             }
         }
-        drawTextAligned(dc, TOP_COL1_X + 5, TOP_ROW2_Y, Graphics.FONT_XTINY, tempText, Graphics.TEXT_JUSTIFY_LEFT);
+        // Text right-justified to same anchor as notification count
+        drawTextAligned(dc, TOP_COL2_X - 6 - SPACER, TOP_ROW2_Y, Graphics.FONT_XTINY, tempText, Graphics.TEXT_JUSTIFY_RIGHT);
+        // Thermometer placeholder icon where notification icon was (TODO: rasterize proper icon)
+        drawTextAligned(dc, TOP_COL2_X - 6, TOP_ROW2_Y, Graphics.FONT_XTINY, "T", Graphics.TEXT_JUSTIFY_LEFT);
 
         // Row 3 — Tide (same as shore)
         var tideIsHigh = true;
