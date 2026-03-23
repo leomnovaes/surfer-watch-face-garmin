@@ -405,28 +405,39 @@ class DataManager {
     }
 
     // =========================================================
-    // onSwellData(data) — receives parsed swell Dictionary from
-    // onBackgroundData(). Persists to surf_ prefixed storage.
+    // onSwellData(data) — receives current swell entry (Dictionary)
+    // from onBackgroundData(). The full forecast array is stored
+    // separately in Application.Storage by the delegate.
     // =========================================================
     function onSwellData(data as Dictionary) as Void {
         swellHeight = data["swellHeight"] as Float or Null;
         swellPeriod = data["swellPeriod"] as Float or Null;
         swellDirection = data["swellDirection"] as Number or Null;
-        surfWindSpeed = data["windSpeed"] as Float or Null;
-        surfWindDeg = data["windDeg"] as Number or Null;
+    }
 
-        Application.Storage.setValue("surf_swellHeight", swellHeight);
-        Application.Storage.setValue("surf_swellPeriod", swellPeriod);
-        Application.Storage.setValue("surf_swellDirection", swellDirection);
-        Application.Storage.setValue("surf_windSpeed", surfWindSpeed);
-        Application.Storage.setValue("surf_windDeg", surfWindDeg);
+    // updateSwellFromForecast() — picks the closest-to-now entry
+    // from the stored swell forecast array. Called from onUpdate()
+    // so the display advances through the forecast over time.
+    function updateSwellFromForecast() as Void {
+        var forecast = Application.Storage.getValue("surf_swellForecast") as Array or Null;
+        if (forecast == null || forecast.size() == 0) { return; }
 
+        // Open-Meteo times are ISO strings like "2026-03-23T14:00"
+        // Find the entry closest to now
         var now = Time.now();
-        var today = Gregorian.info(now, Time.FORMAT_SHORT);
-        swellFetchedDay = today.year.format("%04d") + "-" +
-                          today.month.format("%02d") + "-" +
-                          today.day.format("%02d");
-        Application.Storage.setValue("surf_swellFetchedDay", swellFetchedDay);
+        var nowInfo = Gregorian.info(now, Time.FORMAT_SHORT);
+        var nowHour = nowInfo.hour;
+
+        // Simple approach: entries are hourly starting at midnight, index = hour
+        var idx = nowHour;
+        if (idx >= forecast.size()) { idx = forecast.size() - 1; }
+
+        var entry = forecast[idx] as Dictionary;
+        if (entry != null) {
+            swellHeight = entry["swellHeight"] as Float or Null;
+            swellPeriod = entry["swellPeriod"] as Float or Null;
+            swellDirection = entry["swellDirection"] as Number or Null;
+        }
     }
 
     // =========================================================

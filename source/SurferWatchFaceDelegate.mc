@@ -99,23 +99,10 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         return false;
     }
 
-    private function isSwellRefreshNeeded() as Boolean {        var swellFetchedDay = Application.Storage.getValue("surf_swellFetchedDay") as String or Null;
-        var today = todayUTC();
-        if (swellFetchedDay == null) { return true; }
-        if (!swellFetchedDay.equals(today)) { return true; }
-        var cachedHeight = Application.Storage.getValue("surf_swellHeight");
-        if (cachedHeight == null) { return true; }
-        var swellFetchLat = Application.Storage.getValue("surf_swellFetchLat") as Float or Null;
-        var swellFetchLng = Application.Storage.getValue("surf_swellFetchLng") as Float or Null;
-        if (swellFetchLat == null || swellFetchLng == null) { return true; }
-        if (swellFetchLat != _lat || swellFetchLng != _lng) { return true; }
-        return false;
-    }
-
     // =========================================================
     // onTemporalEvent — entry point
     // Shore mode: OWM weather → SG tide
-    // Surf mode:  SG swell → SG tide → OWM wind
+    // Surf mode:  Open-Meteo swell → SG tide → OWM wind
     // =========================================================
 
     function onTemporalEvent() as Void {
@@ -147,7 +134,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         }
 
         if (_isSurfMode) {
-            _swellNeeded = isSwellRefreshNeeded();
+            _swellNeeded = true; // Open-Meteo is free, always fetch fresh swell
             _tideNeeded = isSurfTideRefreshNeeded(_lat, _lng);
             var owmKey = Application.Properties.getValue("OWMApiKey") as String or Null;
             _windNeeded = (owmKey != null && !owmKey.equals(""));
@@ -191,11 +178,9 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // =========================================================
 
     private function startSwellFetch() as Void {
-        var apiKey = getStormGlassApiKey();
-        System.println("SWELL: startSwellFetch key=" + (apiKey != null ? "set" : "null"));
-        if (apiKey == null) { chainAfterSwell(); return; }
+        System.println("SWELL: startSwellFetch (Open-Meteo, no key needed)");
         var ts = new TideService(method(:onTideComplete));
-        ts.fetchSwell(_lat, _lng, apiKey, method(:onSwellDone));
+        ts.fetchSwell(_lat, _lng, method(:onSwellDone));
     }
 
     private function startTideFetch() as Void {
@@ -234,22 +219,15 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Callbacks — each writes to Storage, then chains to next
     // =========================================================
 
-    // Swell done → chain to tide → wind
-    function onSwellDone(swellData as Dictionary or Null) as Void {
-        System.println("SWELL: done data=" + (swellData != null ? "received" : "null"));
-        if (swellData != null) {
-            _swellResult = swellData;
-            var prefix = "surf_";
-            Application.Storage.setValue(prefix + "swellFetchedDay", todayUTC());
-            Application.Storage.setValue(prefix + "swellFetchLat", _lat);
-            Application.Storage.setValue(prefix + "swellFetchLng", _lng);
-        }
-        // Check if we got -403 (out of memory) — stop chaining, exit now
-        var lastCode = Application.Storage.getValue("sgLastResponseCode") as Number or Null;
-        if (lastCode != null && lastCode == -403) {
-            System.println("SWELL: -403 memory exhausted, exiting cycle");
-            exitWithAllResults();
-            return;
+    // Swell done — receives full 24h hourly array from Open-Meteo
+    function onSwellDone(swellData as Array or Null) as Void {
+        System.println("SWELL: done data=" + (swellData != null ? "received " + swellData.size() + " entries" : "null"));
+        if (swellData != null && swellData.size() > 0) {
+            // Store full forecast array
+            Application.Storage.setValue("surf_swellForecast", swellData);
+            // Extract current entry (index 0 or closest to now) for immediate display
+            var current = swellData[0] as Dictionary;
+            _swellResult = current;
         }
         chainAfterSwell();
     }

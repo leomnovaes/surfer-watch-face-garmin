@@ -115,6 +115,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             dm.computeNextTide();
             dm.interpolateTideHeight();
             dm.computeMoonPhase();
+            dm.updateSwellFromForecast();
 
             drawHrCircle_Surf(dc, dm);
             drawTopSection_Surf(dc, dm);
