@@ -123,8 +123,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             if (dm.bottomToggleState == 0) {
                 drawSwellSection(dc, dm);
             } else {
-                // Show "TIDE" label to confirm toggle worked, then draw curve
-                drawTextAligned(dc, 88, 114, Graphics.FONT_XTINY, "TIDE CURVE", Graphics.TEXT_JUSTIFY_CENTER);
                 drawTideCurve(dc, dm);
             }
         } else {
