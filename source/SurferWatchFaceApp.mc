@@ -44,7 +44,7 @@ class SurferWatchFaceApp extends Application.AppBase {
     // Return the initial view — only called in foreground process
     function getInitialView() as [Views] or [Views, InputDelegates] {
         dataManager = new DataManager();
-        return [ new SurferWatchFaceView() ];
+        return [ new SurferWatchFaceView(), new SurferWatchFaceBehaviorDelegate() ];
     }
 
     // New app settings have been received so trigger a UI update

@@ -101,25 +101,47 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
 
         var dm = (Application.getApp() as SurferWatchFaceApp).getDataManager();
-        if (dm != null) {
+        if (dm == null) { return; }
+
+        var surfMode = Application.Properties.getValue("SurfMode");
+
+        if (surfMode != null && surfMode == 1) {
+            // Surf mode
+            dm.updateSensorData();
+            dm.checkCopyGPS();
+            dm.updateSurfSensors();
+            dm.computeNextTide();
+            dm.interpolateTideHeight();
+            dm.computeMoonPhase();
+
+            drawHrCircle_Surf(dc, dm);
+            drawTopSection_Surf(dc, dm);
+            drawDividers(dc);
+            drawMiddleSection_Surf(dc, dm);
+            if (dm.bottomToggleState == 0) {
+                drawSwellSection(dc, dm);
+            } else {
+                drawTideCurve(dc, dm);
+            }
+        } else {
+            // Shore mode
             dm.updateSensorData();
             dm.computeMoonPhase();
             dm.computeNextTide();
 
-            // Update weather from Garmin built-in if WeatherSource=0
             var weatherSource = Application.Properties.getValue("WeatherSource");
             if (weatherSource == null || weatherSource == 0) {
                 dm.updateGarminWeather();
                 dm.computeSunriseSunset();
             }
-        }
 
-        drawHrCircle(dc, dm);
-        drawTopSection(dc, dm);
-        drawDividers(dc);
-        drawMiddleSection(dc, dm);
-        drawDateRow(dc);
-        drawWeatherWidget(dc, dm);
+            drawHrCircle(dc, dm);
+            drawTopSection(dc, dm);
+            drawDividers(dc);
+            drawMiddleSection(dc, dm);
+            drawDateRow(dc);
+            drawWeatherWidget(dc, dm);
+        }
     }
 
     // =========================================================
@@ -715,6 +737,267 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     // =========================================================
+    // Surf Mode rendering methods
+    // =========================================================
+
+    // Surf mode subscreen: tide height + solar arc + tide direction
+    private function drawHrCircle_Surf(dc as Dc, dm as DataManager) as Void {
+        // Filled white circle
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.fillCircle(HR_CENTER_X, HR_CENTER_Y, HR_RADIUS);
+
+        // Solar intensity arc (reuses stress arc geometry)
+        var solarVal = 0;
+        if (dm.solarIntensity != null) {
+            solarVal = dm.solarIntensity;
+        }
+        drawStressArc(dc, HR_CENTER_X, HR_CENTER_Y, HR_RADIUS, STRESS_ARC_WIDTH, solarVal);
+
+        // Tide direction arrow (up=rising, down=falling)
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        var arrowText = "--";
+        if (dm.nextTideType != null) {
+            arrowText = dm.nextTideType.equals("high") ? "^" : "v";
+        }
+        dc.drawText(HR_HEART_X, HR_HEART_Y, Graphics.FONT_XTINY, arrowText, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+
+        // Tide height text
+        var tideText = "--";
+        if (dm.interpTideHeight != null) {
+            var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
+            if (isMetric) {
+                tideText = dm.interpTideHeight.format("%.1f");
+            } else {
+                tideText = (dm.interpTideHeight * 3.281).format("%.1f");
+            }
+        }
+        dc.drawText(HR_TEXT_X, HR_TEXT_Y, Graphics.FONT_XTINY, tideText, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+    }
+
+    // Surf mode top section: battery, water temp, next tide
+    private function drawTopSection_Surf(dc as Dc, dm as DataManager) as Void {
+        // Row 1 — Battery (same as shore)
+        drawBatteryWithPercent(dc, TOP_COL2_X, TOP_ROW1_Y, dm.battery, dm);
+
+        // Row 2 — Water temperature
+        var tempText = "--";
+        if (dm.waterTemp != null) {
+            var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
+            if (isMetric) {
+                tempText = dm.waterTemp.toNumber().toString() + "°C";
+            } else {
+                tempText = (dm.waterTemp * 1.8 + 32).toNumber().toString() + "°F";
+            }
+        }
+        drawTextAligned(dc, TOP_COL1_X + 5, TOP_ROW2_Y, Graphics.FONT_XTINY, tempText, Graphics.TEXT_JUSTIFY_LEFT);
+
+        // Row 3 — Tide (same as shore)
+        var tideIsHigh = true;
+        var tideTimeStr = "--";
+        var tideHeightStr = "--";
+        if (dm.nextTideTime != null && dm.nextTideType != null) {
+            tideIsHigh = dm.nextTideType.equals("high");
+            tideTimeStr = formatUnixTime(dm.nextTideTime);
+        }
+        if (dm.currentTideHeight != null) {
+            var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
+            if (isMetric) {
+                tideHeightStr = dm.currentTideHeight.format("%.1f") + "m";
+            } else {
+                tideHeightStr = (dm.currentTideHeight * 3.281).format("%.1f") + "ft";
+            }
+        }
+        drawTideInfo(dc, TOP_COL1_X, TOP_ROW3_Y, tideIsHigh, tideTimeStr, tideHeightStr);
+    }
+
+    // Surf mode middle section: wind, time, moon/ampm/seconds
+    private function drawMiddleSection_Surf(dc as Dc, dm as DataManager) as Void {
+        // Left column — Wind direction + speed (replaces sunrise/sunset)
+        if (dm.surfWindDeg != null) {
+            drawWindArrow(dc, MID_LEFT_X, MID_ICON_Y + WIND_ARROW_Y_OFFSET, dm.surfWindDeg, WIND_ARROW_SIZE);
+        }
+        var windText = "--";
+        if (dm.surfWindSpeed != null) {
+            var windUnit = Application.Properties.getValue("WindSpeedUnit");
+            var speed;
+            var speedMs = dm.surfWindSpeed; // StormGlass returns m/s
+            if (windUnit == null || windUnit == 0) {
+                var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
+                speed = isMetric ? speedMs * 3.6 : speedMs * 2.237;
+            } else if (windUnit == 1) {
+                speed = speedMs * 3.6;
+            } else if (windUnit == 2) {
+                speed = speedMs * 1.944;
+            } else if (windUnit == 3) {
+                speed = speedMs * 2.237;
+            } else {
+                speed = speedMs;
+            }
+            windText = speed.format("%.1f");
+        }
+        drawTextAligned(dc, MID_LEFT_X, MID_TEXT_Y, Graphics.FONT_XTINY, windText, Graphics.TEXT_JUSTIFY_CENTER);
+
+        // Center — current time (same as shore)
+        var clockTime = System.getClockTime();
+        var hours = clockTime.hour;
+        var is24Hour = System.getDeviceSettings().is24Hour;
+        var ampm = "";
+        if (!is24Hour) {
+            ampm = hours >= 12 ? "pm" : "am";
+            hours = hours % 12;
+            if (hours == 0) { hours = 12; }
+        }
+        var timeString = hours.toString() + ":" + clockTime.min.format("%02d");
+        var clockFont = clockSaira40;
+        var fontSetting = Application.Properties.getValue("ClockFont");
+        if (fontSetting != null && fontSetting == 1) {
+            clockFont = clockRajdhani40;
+        }
+        dc.drawText(MID_CENTER_X, MID_Y + 14, clockFont, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+
+        // Right column — moon, AM/PM, seconds (same as shore)
+        var seconds = clockTime.sec.format("%02d");
+        drawRightColumn(dc, ampm, seconds, dm);
+    }
+
+    // Surf mode bottom section — swell view
+    private function drawSwellSection(dc as Dc, dm as DataManager) as Void {
+        var swellY = 120;
+        var swellTextY = swellY + 18;
+
+        // Col 1: Swell height
+        var htText = "--";
+        if (dm.swellHeight != null) {
+            var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
+            if (isMetric) {
+                htText = dm.swellHeight.format("%.1f") + "m";
+            } else {
+                htText = (dm.swellHeight * 3.281).format("%.1f") + "ft";
+            }
+        }
+        if (surferIconsFont != null) {
+            drawTextAligned(dc, WX_COL1_X, swellY, surferIconsFont, "H", Graphics.TEXT_JUSTIFY_CENTER);
+        }
+        drawTextAligned(dc, WX_COL1_X, swellTextY, Graphics.FONT_XTINY, htText, Graphics.TEXT_JUSTIFY_CENTER);
+
+        // Col 2: Swell period
+        var perText = "--";
+        if (dm.swellPeriod != null) {
+            perText = dm.swellPeriod.toNumber().toString() + "s";
+        }
+        drawTextAligned(dc, WX_COL2_X, swellY + 4, Graphics.FONT_XTINY, "~", Graphics.TEXT_JUSTIFY_CENTER);
+        drawTextAligned(dc, WX_COL2_X, swellTextY + 4, Graphics.FONT_XTINY, perText, Graphics.TEXT_JUSTIFY_CENTER);
+
+        // Col 3: Swell direction arrow
+        if (dm.swellDirection != null) {
+            drawWindArrow(dc, WX_COL3_X, swellY + WIND_ARROW_Y_OFFSET, dm.swellDirection, WIND_ARROW_SIZE);
+        }
+        var dirText = "--";
+        if (dm.swellDirection != null) {
+            dirText = degreesToCompass(dm.swellDirection);
+        }
+        drawTextAligned(dc, WX_COL3_X, swellTextY, Graphics.FONT_XTINY, dirText, Graphics.TEXT_JUSTIFY_CENTER);
+    }
+
+    // Surf mode bottom section — tide curve view
+    private function drawTideCurve(dc as Dc, dm as DataManager) as Void {
+        var topY = 114;
+        var bottomY = 170;
+        var leftX = 12;
+        var rightX = 164;
+
+        if (dm.tideExtremes == null || dm.tideExtremes.size() < 2) {
+            drawTextAligned(dc, 88, 142, Graphics.FONT_XTINY, "--", Graphics.TEXT_JUSTIFY_CENTER);
+            return;
+        }
+
+        // Time range: start and end of today
+        var now = Time.now();
+        var todayInfo = Gregorian.info(now, Time.FORMAT_SHORT);
+        var startMoment = Gregorian.moment({
+            :year => todayInfo.year, :month => todayInfo.month, :day => todayInfo.day,
+            :hour => 0, :minute => 0, :second => 0
+        });
+        var startTime = startMoment.value().toFloat();
+        var endTime = startTime + 86400.0;
+        var nowVal = now.value().toFloat();
+
+        // Find height range
+        var minH = 999.0;
+        var maxH = -999.0;
+        for (var i = 0; i < dm.tideExtremes.size(); i++) {
+            var entry = dm.tideExtremes[i] as Dictionary;
+            var h = entry["height"];
+            if (h != null) {
+                var hf = (h as Float).toFloat();
+                if (hf < minH) { minH = hf; }
+                if (hf > maxH) { maxH = hf; }
+            }
+        }
+        if (maxH <= minH) { maxH = minH + 1.0; }
+        var hRange = maxH - minH;
+        var padding = hRange * 0.1;
+        minH -= padding;
+        maxH += padding;
+        hRange = maxH - minH;
+
+        // Draw curve: for each x pixel, interpolate height and plot
+        var prevPy = -1;
+        for (var x = leftX; x <= rightX; x++) {
+            var t = startTime + (x - leftX).toFloat() / (rightX - leftX).toFloat() * (endTime - startTime);
+            // Find surrounding events
+            var prev = null;
+            var next = null;
+            for (var i = 0; i < dm.tideExtremes.size(); i++) {
+                var entry = dm.tideExtremes[i] as Dictionary;
+                var et = entry["time"] as Number;
+                if (et != null) {
+                    if (et.toFloat() <= t) { prev = entry; }
+                    else if (next == null) { next = entry; }
+                }
+            }
+            var height = null;
+            if (prev != null && next != null) {
+                var pt = (prev["time"] as Number).toFloat();
+                var nt = (next["time"] as Number).toFloat();
+                var ph = (prev["height"] as Float).toFloat();
+                var nh = (next["height"] as Float).toFloat();
+                var frac = (t - pt) / (nt - pt);
+                height = ph + (nh - ph) * (1.0 - Math.cos(frac * Math.PI)) / 2.0;
+            } else if (prev != null) {
+                height = (prev["height"] as Float).toFloat();
+            } else if (next != null) {
+                height = (next["height"] as Float).toFloat();
+            }
+
+            if (height != null) {
+                var py = bottomY - ((height - minH) / hRange * (bottomY - topY)).toNumber();
+                if (py < topY) { py = topY; }
+                if (py > bottomY) { py = bottomY; }
+                if (prevPy >= 0) {
+                    dc.drawLine(x - 1, prevPy, x, py);
+                }
+                prevPy = py;
+            }
+        }
+
+        // Draw "now" marker
+        if (nowVal >= startTime && nowVal <= endTime) {
+            var nowX = leftX + ((nowVal - startTime) / (endTime - startTime) * (rightX - leftX)).toNumber();
+            dc.drawLine(nowX, topY, nowX, bottomY);
+        }
+    }
+
+    // Convert degrees to compass direction
+    private function degreesToCompass(deg as Number) as String {
+        var dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+        var idx = Math.round(deg.toFloat() / 45.0).toNumber() % 8;
+        return dirs[idx];
+    }
+
+    // =========================================================
     // onBackgroundData — NOT on the view, moved to App class
     // =========================================================
 
@@ -732,4 +1015,25 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         WatchUi.requestUpdate();
     }
 
+}
+
+
+// BehaviorDelegate for button press handling (surf mode bottom toggle)
+class SurferWatchFaceBehaviorDelegate extends WatchUi.BehaviorDelegate {
+    function initialize() {
+        BehaviorDelegate.initialize();
+    }
+
+    function onSelect() as Boolean {
+        var surfMode = Application.Properties.getValue("SurfMode");
+        if (surfMode != null && surfMode == 1) {
+            var dm = (Application.getApp() as SurferWatchFaceApp).getDataManager();
+            if (dm != null) {
+                dm.bottomToggleState = (dm.bottomToggleState == 0) ? 1 : 0;
+                WatchUi.requestUpdate();
+            }
+            return true;
+        }
+        return false;
+    }
 }
