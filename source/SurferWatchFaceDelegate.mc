@@ -322,19 +322,11 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Get the active StormGlass API key
     // If primary failed last time (stored flag), try backup first
     private function getStormGlassApiKey() as String or Null {
-        var primaryFailed = Application.Storage.getValue("sgPrimaryFailed");
         var apiKey = Application.Properties.getValue("StormGlassApiKey") as String or Null;
-        var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
-
-        if (primaryFailed != null && primaryFailed == true) {
-            if (backupKey != null && !backupKey.equals("")) {
-                System.println("SG: using backup key (primary failed)");
-                return backupKey;
-            }
-        }
         if (apiKey != null && !apiKey.equals("")) {
             return apiKey;
         }
+        var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
         if (backupKey != null && !backupKey.equals("")) {
             return backupKey;
         }
