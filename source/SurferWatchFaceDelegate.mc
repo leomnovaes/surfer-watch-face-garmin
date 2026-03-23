@@ -24,9 +24,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Swell result holder
     private var _swellResult as Dictionary or Null;
 
-    // Track whether we already tried the backup key this cycle
-    private var _usedBackupKey as Boolean;
-
     function initialize() {
         ServiceDelegate.initialize();
         _weatherResult = null;
@@ -36,7 +33,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         _lat = 0.0f;
         _lng = 0.0f;
         _swellResult = null;
-        _usedBackupKey = false;
     }
 
     // Haversine distance in meters between two lat/lon pairs
@@ -239,19 +235,14 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             Application.Storage.setValue(prefix + "tideFetchLat", _lat);
             Application.Storage.setValue(prefix + "tideFetchLng", _lng);
             Application.Storage.setValue(prefix + "tideDataExpired", false);
+            Application.Storage.setValue("sgPrimaryFailed", false);
             if (_isSurfMode) {
                 Application.Storage.setValue("surf_tideExtremes", tideData);
             }
-        } else if (!_usedBackupKey) {
-            // Tide fetch failed — retry with backup key
-            var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
-            if (backupKey != null && !backupKey.equals("")) {
-                _usedBackupKey = true;
-                System.println("TIDE: retrying with backup key");
-                var tideService = new TideService(method(:onTideComplete));
-                tideService.fetch(_lat, _lng, backupKey);
-                return;
-            }
+        } else {
+            // Primary key failed — mark it so next cycle uses backup
+            Application.Storage.setValue("sgPrimaryFailed", true);
+            System.println("TIDE: primary key failed, marked for backup next cycle");
         }
 
         if (_swellNeeded) {
@@ -278,16 +269,10 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         _swellResult = swellData;
         System.println("SWELL: onSwellComplete data=" + (swellData != null ? "received" : "null"));
 
-        if (swellData == null && !_usedBackupKey) {
-            // Swell fetch failed — retry with backup key
-            var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
-            if (backupKey != null && !backupKey.equals("")) {
-                _usedBackupKey = true;
-                System.println("SWELL: retrying with backup key");
-                var tideService = new TideService(method(:onTideComplete));
-                tideService.fetchSwell(_lat, _lng, backupKey, method(:onSwellComplete));
-                return;
-            }
+        if (swellData == null) {
+            // Primary key failed — mark it so next cycle uses backup
+            Application.Storage.setValue("sgPrimaryFailed", true);
+            System.println("SWELL: primary key failed, marked for backup next cycle");
         }
 
         // Only mark as fetched when we got real data
@@ -296,6 +281,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             Application.Storage.setValue(prefix + "swellFetchedDay", todayUTC());
             Application.Storage.setValue(prefix + "swellFetchLat", _lat);
             Application.Storage.setValue(prefix + "swellFetchLng", _lng);
+            Application.Storage.setValue("sgPrimaryFailed", false);
         }
 
         var result = {} as Dictionary<String, Application.PropertyValueType>;
@@ -319,14 +305,22 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         }
     }
 
-    // Get the active StormGlass API key (primary, or backup if primary quota exhausted)
+    // Get the active StormGlass API key
+    // If primary failed last time (stored flag), try backup first
     private function getStormGlassApiKey() as String or Null {
+        var primaryFailed = Application.Storage.getValue("sgPrimaryFailed");
         var apiKey = Application.Properties.getValue("StormGlassApiKey") as String or Null;
+        var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
+
+        if (primaryFailed != null && primaryFailed == true) {
+            // Try backup first
+            if (backupKey != null && !backupKey.equals("")) {
+                return backupKey;
+            }
+        }
         if (apiKey != null && !apiKey.equals("")) {
             return apiKey;
         }
-        // Try backup key
-        var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
         if (backupKey != null && !backupKey.equals("")) {
             return backupKey;
         }
