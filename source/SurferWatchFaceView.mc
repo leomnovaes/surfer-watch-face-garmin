@@ -481,6 +481,20 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private static const WIND_ARROW_NOTCH = 0.5;    // tail notch Y (1.0 = no tail/triangle, 0.0 = center, negative = deep tail)
     private static const WIND_ARROW_Y_OFFSET = 5;   // vertical offset from icon position
 
+    // --- Layout constants — Tide Curve (tweak these) ---
+    private static const TC_Y = 114;               // top Y of entire tide curve section (including labels)
+    private static const TC_LABEL_HEIGHT = 14;      // vertical space reserved for labels above/below curve
+    private static const TC_CURVE_HEIGHT = 28;      // height of the filled curve area in pixels
+    private static const TC_LABEL_GAP = 2;          // gap between label text and curve edge
+    private static const TC_LEFT_X = 14;            // left edge of curve
+    private static const TC_RIGHT_X = 162;          // right edge of curve
+    private static const TC_NOW_GAP_HALF = 2;       // half-width of the "now" gap in pixels
+    private static const TC_TRI_WIDTH = 4;          // half-width of the "now" triangle
+    private static const TC_TRI_HEIGHT = 5;         // height of the "now" triangle
+    private static const TC_TRI_GAP = 3;            // gap between triangle tip and curve top
+    private static const TC_TICK_HALF = 2;          // half-width of tick marks at events
+    private static const TC_HEIGHT_PAD = 0.1;       // padding fraction added to height range (0.1 = 10%)
+
     // --- Layout constants — HR Circle content positions (tweak these) ---
     private static const HR_HEART_X = 144;
     private static const HR_HEART_Y = 14;
@@ -909,14 +923,15 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     // Surf mode bottom section — tide curve view
     // Filled area under curve, gap at "now", triangle marker, tick marks + time labels at events
     private function drawTideCurve(dc as Dc, dm as DataManager) as Void {
-        var curveTopY = 130;
-        var curveBottomY = 158;
-        var leftX = 14;
-        var rightX = 162;
-        var nowGapHalf = 2; // half-width of the "now" gap in pixels
+        // Derived positions from constants
+        var curveTopY = TC_Y + TC_LABEL_HEIGHT;
+        var curveBottomY = curveTopY + TC_CURVE_HEIGHT;
+        var leftX = TC_LEFT_X;
+        var rightX = TC_RIGHT_X;
+        var nowGapHalf = TC_NOW_GAP_HALF; // half-width of the "now" gap in pixels
 
         if (dm.tideExtremes == null || dm.tideExtremes.size() < 2) {
-            drawTextAligned(dc, 88, 142, Graphics.FONT_XTINY, "--", Graphics.TEXT_JUSTIFY_CENTER);
+            drawTextAligned(dc, 88, curveTopY + TC_CURVE_HEIGHT / 2, Graphics.FONT_XTINY, "--", Graphics.TEXT_JUSTIFY_CENTER);
             return;
         }
 
@@ -946,9 +961,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         }
         if (maxH <= minH) { maxH = minH + 1.0; }
         var hRange = maxH - minH;
-        var pad = hRange * 0.1;
-        minH -= pad;
-        maxH += pad;
+        minH -= hRange * TC_HEIGHT_PAD;
+        maxH += hRange * TC_HEIGHT_PAD;
         hRange = maxH - minH;
 
         // Helper: interpolate height at time t
@@ -985,7 +999,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             }
 
             if (height != null) {
-                var py = curveBottomY - ((height - minH) / hRange * (curveBottomY - curveTopY)).toNumber();
+                var py = curveBottomY - ((height - minH) / hRange * TC_CURVE_HEIGHT).toNumber();
                 if (py < curveTopY) { py = curveTopY; }
                 if (py > curveBottomY) { py = curveBottomY; }
 
@@ -1022,13 +1036,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 var nh = (next2["height"] as Float).toFloat();
                 var frac = (nowVal - pt) / (nt - pt);
                 nowHeight = ph + (nh - ph) * (1.0 - Math.cos(frac * Math.PI)) / 2.0;
-                nowPy = curveBottomY - ((nowHeight - minH) / hRange * (curveBottomY - curveTopY)).toNumber();
+                nowPy = curveBottomY - ((nowHeight - minH) / hRange * TC_CURVE_HEIGHT).toNumber();
             }
-            // Small downward triangle above the curve (2px gap, 4px tall)
-            var triBottom = nowPy - 3;
-            var triTop = triBottom - 5;
-            if (triTop < curveTopY - 6) { triTop = curveTopY - 6; }
-            dc.fillPolygon([[nowX, triBottom], [nowX - 4, triTop], [nowX + 4, triTop]]);
+            var triBottom = nowPy - TC_TRI_GAP;
+            var triTop = triBottom - TC_TRI_HEIGHT;
+            dc.fillPolygon([[nowX, triBottom], [nowX - TC_TRI_WIDTH, triTop], [nowX + TC_TRI_WIDTH, triTop]]);
         }
 
         // Draw tick marks and time labels at tide events
@@ -1040,11 +1052,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 var etf = et.toFloat();
                 if (etf >= startTime && etf <= endTime) {
                     var ex = leftX + ((etf - startTime) / (endTime - startTime) * (rightX - leftX)).toNumber();
-                    var epy = curveBottomY - (((eh as Float).toFloat() - minH) / hRange * (curveBottomY - curveTopY)).toNumber();
 
-                    // Horizontal tick mark (5px wide, 2px thick)
+                    // Tick marks at curve edges
                     dc.setPenWidth(2);
-                    dc.drawLine(ex - 2, epy, ex + 2, epy);
+                    dc.drawLine(ex - TC_TICK_HALF, curveTopY, ex + TC_TICK_HALF, curveTopY);
+                    dc.drawLine(ex - TC_TICK_HALF, curveBottomY, ex + TC_TICK_HALF, curveBottomY);
                     dc.setPenWidth(1);
 
                     // Time label — short format
@@ -1062,14 +1074,13 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                         timeLabel = hr.toString() + suffix;
                     }
 
-                    // Place label: above for highs, below for lows, with 2px spacing
                     var isHigh = (entry["type"] as String).equals("high");
                     if (isHigh) {
-                        // Label above the peak — bottom of text 2px above the tick
-                        drawTextAligned(dc, ex, epy - 16, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
+                        // Label above curve area, referenced from curveTopY
+                        drawTextAligned(dc, ex, curveTopY - TC_LABEL_GAP - 13, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
                     } else {
-                        // Label below the valley — top of text 2px below the tick
-                        drawTextAligned(dc, ex, epy + 3, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
+                        // Label below curve area, referenced from curveBottomY
+                        drawTextAligned(dc, ex, curveBottomY + TC_LABEL_GAP, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
                     }
                 }
             }
