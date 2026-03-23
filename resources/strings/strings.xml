@@ -18,5 +18,11 @@
     <string id="WindSpeedKnots">knots</string>
     <string id="WindSpeedMph">mph</string>
     <string id="WindSpeedMs">m/s</string>
+    <string id="SurfModeTitle">Display Mode</string>
+    <string id="SurfModeShore">Shore</string>
+    <string id="SurfModeSurf">Surf</string>
+    <string id="SurfSpotLatTitle">Surf Spot Latitude</string>
+    <string id="SurfSpotLngTitle">Surf Spot Longitude</string>
+    <string id="CopyGPSToSurfSpotTitle">Copy GPS to Surf Spot</string>
 
 </strings>

@@ -7,5 +7,9 @@
     <property id="ClockFont" type="number">0</property>
     <property id="WeatherSource" type="number">0</property>
     <property id="WindSpeedUnit" type="number">0</property>
+    <property id="SurfMode" type="number">0</property>
+    <property id="SurfSpotLat" type="string">0.0</property>
+    <property id="SurfSpotLng" type="string">0.0</property>
+    <property id="CopyGPSToSurfSpot" type="boolean">false</property>
 
 </properties>

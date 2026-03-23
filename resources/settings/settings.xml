@@ -32,6 +32,25 @@
         <settingConfig type="alphaNumeric"/>
     </setting>
 
+    <setting propertyKey="@Properties.SurfMode" title="@Strings.SurfModeTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.SurfModeShore</listEntry>
+            <listEntry value="1">@Strings.SurfModeSurf</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.SurfSpotLat" title="@Strings.SurfSpotLatTitle">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+
+    <setting propertyKey="@Properties.SurfSpotLng" title="@Strings.SurfSpotLngTitle">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+
+    <setting propertyKey="@Properties.CopyGPSToSurfSpot" title="@Strings.CopyGPSToSurfSpotTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+
     <setting propertyKey="@Properties.HomeLat" title="@Strings.HomeLatTitle">
         <settingConfig type="alphaNumeric"/>
     </setting>

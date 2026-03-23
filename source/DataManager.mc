@@ -1,6 +1,7 @@
 import Toybox.Activity;
 import Toybox.Application;
 import Toybox.Lang;
+import Toybox.Math;
 import Toybox.Position;
 import Toybox.SensorHistory;
 import Toybox.System;
@@ -38,11 +39,30 @@ class DataManager {
     var lastKnownLat as Float or Null;
     var lastKnownLng as Float or Null;
 
+    // --- Surf mode: swell data (from StormGlass /v2/weather/point) ---
+    var swellHeight as Float or Null;
+    var swellPeriod as Float or Null;
+    var swellDirection as Number or Null;
+    var surfWindSpeed as Float or Null;
+    var surfWindDeg as Number or Null;
+    var swellFetchedDay as String or Null;
+
+    // --- Surf mode: sensor data ---
+    var waterTemp as Float or Null;
+    var solarIntensity as Number or Null;
+
+    // --- Surf mode: interpolated tide ---
+    var interpTideHeight as Float or Null;
+
+    // --- Surf mode: UI state ---
+    var bottomToggleState as Number;
+
     function initialize() {
         // Initialize sensor defaults
         battery = 0;
         notificationCount = 0;
         bluetoothConnected = false;
+        bottomToggleState = 0;
 
         // Load persisted data from Application.Storage
         loadTideData();
@@ -332,6 +352,168 @@ class DataManager {
         // Phase as 0.0–1.0
         moonPhase = (cycles - cycles.toNumber().toFloat());
         if (moonPhase < 0.0f) { moonPhase = moonPhase + 1.0f; }
+    }
+
+    // =========================================================
+    // interpolateTideHeight() — cosine interpolation between
+    // surrounding tide extremes for current tide height.
+    // Called from onUpdate() when SurfMode=1.
+    // =========================================================
+    function interpolateTideHeight() as Void {
+        if (tideExtremes == null || tideExtremes.size() < 2) {
+            interpTideHeight = null;
+            return;
+        }
+
+        var now = Time.now().value();
+        var prevEvent = null;
+        var nextEvent = null;
+
+        for (var i = 0; i < tideExtremes.size(); i++) {
+            var entry = tideExtremes[i] as Dictionary;
+            var entryTime = entry["time"] as Number;
+            if (entryTime != null) {
+                if (entryTime <= now) {
+                    prevEvent = entry;
+                } else if (nextEvent == null) {
+                    nextEvent = entry;
+                }
+            }
+        }
+
+        if (prevEvent == null && nextEvent != null) {
+            interpTideHeight = (nextEvent["height"] as Float).toFloat();
+            return;
+        }
+        if (prevEvent != null && nextEvent == null) {
+            interpTideHeight = (prevEvent["height"] as Float).toFloat();
+            return;
+        }
+        if (prevEvent == null || nextEvent == null) {
+            interpTideHeight = null;
+            return;
+        }
+
+        var prevTime = (prevEvent["time"] as Number).toFloat();
+        var nextTime = (nextEvent["time"] as Number).toFloat();
+        var prevHeight = (prevEvent["height"] as Float).toFloat();
+        var nextHeight = (nextEvent["height"] as Float).toFloat();
+
+        var t = (now.toFloat() - prevTime) / (nextTime - prevTime);
+        // Cosine interpolation for smooth tide curve
+        interpTideHeight = prevHeight + (nextHeight - prevHeight) * (1.0 - Math.cos(t * Math.PI)) / 2.0;
+    }
+
+    // =========================================================
+    // onSwellData(data) — receives parsed swell Dictionary from
+    // onBackgroundData(). Persists to surf_ prefixed storage.
+    // =========================================================
+    function onSwellData(data as Dictionary) as Void {
+        swellHeight = data["swellHeight"] as Float or Null;
+        swellPeriod = data["swellPeriod"] as Float or Null;
+        swellDirection = data["swellDirection"] as Number or Null;
+        surfWindSpeed = data["windSpeed"] as Float or Null;
+        surfWindDeg = data["windDeg"] as Number or Null;
+
+        Application.Storage.setValue("surf_swellHeight", swellHeight);
+        Application.Storage.setValue("surf_swellPeriod", swellPeriod);
+        Application.Storage.setValue("surf_swellDirection", swellDirection);
+        Application.Storage.setValue("surf_windSpeed", surfWindSpeed);
+        Application.Storage.setValue("surf_windDeg", surfWindDeg);
+
+        var now = Time.now();
+        var today = Gregorian.info(now, Time.FORMAT_SHORT);
+        swellFetchedDay = today.year.format("%04d") + "-" +
+                          today.month.format("%02d") + "-" +
+                          today.day.format("%02d");
+        Application.Storage.setValue("surf_swellFetchedDay", swellFetchedDay);
+    }
+
+    // =========================================================
+    // loadSurfCache() — loads surf-mode data from surf_ prefixed
+    // Application.Storage keys.
+    // =========================================================
+    function loadSurfCache() as Void {
+        tideExtremes = Application.Storage.getValue("surf_tideExtremes") as Array or Null;
+        tideFetchedDay = Application.Storage.getValue("surf_tideFetchedDay") as String or Null;
+        swellHeight = Application.Storage.getValue("surf_swellHeight") as Float or Null;
+        swellPeriod = Application.Storage.getValue("surf_swellPeriod") as Float or Null;
+        swellDirection = Application.Storage.getValue("surf_swellDirection") as Number or Null;
+        surfWindSpeed = Application.Storage.getValue("surf_windSpeed") as Float or Null;
+        surfWindDeg = Application.Storage.getValue("surf_windDeg") as Number or Null;
+        swellFetchedDay = Application.Storage.getValue("surf_swellFetchedDay") as String or Null;
+    }
+
+    // =========================================================
+    // loadShoreCache() — loads shore-mode data from unprefixed
+    // Application.Storage keys.
+    // =========================================================
+    function loadShoreCache() as Void {
+        loadTideData();
+        loadWeatherData();
+    }
+
+    // =========================================================
+    // checkCopyGPS() — one-shot GPS copy to surf spot settings.
+    // When CopyGPSToSurfSpot is true and GPS is available,
+    // copies coordinates and resets the flag.
+    // =========================================================
+    function checkCopyGPS() as Void {
+        var copyGPS = Application.Properties.getValue("CopyGPSToSurfSpot");
+        if (copyGPS == null || copyGPS != true) {
+            return;
+        }
+        if (lastKnownLat == null || lastKnownLng == null) {
+            return;
+        }
+        Application.Properties.setValue("SurfSpotLat", lastKnownLat.toString());
+        Application.Properties.setValue("SurfSpotLng", lastKnownLng.toString());
+        Application.Properties.setValue("CopyGPSToSurfSpot", false);
+    }
+
+    // =========================================================
+    // updateSurfSensors() — reads water temp and solar intensity
+    // from SensorHistory. Called from onUpdate() when SurfMode=1.
+    // =========================================================
+    function updateSurfSensors() as Void {
+        // Water temperature
+        if (SensorHistory has :getTemperatureHistory) {
+            var tempIter = SensorHistory.getTemperatureHistory({:period => 1});
+            if (tempIter != null) {
+                var sample = tempIter.next();
+                if (sample != null && sample.data != null) {
+                    waterTemp = sample.data.toFloat();
+                } else {
+                    waterTemp = null;
+                }
+            } else {
+                waterTemp = null;
+            }
+        } else {
+            waterTemp = null;
+        }
+
+        // Solar intensity
+        if (SensorHistory has :getSolarIntensityHistory) {
+            var solarIter = SensorHistory.getSolarIntensityHistory({:period => 1});
+            if (solarIter != null) {
+                var sample = solarIter.next();
+                if (sample != null && sample.data != null) {
+                    var val = sample.data;
+                    if (val >= 0 && val <= 100) {
+                        solarIntensity = val.toNumber();
+                    } else {
+                        solarIntensity = null;
+                    }
+                } else {
+                    solarIntensity = null;
+                }
+            } else {
+                solarIntensity = null;
+            }
+        } else {
+            solarIntensity = null;
+        }
     }
 
     // =========================================================
