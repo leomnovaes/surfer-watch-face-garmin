@@ -24,11 +24,15 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Swell result holder
     private var _swellResult as Dictionary or Null;
 
+    // Track whether we need OWM wind for surf spot
+    private var _surfWindNeeded as Boolean;
+
     function initialize() {
         ServiceDelegate.initialize();
         _weatherResult = null;
         _tideNeeded = false;
         _swellNeeded = false;
+        _surfWindNeeded = false;
         _isSurfMode = false;
         _lat = 0.0f;
         _lng = 0.0f;
@@ -190,13 +194,25 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         if (_isSurfMode) {
             _tideNeeded = isSurfTideRefreshNeeded(_lat, _lng);
             _swellNeeded = isSwellRefreshNeeded();
-            System.println("SURF: tideNeeded=" + _tideNeeded + " swellNeeded=" + _swellNeeded + " lat=" + _lat + " lng=" + _lng);
+            // Always fetch OWM wind for surf spot (free, small response)
+            var owmKey = Application.Properties.getValue("OWMApiKey") as String or Null;
+            _surfWindNeeded = (owmKey != null && !owmKey.equals(""));
+            System.println("SURF: tideNeeded=" + _tideNeeded + " swellNeeded=" + _swellNeeded + " windNeeded=" + _surfWindNeeded + " lat=" + _lat + " lng=" + _lng);
         } else {
             _tideNeeded = isTideRefreshNeeded(_lat, _lng);
             _swellNeeded = false;
         }
 
         if (owmNeeded) {
+            var apiKey = Application.Properties.getValue("OWMApiKey") as String;
+            var units = "metric";
+            if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) {
+                units = "imperial";
+            }
+            var weatherService = new WeatherService(method(:onWeatherComplete));
+            weatherService.fetch(_lat, _lng, apiKey, units);
+        } else if (_surfWindNeeded) {
+            // Surf mode: fetch OWM wind for surf spot, then chain to tide/swell
             var apiKey = Application.Properties.getValue("OWMApiKey") as String;
             var units = "metric";
             if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) {
@@ -240,9 +256,14 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
                 Application.Storage.setValue("surf_tideExtremes", tideData);
             }
         } else {
-            // Primary key failed — mark it so next cycle uses backup
-            Application.Storage.setValue("sgPrimaryFailed", true);
-            System.println("TIDE: primary key failed, marked for backup next cycle");
+            // Only mark primary as failed on 402 (quota/payment) — not on -403 (memory) or other errors
+            var lastCode = Application.Storage.getValue("sgLastResponseCode") as Number or Null;
+            if (lastCode != null && lastCode == 402) {
+                Application.Storage.setValue("sgPrimaryFailed", true);
+                System.println("TIDE: 402 quota — marked primary as failed for backup next cycle");
+            } else {
+                System.println("TIDE: failed with code " + lastCode + " — not switching to backup");
+            }
         }
 
         if (_swellNeeded) {
@@ -270,9 +291,13 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         System.println("SWELL: onSwellComplete data=" + (swellData != null ? "received" : "null"));
 
         if (swellData == null) {
-            // Primary key failed — mark it so next cycle uses backup
-            Application.Storage.setValue("sgPrimaryFailed", true);
-            System.println("SWELL: primary key failed, marked for backup next cycle");
+            var lastCode = Application.Storage.getValue("sgLastResponseCode") as Number or Null;
+            if (lastCode != null && lastCode == 402) {
+                Application.Storage.setValue("sgPrimaryFailed", true);
+                System.println("SWELL: 402 quota — marked primary as failed for backup next cycle");
+            } else {
+                System.println("SWELL: failed with code " + lastCode + " — not switching to backup");
+            }
         }
 
         // Only mark as fetched when we got real data
