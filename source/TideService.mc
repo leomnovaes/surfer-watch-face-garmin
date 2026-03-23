@@ -145,15 +145,10 @@ class TideService {
     // tide fetching. Returns closest hourly entry to now.
     // =========================================================
     function fetchSwell(lat as Float, lng as Float, apiKey as String, callback as Method) as Void {
-        // 24h window from start of today — 3 params fits in 28KB background memory (~6KB response)
-        var now = Time.now();
-        var todayInfo = Gregorian.info(now, Time.FORMAT_SHORT);
-        var startMoment = Gregorian.moment({
-            :year => todayInfo.year, :month => todayInfo.month, :day => todayInfo.day,
-            :hour => 0, :minute => 0, :second => 0
-        });
-        var startUnix = startMoment.value();
-        var endUnix = startUnix + 86400;
+        // 6h window centered on now — 24h response exceeds background memory (~28KB)
+        var nowUnix = Time.now().value();
+        var startUnix = nowUnix - (3 * 3600);
+        var endUnix = nowUnix + (3 * 3600);
 
         var url = "https://api.stormglass.io/v2/weather/point"
             + "?lat=" + lat.toString()
