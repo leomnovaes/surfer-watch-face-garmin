@@ -61,18 +61,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         var tideFetchedDay = Application.Storage.getValue("tideFetchedDay") as String or Null;
         var today = todayUTC();
 
-        // Guard: skip if quota exhausted
-        var quotaExhausted = Application.Storage.getValue("stormGlassQuotaExhausted");
-        if (quotaExhausted != null && quotaExhausted == true) {
-            // Check if it's a new day — clear quota flag if so
-            if (tideFetchedDay != null && !tideFetchedDay.equals(today)) {
-                // New day — clear the exhausted flag
-                Application.Storage.setValue("stormGlassQuotaExhausted", false);
-            } else {
-                return false;
-            }
-        }
-
         // Condition 1: never fetched
         if (tideFetchedDay == null) {
             return true;
@@ -106,15 +94,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         var swellFetchedDay = Application.Storage.getValue("surf_swellFetchedDay") as String or Null;
         var today = todayUTC();
 
-        var quotaExhausted = Application.Storage.getValue("surf_stormGlassQuotaExhausted");
-        if (quotaExhausted != null && quotaExhausted == true) {
-            if (swellFetchedDay != null && !swellFetchedDay.equals(today)) {
-                Application.Storage.setValue("surf_stormGlassQuotaExhausted", false);
-            } else {
-                return false;
-            }
-        }
-
         // Never fetched
         if (swellFetchedDay == null) { return true; }
         // New calendar day
@@ -137,15 +116,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     private function isSurfTideRefreshNeeded(lat as Float, lng as Float) as Boolean {
         var tideFetchedDay = Application.Storage.getValue("surf_tideFetchedDay") as String or Null;
         var today = todayUTC();
-
-        var quotaExhausted = Application.Storage.getValue("surf_stormGlassQuotaExhausted");
-        if (quotaExhausted != null && quotaExhausted == true) {
-            if (tideFetchedDay != null && !tideFetchedDay.equals(today)) {
-                Application.Storage.setValue("surf_stormGlassQuotaExhausted", false);
-            } else {
-                return false;
-            }
-        }
 
         // Never fetched
         if (tideFetchedDay == null) { return true; }

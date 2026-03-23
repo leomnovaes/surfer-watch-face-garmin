@@ -78,16 +78,10 @@ class TideService {
             return;
         }
 
-        // Check quota: meta.requestCount vs meta.dailyQuota
+        // Check quota (informational only — backup key handles exhaustion)
         var meta = data["meta"];
         if (meta != null && meta instanceof Dictionary) {
-            var requestCount = meta["requestCount"];
-            var dailyQuota = meta["dailyQuota"];
-            if (requestCount != null && dailyQuota != null) {
-                if (requestCount >= dailyQuota) {
-                    Application.Storage.setValue("stormGlassQuotaExhausted", true);
-                }
-            }
+            // Quota info available but not used for gating
         }
 
         // Parse response data array — minimal parsing for background memory
@@ -222,16 +216,10 @@ class TideService {
             return;
         }
 
-        // Check quota
+        // Check quota (informational only)
         var meta = data["meta"];
         if (meta != null && meta instanceof Dictionary) {
-            var requestCount = meta["requestCount"];
-            var dailyQuota = meta["dailyQuota"];
-            if (requestCount != null && dailyQuota != null) {
-                if (requestCount >= dailyQuota) {
-                    Application.Storage.setValue("surf_stormGlassQuotaExhausted", true);
-                }
-            }
+            // Quota info available but not used for gating
         }
 
         var hours = data["hours"];
