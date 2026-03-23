@@ -278,6 +278,10 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     function onSwellComplete(swellData as Dictionary or Null) as Void {
         _swellResult = swellData;
 
+        // Always mark swell as fetched today to prevent retries (even on failure)
+        var prefix = _isSurfMode ? "surf_" : "";
+        Application.Storage.setValue(prefix + "swellFetchedDay", todayUTC());
+
         var result = {} as Dictionary<String, Application.PropertyValueType>;
         if (_weatherResult != null) {
             result["weather"] = _weatherResult as Application.PropertyValueType;
@@ -299,10 +303,27 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         }
     }
 
+    // Get the active StormGlass API key (primary, or backup if primary quota exhausted)
+    private function getStormGlassApiKey() as String or Null {
+        var apiKey = Application.Properties.getValue("StormGlassApiKey") as String or Null;
+        if (apiKey != null && !apiKey.equals("")) {
+            return apiKey;
+        }
+        // Try backup key
+        var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
+        if (backupKey != null && !backupKey.equals("")) {
+            return backupKey;
+        }
+        return null;
+    }
+
     // Start a swell fetch using StormGlass weather endpoint
     private function startSwellFetch() as Void {
-        var apiKey = Application.Properties.getValue("StormGlassApiKey") as String or Null;
-        if (apiKey == null || apiKey.equals("")) {
+        var apiKey = getStormGlassApiKey();
+        if (apiKey == null) {
+            // No key — mark swell as fetched today to prevent retries
+            var prefix = _isSurfMode ? "surf_" : "";
+            Application.Storage.setValue(prefix + "swellFetchedDay", todayUTC());
             exitWithResults();
             return;
         }
@@ -313,9 +334,8 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
 
     // Start a tide fetch using StormGlass API
     private function startTideFetch() as Void {
-        var apiKey = Application.Properties.getValue("StormGlassApiKey") as String or Null;
-        if (apiKey == null || apiKey.equals("")) {
-            // No StormGlass key — exit with whatever we have
+        var apiKey = getStormGlassApiKey();
+        if (apiKey == null) {
             exitWithResults();
             return;
         }

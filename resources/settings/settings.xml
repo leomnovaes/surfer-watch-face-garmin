@@ -32,6 +32,10 @@
         <settingConfig type="alphaNumeric"/>
     </setting>
 
+    <setting propertyKey="@Properties.StormGlassBackupApiKey" title="@Strings.StormGlassBackupApiKeyTitle">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+
     <setting propertyKey="@Properties.SurfMode" title="@Strings.SurfModeTitle">
         <settingConfig type="list">
             <listEntry value="0">@Strings.SurfModeShore</listEntry>
