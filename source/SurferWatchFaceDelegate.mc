@@ -233,6 +233,13 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             Application.Storage.setValue(prefix + "swellFetchLat", _lat);
             Application.Storage.setValue(prefix + "swellFetchLng", _lng);
         }
+        // Check if we got -403 (out of memory) — stop chaining, exit now
+        var lastCode = Application.Storage.getValue("sgLastResponseCode") as Number or Null;
+        if (lastCode != null && lastCode == -403) {
+            System.println("SWELL: -403 memory exhausted, exiting cycle");
+            exitWithAllResults();
+            return;
+        }
         chainAfterSwell();
     }
 
@@ -259,6 +266,12 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             if (_isSurfMode) {
                 Application.Storage.setValue("surf_tideExtremes", tideData);
             }
+        }
+        var lastCode = Application.Storage.getValue("sgLastResponseCode") as Number or Null;
+        if (lastCode != null && lastCode == -403) {
+            System.println("TIDE: -403 memory exhausted, exiting cycle");
+            exitWithAllResults();
+            return;
         }
         chainAfterTide();
     }
