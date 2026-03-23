@@ -187,19 +187,15 @@ class TideService {
             return;
         }
 
-        // Build flat array of hourly entries
-        var results = [] as Array;
-        for (var i = 0; i < times.size(); i++) {
-            var entry = {} as Dictionary<String, Application.PropertyValueType>;
-            entry["time"] = times[i] as Application.PropertyValueType;
-            entry["swellHeight"] = (i < heights.size()) ? heights[i] as Application.PropertyValueType : null;
-            entry["swellPeriod"] = (i < periods.size()) ? periods[i] as Application.PropertyValueType : null;
-            entry["swellDirection"] = (i < dirs.size()) ? dirs[i] as Application.PropertyValueType : null;
-            results.add(entry);
-        }
+        // Pass flat arrays directly — much less memory than array of dicts
+        var result = {} as Dictionary<String, Application.PropertyValueType>;
+        result["times"] = times as Application.PropertyValueType;
+        result["heights"] = heights as Application.PropertyValueType;
+        result["periods"] = periods as Application.PropertyValueType;
+        result["directions"] = dirs as Application.PropertyValueType;
 
         if (_swellCallback != null) {
-            _swellCallback.invoke(results);
+            _swellCallback.invoke(result);
         }
     }
 

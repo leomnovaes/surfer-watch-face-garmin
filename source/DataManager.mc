@@ -415,29 +415,22 @@ class DataManager {
         swellDirection = data["swellDirection"] as Number or Null;
     }
 
-    // updateSwellFromForecast() — picks the closest-to-now entry
-    // from the stored swell forecast array. Called from onUpdate()
+    // updateSwellFromForecast() — picks the current hour's entry
+    // from the stored swell forecast arrays. Called from onUpdate()
     // so the display advances through the forecast over time.
     function updateSwellFromForecast() as Void {
-        var forecast = Application.Storage.getValue("surf_swellForecast") as Array or Null;
-        if (forecast == null || forecast.size() == 0) { return; }
+        var heights = Application.Storage.getValue("surf_swellHeights") as Array or Null;
+        if (heights == null || heights.size() == 0) { return; }
 
-        // Open-Meteo times are ISO strings like "2026-03-23T14:00"
-        // Find the entry closest to now
-        var now = Time.now();
-        var nowInfo = Gregorian.info(now, Time.FORMAT_SHORT);
-        var nowHour = nowInfo.hour;
+        var periods = Application.Storage.getValue("surf_swellPeriods") as Array or Null;
+        var dirs = Application.Storage.getValue("surf_swellDirections") as Array or Null;
 
-        // Simple approach: entries are hourly starting at midnight, index = hour
-        var idx = nowHour;
-        if (idx >= forecast.size()) { idx = forecast.size() - 1; }
+        var nowHour = Gregorian.info(Time.now(), Time.FORMAT_SHORT).hour;
+        var idx = nowHour < heights.size() ? nowHour : heights.size() - 1;
 
-        var entry = forecast[idx] as Dictionary;
-        if (entry != null) {
-            swellHeight = entry["swellHeight"] as Float or Null;
-            swellPeriod = entry["swellPeriod"] as Float or Null;
-            swellDirection = entry["swellDirection"] as Number or Null;
-        }
+        swellHeight = heights[idx] != null ? (heights[idx] as Float).toFloat() : null;
+        swellPeriod = (periods != null && idx < periods.size() && periods[idx] != null) ? (periods[idx] as Float).toFloat() : null;
+        swellDirection = (dirs != null && idx < dirs.size() && dirs[idx] != null) ? (dirs[idx] as Number).toNumber() : null;
     }
 
     // =========================================================

@@ -219,15 +219,28 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Callbacks — each writes to Storage, then chains to next
     // =========================================================
 
-    // Swell done — receives full 24h hourly array from Open-Meteo
-    function onSwellDone(swellData as Array or Null) as Void {
-        System.println("SWELL: done data=" + (swellData != null ? "received " + swellData.size() + " entries" : "null"));
-        if (swellData != null && swellData.size() > 0) {
-            // Store full forecast array
-            Application.Storage.setValue("surf_swellForecast", swellData);
-            // Extract current entry (index 0 or closest to now) for immediate display
-            var current = swellData[0] as Dictionary;
-            _swellResult = current;
+    // Swell done — receives dict of flat arrays from Open-Meteo
+    function onSwellDone(swellData as Dictionary or Null) as Void {
+        System.println("SWELL: done data=" + (swellData != null ? "received" : "null"));
+        if (swellData != null) {
+            // Store flat arrays directly — no conversion needed
+            Application.Storage.setValue("surf_swellHeights", swellData["heights"]);
+            Application.Storage.setValue("surf_swellPeriods", swellData["periods"]);
+            Application.Storage.setValue("surf_swellDirections", swellData["directions"]);
+
+            // Extract current hour for immediate display
+            var heights = swellData["heights"] as Array;
+            var periods = swellData["periods"] as Array;
+            var dirs = swellData["directions"] as Array;
+            if (heights != null && heights.size() > 0) {
+                var nowHour = Gregorian.info(Time.now(), Time.FORMAT_SHORT).hour;
+                var idx = nowHour < heights.size() ? nowHour : heights.size() - 1;
+                var current = {} as Dictionary<String, Application.PropertyValueType>;
+                current["swellHeight"] = heights[idx] as Application.PropertyValueType;
+                current["swellPeriod"] = (idx < periods.size()) ? periods[idx] as Application.PropertyValueType : null;
+                current["swellDirection"] = (idx < dirs.size()) ? dirs[idx] as Application.PropertyValueType : null;
+                _swellResult = current;
+            }
         }
         chainAfterSwell();
     }
