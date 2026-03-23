@@ -934,14 +934,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             return;
         }
 
-        // Time range: start and end of today
+        // Time range: local today (midnight to midnight)
         var now = Time.now();
-        var todayInfo = Gregorian.info(now, Time.FORMAT_SHORT);
-        var startMoment = Gregorian.moment({
-            :year => todayInfo.year, :month => todayInfo.month, :day => todayInfo.day,
-            :hour => 0, :minute => 0, :second => 0
-        });
-        var startTime = startMoment.value().toFloat();
+        var startTime = Time.today().value().toFloat();
         var endTime = startTime + 86400.0;
         var nowVal = now.value().toFloat();
         var nowX = leftX + ((nowVal - startTime) / (endTime - startTime) * (rightX - leftX)).toNumber();
@@ -1002,13 +997,16 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 if (py < curveTopY) { py = curveTopY; }
                 if (py > curveBottomY) { py = curveBottomY; }
 
-                // Skip fill in the "now" gap zone
+                // Now marker: dithered checkerboard for "gray" effect, solid fill elsewhere
                 var inNowGap = (x >= nowX - nowGapHalf && x <= nowX + nowGapHalf);
-                if (!inNowGap) {
-                    // Fill from curve to bottom
-                    if (py < curveBottomY) {
-                        dc.drawLine(x, py, x, curveBottomY);
+                if (inNowGap) {
+                    for (var dy = py; dy <= curveBottomY; dy++) {
+                        if ((x + dy) % 2 == 0) {
+                            dc.drawPoint(x, dy);
+                        }
                     }
+                } else if (py < curveBottomY) {
+                    dc.drawLine(x, py, x, curveBottomY);
                 }
             }
         }
@@ -1042,28 +1040,31 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             dc.fillPolygon([[nowX, triBottom], [nowX - TC_TRI_WIDTH, triTopPt], [nowX + TC_TRI_WIDTH, triTopPt]]);
         }
 
-        // Time labels at tide events (above curve only, aligned with event time)
+        // Time labels at tide events (above curve, short format, aligned to nearest hour)
         for (var i = 0; i < dm.tideExtremes.size(); i++) {
             var entry = dm.tideExtremes[i] as Dictionary;
             var et = entry["time"] as Number;
             if (et != null) {
                 var etf = et.toFloat();
                 if (etf >= startTime && etf <= endTime) {
+                    // Align label X with the event position
                     var ex = leftX + ((etf - startTime) / (endTime - startTime) * (rightX - leftX)).toNumber();
 
+                    // Short format: round to nearest hour
                     var moment = new Time.Moment(et);
                     var info = Gregorian.info(moment, Time.FORMAT_SHORT);
                     var hr = info.hour;
-                    var mn = info.min;
+                    // Round: if minutes >= 30, bump hour
+                    if (info.min >= 30) { hr = (hr + 1) % 24; }
                     var is24 = System.getDeviceSettings().is24Hour;
                     var timeLabel;
                     if (is24) {
-                        timeLabel = hr.toString() + ":" + mn.format("%02d");
+                        timeLabel = hr.toString();
                     } else {
                         var suffix = hr >= 12 ? "p" : "a";
                         hr = hr % 12;
                         if (hr == 0) { hr = 12; }
-                        timeLabel = hr.toString() + ":" + mn.format("%02d") + suffix;
+                        timeLabel = hr.toString() + suffix;
                     }
 
                     drawTextAligned(dc, ex, curveTopY - TC_LABEL_GAP - 13, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
