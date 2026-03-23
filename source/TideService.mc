@@ -53,12 +53,8 @@ class TideService {
 
     // Callback for StormGlass response
     function onTideResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
-        System.println("TIDE: onTideResponse code=" + responseCode);
+        System.println("TIDE: response code=" + responseCode);
         if (responseCode != 200 || data == null || !(data instanceof Dictionary)) {
-            if (responseCode == 402) {
-                Application.Storage.setValue("sgUseBackup", true);
-                System.println("TIDE: 402 — will use backup key next cycle");
-            }
             _callback.invoke(null);
             return;
         }
@@ -181,12 +177,8 @@ class TideService {
     private var _swellCallback as Method or Null;
 
     function onSwellResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
-        System.println("SWELL: onSwellResponse code=" + responseCode);
+        System.println("SWELL: response code=" + responseCode);
         if (responseCode != 200 || data == null || !(data instanceof Dictionary)) {
-            if (responseCode == 402) {
-                Application.Storage.setValue("sgUseBackup", true);
-                System.println("SWELL: 402 — will use backup key next cycle");
-            }
             if (_swellCallback != null) {
                 _swellCallback.invoke(null);
             }

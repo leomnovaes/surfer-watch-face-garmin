@@ -10,38 +10,39 @@ import Toybox.Time.Gregorian;
 (:background)
 class SurferWatchFaceDelegate extends System.ServiceDelegate {
 
-    // Holds weather result while waiting for tide fetch to complete
-    private var _weatherResult as Dictionary or Null;
-    // Track whether tide fetch is needed this cycle
-    private var _tideNeeded as Boolean;
-    // Track whether swell fetch is needed this cycle (surf mode only)
-    private var _swellNeeded as Boolean;
-    // Track surf mode for this cycle
     private var _isSurfMode as Boolean;
-    // Current position for this cycle
     private var _lat as Float;
     private var _lng as Float;
-    // Swell result holder
-    private var _swellResult as Dictionary or Null;
 
-    // Track whether we need OWM wind for surf spot
-    private var _surfWindNeeded as Boolean;
+    // What needs fetching this cycle
+    private var _tideNeeded as Boolean;
+    private var _swellNeeded as Boolean;
+    private var _windNeeded as Boolean;
+
+    // Accumulated results for Background.exit()
+    private var _weatherResult as Dictionary or Null;
+    private var _tideResult as Array or Null;
+    private var _swellResult as Dictionary or Null;
 
     function initialize() {
         ServiceDelegate.initialize();
-        _weatherResult = null;
-        _tideNeeded = false;
-        _swellNeeded = false;
-        _surfWindNeeded = false;
         _isSurfMode = false;
         _lat = 0.0f;
         _lng = 0.0f;
+        _tideNeeded = false;
+        _swellNeeded = false;
+        _windNeeded = false;
+        _weatherResult = null;
+        _tideResult = null;
         _swellResult = null;
     }
 
-    // Haversine distance in meters between two lat/lon pairs
+    // =========================================================
+    // Utility
+    // =========================================================
+
     function distanceBetween(lat1 as Float, lon1 as Float, lat2 as Float, lon2 as Float) as Float {
-        var R = 6371000.0f; // Earth radius in meters
+        var R = 6371000.0f;
         var dLat = (lat2 - lat1) * Math.PI / 180.0f;
         var dLon = (lon2 - lon1) * Math.PI / 180.0f;
         var a = Math.sin(dLat / 2.0f) * Math.sin(dLat / 2.0f) +
@@ -51,328 +52,249 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         return R * c;
     }
 
-    // Returns today's date as "YYYY-MM-DD" in UTC
     private function todayUTC() as String {
         var now = Time.now();
         var today = Gregorian.info(now, Time.FORMAT_SHORT);
-        return today.year.format("%04d") + "-" +
-               today.month.format("%02d") + "-" +
-               today.day.format("%02d");
+        return today.year.format("%04d") + "-" + today.month.format("%02d") + "-" + today.day.format("%02d");
     }
 
-    // Determine if StormGlass tide refresh is needed (design §4.2)
+    private function getStormGlassApiKey() as String or Null {
+        var apiKey = Application.Properties.getValue("StormGlassApiKey") as String or Null;
+        if (apiKey != null && !apiKey.equals("")) { return apiKey; }
+        var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
+        if (backupKey != null && !backupKey.equals("")) { return backupKey; }
+        return null;
+    }
+
+    private function getStormGlassBackupKey() as String or Null {
+        var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
+        if (backupKey != null && !backupKey.equals("")) { return backupKey; }
+        return null;
+    }
+
+    // =========================================================
+    // Refresh checks
+    // =========================================================
+
     private function isTideRefreshNeeded(lat as Float, lng as Float) as Boolean {
         var tideFetchedDay = Application.Storage.getValue("tideFetchedDay") as String or Null;
         var today = todayUTC();
-
-        // Condition 1: never fetched
-        if (tideFetchedDay == null) {
-            return true;
-        }
-
-        // Condition 2: new calendar day
-        if (!tideFetchedDay.equals(today)) {
-            return true;
-        }
-
-        // Condition 3: moved >50km since last fetch
+        if (tideFetchedDay == null) { return true; }
+        if (!tideFetchedDay.equals(today)) { return true; }
         var tideFetchLat = Application.Storage.getValue("tideFetchLat") as Float or Null;
         var tideFetchLng = Application.Storage.getValue("tideFetchLng") as Float or Null;
         if (tideFetchLat != null && tideFetchLng != null) {
-            if (distanceBetween(lat, lng, tideFetchLat, tideFetchLng) > 50000.0f) {
-                return true;
-            }
+            if (distanceBetween(lat, lng, tideFetchLat, tideFetchLng) > 50000.0f) { return true; }
         }
-
-        // Condition 4: tide data expired (all events in past)
         var tideDataExpired = Application.Storage.getValue("tideDataExpired");
-        if (tideDataExpired != null && tideDataExpired == true) {
-            return true;
-        }
-
+        if (tideDataExpired != null && tideDataExpired == true) { return true; }
         return false;
     }
 
-    // Determine if StormGlass swell refresh is needed (surf mode only)
-    private function isSwellRefreshNeeded() as Boolean {
-        var swellFetchedDay = Application.Storage.getValue("surf_swellFetchedDay") as String or Null;
-        var today = todayUTC();
-
-        // Never fetched
-        if (swellFetchedDay == null) { return true; }
-        // New calendar day
-        if (!swellFetchedDay.equals(today)) { return true; }
-
-        // No actual swell data cached (fetch day was written but data wasn't)
-        var cachedHeight = Application.Storage.getValue("surf_swellHeight");
-        if (cachedHeight == null) { return true; }
-
-        // Settings location changed
-        var swellFetchLat = Application.Storage.getValue("surf_swellFetchLat") as Float or Null;
-        var swellFetchLng = Application.Storage.getValue("surf_swellFetchLng") as Float or Null;
-        if (swellFetchLat == null || swellFetchLng == null) { return true; }
-        if (swellFetchLat != _lat || swellFetchLng != _lng) { return true; }
-
-        return false;
-    }
-
-    // Determine if surf-mode tide refresh is needed (uses surf_ prefixed keys)
     private function isSurfTideRefreshNeeded(lat as Float, lng as Float) as Boolean {
         var tideFetchedDay = Application.Storage.getValue("surf_tideFetchedDay") as String or Null;
         var today = todayUTC();
-
-        // Never fetched
         if (tideFetchedDay == null) { return true; }
-        // New calendar day
         if (!tideFetchedDay.equals(today)) { return true; }
-
-        // Settings location changed (any change, no distance threshold)
         var tideFetchLat = Application.Storage.getValue("surf_tideFetchLat") as Float or Null;
         var tideFetchLng = Application.Storage.getValue("surf_tideFetchLng") as Float or Null;
         if (tideFetchLat == null || tideFetchLng == null) { return true; }
         if (tideFetchLat != lat || tideFetchLng != lng) { return true; }
-
-        // Tide data expired
         var tideDataExpired = Application.Storage.getValue("surf_tideDataExpired");
         if (tideDataExpired != null && tideDataExpired == true) { return true; }
-
         return false;
     }
 
+    private function isSwellRefreshNeeded() as Boolean {
+        var swellFetchedDay = Application.Storage.getValue("surf_swellFetchedDay") as String or Null;
+        var today = todayUTC();
+        if (swellFetchedDay == null) { return true; }
+        if (!swellFetchedDay.equals(today)) { return true; }
+        var cachedHeight = Application.Storage.getValue("surf_swellHeight");
+        if (cachedHeight == null) { return true; }
+        var swellFetchLat = Application.Storage.getValue("surf_swellFetchLat") as Float or Null;
+        var swellFetchLng = Application.Storage.getValue("surf_swellFetchLng") as Float or Null;
+        if (swellFetchLat == null || swellFetchLng == null) { return true; }
+        if (swellFetchLat != _lat || swellFetchLng != _lng) { return true; }
+        return false;
+    }
+
+    // =========================================================
+    // onTemporalEvent — entry point
+    // Shore mode: OWM weather → SG tide
+    // Surf mode:  SG swell → SG tide → OWM wind
+    // =========================================================
+
     function onTemporalEvent() as Void {
-        // Guard: skip if no phone connection
         var btConnected = Application.Storage.getValue("bluetoothConnected");
         if (btConnected == null || btConnected == false) {
             Background.exit(null);
             return;
         }
 
-        // Determine mode and coordinates
         var surfMode = Application.Properties.getValue("SurfMode");
         _isSurfMode = (surfMode != null && surfMode == 1);
 
         if (_isSurfMode) {
-            // Surf mode: use surf spot coordinates
             var surfLat = Application.Properties.getValue("SurfSpotLat");
             var surfLng = Application.Properties.getValue("SurfSpotLng");
-            if (surfLat == null || surfLng == null) {
-                Background.exit(null);
-                return;
-            }
-            var lat = surfLat.toFloat();
-            var lng = surfLng.toFloat();
-            if (lat == 0.0 && lng == 0.0) {
-                Background.exit(null);
-                return;
-            }
-            _lat = lat;
-            _lng = lng;
+            if (surfLat == null || surfLng == null) { Background.exit(null); return; }
+            _lat = surfLat.toFloat();
+            _lng = surfLng.toFloat();
+            if (_lat == 0.0 && _lng == 0.0) { Background.exit(null); return; }
         } else {
-            // Shore mode: use current GPS
             var lat = Application.Storage.getValue("lastKnownLat") as Float or Null;
             var lng = Application.Storage.getValue("lastKnownLng") as Float or Null;
-            if (lat == null || lng == null) {
-                Background.exit(null);
-                return;
-            }
+            if (lat == null || lng == null) { Background.exit(null); return; }
             _lat = lat;
             _lng = lng;
-        }
-
-        // Check what needs fetching
-        var owmNeeded = false;
-        if (!_isSurfMode) {
-            var weatherSource = Application.Properties.getValue("WeatherSource");
-            if (weatherSource != null && weatherSource == 1) {
-                var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
-                if (apiKey != null && !apiKey.equals("")) {
-                    owmNeeded = true;
-                }
-            }
         }
 
         if (_isSurfMode) {
-            _tideNeeded = isSurfTideRefreshNeeded(_lat, _lng);
             _swellNeeded = isSwellRefreshNeeded();
-            // Always fetch OWM wind for surf spot (free, small response)
+            _tideNeeded = isSurfTideRefreshNeeded(_lat, _lng);
             var owmKey = Application.Properties.getValue("OWMApiKey") as String or Null;
-            _surfWindNeeded = (owmKey != null && !owmKey.equals(""));
-            System.println("SURF: tideNeeded=" + _tideNeeded + " swellNeeded=" + _swellNeeded + " windNeeded=" + _surfWindNeeded + " lat=" + _lat + " lng=" + _lng);
+            _windNeeded = (owmKey != null && !owmKey.equals(""));
+            System.println("SURF: swellNeeded=" + _swellNeeded + " tideNeeded=" + _tideNeeded + " windNeeded=" + _windNeeded);
+
+            // Surf chain: swell → tide → wind
+            if (_swellNeeded) {
+                startSwellFetch();
+            } else if (_tideNeeded) {
+                startTideFetch();
+            } else if (_windNeeded) {
+                startWindFetch();
+            } else {
+                Background.exit(null);
+            }
         } else {
+            // Shore mode: OWM weather → tide
             _tideNeeded = isTideRefreshNeeded(_lat, _lng);
             _swellNeeded = false;
-        }
+            _windNeeded = false;
 
-        if (owmNeeded) {
-            System.println("DECISION: owmNeeded");
-            var apiKey = Application.Properties.getValue("OWMApiKey") as String;
-            var units = "metric";
-            if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) {
-                units = "imperial";
+            var owmNeeded = false;
+            var weatherSource = Application.Properties.getValue("WeatherSource");
+            if (weatherSource != null && weatherSource == 1) {
+                var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
+                if (apiKey != null && !apiKey.equals("")) { owmNeeded = true; }
             }
-            var weatherService = new WeatherService(method(:onWeatherComplete));
-            weatherService.fetch(_lat, _lng, apiKey, units);
-        } else if (_surfWindNeeded) {
-            System.println("DECISION: surfWindNeeded");
-            // Surf mode: fetch OWM wind for surf spot
-            var apiKey = Application.Properties.getValue("OWMApiKey") as String;
-            var units = "metric";
-            if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) {
-                units = "imperial";
-            }
-            var weatherService = new WeatherService(method(:onWeatherComplete));
-            weatherService.fetch(_lat, _lng, apiKey, units);
-        } else if (_tideNeeded) {
-            System.println("DECISION: tideNeeded");
-            startTideFetch();
-        } else if (_swellNeeded) {
-            System.println("DECISION: swellNeeded");
-            startSwellFetch();
-        } else {
-            Background.exit(null);
-        }
-    }
 
-    // Called when WeatherService completes — chains into tide fetch if needed
-    function onWeatherComplete(weatherData as Dictionary or Null) as Void {
-        _weatherResult = weatherData;
-
-        if (_tideNeeded) {
-            startTideFetch();
-        } else if (_swellNeeded) {
-            startSwellFetch();
-        } else {
-            exitWithResults();
-        }
-    }
-
-    // Called when TideService completes — chains into swell if needed, then exits
-    function onTideComplete(tideData as Array or Null) as Void {
-        if (tideData != null) {
-            var today = todayUTC();
-            var prefix = _isSurfMode ? "surf_" : "";
-            Application.Storage.setValue(prefix + "tideFetchedDay", today);
-            Application.Storage.setValue(prefix + "tideFetchLat", _lat);
-            Application.Storage.setValue(prefix + "tideFetchLng", _lng);
-            Application.Storage.setValue(prefix + "tideDataExpired", false);
-            Application.Storage.setValue("sgUseBackup", false);
-            if (_isSurfMode) {
-                Application.Storage.setValue("surf_tideExtremes", tideData);
-            }
-        } else {
-            System.println("TIDE: failed");
-        }
-
-        if (_swellNeeded) {
-            startSwellFetch();
-        } else {
-            // Package and exit
-            var result = {} as Dictionary<String, Application.PropertyValueType>;
-            if (_weatherResult != null) {
-                result["weather"] = _weatherResult as Application.PropertyValueType;
-            }
-            if (tideData != null) {
-                result["tides"] = tideData as Application.PropertyValueType;
-            }
-            if (result.size() > 0) {
-                Background.exit(result);
+            if (owmNeeded) {
+                startWindFetch(); // reuse same OWM fetch for shore weather
+            } else if (_tideNeeded) {
+                startTideFetch();
             } else {
                 Background.exit(null);
             }
         }
     }
 
-    // Called when swell fetch completes — exits with all results
-    function onSwellComplete(swellData as Dictionary or Null) as Void {
-        _swellResult = swellData;
-        System.println("SWELL: onSwellComplete data=" + (swellData != null ? "received" : "null"));
+    // =========================================================
+    // Fetch starters
+    // =========================================================
 
-        if (swellData == null) {
-            System.println("SWELL: failed");
-        }
+    private function startSwellFetch() as Void {
+        var apiKey = getStormGlassApiKey();
+        System.println("SWELL: startSwellFetch key=" + (apiKey != null ? "set" : "null"));
+        if (apiKey == null) { chainAfterSwell(); return; }
+        var ts = new TideService(method(:onTideComplete));
+        ts.fetchSwell(_lat, _lng, apiKey, method(:onSwellDone));
+    }
 
-        // Only mark as fetched when we got real data
+    private function startTideFetch() as Void {
+        var apiKey = getStormGlassApiKey();
+        System.println("TIDE: startTideFetch key=" + (apiKey != null ? "set" : "null"));
+        if (apiKey == null) { chainAfterTide(); return; }
+        var ts = new TideService(method(:onTideComplete));
+        ts.fetch(_lat, _lng, apiKey);
+    }
+
+    private function startWindFetch() as Void {
+        var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
+        System.println("WIND: startWindFetch key=" + (apiKey != null ? "set" : "null"));
+        if (apiKey == null || apiKey.equals("")) { exitWithAllResults(); return; }
+        var units = "metric";
+        if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) { units = "imperial"; }
+        var ws = new WeatherService(method(:onWindDone));
+        ws.fetch(_lat, _lng, apiKey, units);
+    }
+
+    // =========================================================
+    // Callbacks — each writes to Storage, then chains to next
+    // =========================================================
+
+    // Swell done → chain to tide → wind
+    function onSwellDone(swellData as Dictionary or Null) as Void {
+        System.println("SWELL: done data=" + (swellData != null ? "received" : "null"));
         if (swellData != null) {
-            var prefix = _isSurfMode ? "surf_" : "";
+            _swellResult = swellData;
+            var prefix = "surf_";
             Application.Storage.setValue(prefix + "swellFetchedDay", todayUTC());
             Application.Storage.setValue(prefix + "swellFetchLat", _lat);
             Application.Storage.setValue(prefix + "swellFetchLng", _lng);
-            Application.Storage.setValue("sgUseBackup", false);
         }
+        chainAfterSwell();
+    }
 
+    private function chainAfterSwell() as Void {
+        if (_tideNeeded) {
+            startTideFetch();
+        } else if (_windNeeded) {
+            startWindFetch();
+        } else {
+            exitWithAllResults();
+        }
+    }
+
+    // Tide done → chain to wind (surf) or exit (shore)
+    function onTideComplete(tideData as Array or Null) as Void {
+        System.println("TIDE: done data=" + (tideData != null ? "received" : "null"));
+        if (tideData != null) {
+            _tideResult = tideData;
+            var prefix = _isSurfMode ? "surf_" : "";
+            Application.Storage.setValue(prefix + "tideFetchedDay", todayUTC());
+            Application.Storage.setValue(prefix + "tideFetchLat", _lat);
+            Application.Storage.setValue(prefix + "tideFetchLng", _lng);
+            Application.Storage.setValue(prefix + "tideDataExpired", false);
+            if (_isSurfMode) {
+                Application.Storage.setValue("surf_tideExtremes", tideData);
+            }
+        }
+        chainAfterTide();
+    }
+
+    private function chainAfterTide() as Void {
+        if (_isSurfMode && _windNeeded) {
+            startWindFetch();
+        } else {
+            exitWithAllResults();
+        }
+    }
+
+    // Wind/weather done → exit
+    function onWindDone(weatherData as Dictionary or Null) as Void {
+        System.println("WIND: done data=" + (weatherData != null ? "received" : "null"));
+        _weatherResult = weatherData;
+        exitWithAllResults();
+    }
+
+    // =========================================================
+    // Exit with all accumulated results
+    // =========================================================
+
+    private function exitWithAllResults() as Void {
         var result = {} as Dictionary<String, Application.PropertyValueType>;
         if (_weatherResult != null) {
             result["weather"] = _weatherResult as Application.PropertyValueType;
         }
-        // Include tide data if it was fetched this cycle (stored in surf_ keys)
-        if (_isSurfMode) {
-            var surfTides = Application.Storage.getValue("surf_tideExtremes");
-            if (surfTides != null) {
-                result["tides"] = surfTides as Application.PropertyValueType;
-            }
+        if (_tideResult != null) {
+            result["tides"] = _tideResult as Application.PropertyValueType;
         }
-        if (swellData != null) {
-            result["swell"] = swellData as Application.PropertyValueType;
+        if (_swellResult != null) {
+            result["swell"] = _swellResult as Application.PropertyValueType;
         }
         if (result.size() > 0) {
-            Background.exit(result);
-        } else {
-            Background.exit(null);
-        }
-    }
-
-    // Get the active StormGlass API key
-    // If primary failed last time (stored flag), try backup first
-    private function getStormGlassApiKey() as String or Null {
-        var useBackup = Application.Storage.getValue("sgUseBackup");
-        var apiKey = Application.Properties.getValue("StormGlassApiKey") as String or Null;
-        var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
-
-        if (useBackup != null && useBackup == true) {
-            if (backupKey != null && !backupKey.equals("")) {
-                System.println("SG: using backup key (primary got 402)");
-                return backupKey;
-            }
-        }
-        if (apiKey != null && !apiKey.equals("")) {
-            return apiKey;
-        }
-        if (backupKey != null && !backupKey.equals("")) {
-            return backupKey;
-        }
-        return null;
-    }
-
-    // Start a swell fetch using StormGlass weather endpoint
-    private function startSwellFetch() as Void {
-        var apiKey = getStormGlassApiKey();
-        System.println("SWELL: startSwellFetch apiKey=" + (apiKey != null ? "set" : "null"));
-        if (apiKey == null) {
-            exitWithResults();
-            return;
-        }
-
-        var tideService = new TideService(method(:onTideComplete));
-        tideService.fetchSwell(_lat, _lng, apiKey, method(:onSwellComplete));
-    }
-
-    // Start a tide fetch using StormGlass API
-    private function startTideFetch() as Void {
-        var apiKey = getStormGlassApiKey();
-        if (apiKey == null) {
-            exitWithResults();
-            return;
-        }
-
-        var tideService = new TideService(method(:onTideComplete));
-        tideService.fetch(_lat, _lng, apiKey);
-    }
-
-    // Exit with whatever results we have (weather only, or nothing)
-    private function exitWithResults() as Void {
-        if (_weatherResult != null) {
-            var result = {} as Dictionary<String, Application.PropertyValueType>;
-            result["weather"] = _weatherResult as Application.PropertyValueType;
             Background.exit(result);
         } else {
             Background.exit(null);
