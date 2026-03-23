@@ -105,23 +105,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         return false;
     }
 
-    private function isSurfWindRefreshNeeded() as Boolean {
-        var owmKey = Application.Properties.getValue("OWMApiKey") as String or Null;
-        if (owmKey == null || owmKey.equals("")) { return false; }
-        // Fetch every 5 min (every temporal event) since OWM is free
-        // Guard: check if we have recent data (within 10 min to avoid redundant calls)
-        var lastFetch = Application.Storage.getValue("surf_windFetchedAt") as Number or Null;
-        if (lastFetch == null) { return true; }
-        var now = Time.now().value();
-        if (now - lastFetch >= 5 * 60) { return true; }
-        // Location changed
-        var fetchLat = Application.Storage.getValue("surf_windFetchLat") as Float or Null;
-        var fetchLng = Application.Storage.getValue("surf_windFetchLng") as Float or Null;
-        if (fetchLat == null || fetchLng == null) { return true; }
-        if (fetchLat != _lat || fetchLng != _lng) { return true; }
-        return false;
-    }
-
     private function isSwellRefreshNeeded() as Boolean {        var swellFetchedDay = Application.Storage.getValue("surf_swellFetchedDay") as String or Null;
         var today = todayUTC();
         if (swellFetchedDay == null) { return true; }
@@ -169,7 +152,8 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         if (_isSurfMode) {
             _swellNeeded = isSwellRefreshNeeded();
             _tideNeeded = isSurfTideRefreshNeeded(_lat, _lng);
-            _windNeeded = isSurfWindRefreshNeeded();
+            var owmKey = Application.Properties.getValue("OWMApiKey") as String or Null;
+            _windNeeded = (owmKey != null && !owmKey.equals(""));
             System.println("SURF: swellNeeded=" + _swellNeeded + " tideNeeded=" + _tideNeeded + " windNeeded=" + _windNeeded);
 
             // Surf chain: swell → tide → wind
@@ -291,11 +275,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     function onWindDone(weatherData as Dictionary or Null) as Void {
         System.println("WIND: done data=" + (weatherData != null ? "received" : "null"));
         _weatherResult = weatherData;
-        if (weatherData != null && _isSurfMode) {
-            Application.Storage.setValue("surf_windFetchedAt", Time.now().value());
-            Application.Storage.setValue("surf_windFetchLat", _lat);
-            Application.Storage.setValue("surf_windFetchLng", _lng);
-        }
         exitWithAllResults();
     }
 
