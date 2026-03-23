@@ -483,8 +483,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     // --- Layout constants — Tide Curve (tweak these) ---
     private static const TC_Y = 114;               // top Y of entire tide curve section (including labels)
-    private static const TC_LABEL_HEIGHT = 14;      // vertical space reserved for labels above curve
-    private static const TC_CURVE_HEIGHT = 32;      // height of the filled curve area in pixels
+    private static const TC_LABEL_HEIGHT = 16;      // vertical space reserved for labels above curve
+    private static const TC_CURVE_HEIGHT = 36;      // height of the filled curve area in pixels
     private static const TC_LABEL_GAP = 2;          // gap between label text and curve edge
     private static const TC_LEFT_X = 14;            // left edge of curve
     private static const TC_RIGHT_X = 162;          // right edge of curve
