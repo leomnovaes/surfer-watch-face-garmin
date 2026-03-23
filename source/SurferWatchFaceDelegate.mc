@@ -24,6 +24,9 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Swell result holder
     private var _swellResult as Dictionary or Null;
 
+    // Track whether we already tried the backup key this cycle
+    private var _usedBackupKey as Boolean;
+
     function initialize() {
         ServiceDelegate.initialize();
         _weatherResult = null;
@@ -33,6 +36,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         _lat = 0.0f;
         _lng = 0.0f;
         _swellResult = null;
+        _usedBackupKey = false;
     }
 
     // Haversine distance in meters between two lat/lon pairs
@@ -238,6 +242,16 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             if (_isSurfMode) {
                 Application.Storage.setValue("surf_tideExtremes", tideData);
             }
+        } else if (!_usedBackupKey) {
+            // Tide fetch failed — retry with backup key
+            var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
+            if (backupKey != null && !backupKey.equals("")) {
+                _usedBackupKey = true;
+                System.println("TIDE: retrying with backup key");
+                var tideService = new TideService(method(:onTideComplete));
+                tideService.fetch(_lat, _lng, backupKey);
+                return;
+            }
         }
 
         if (_swellNeeded) {
@@ -263,6 +277,18 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     function onSwellComplete(swellData as Dictionary or Null) as Void {
         _swellResult = swellData;
         System.println("SWELL: onSwellComplete data=" + (swellData != null ? "received" : "null"));
+
+        if (swellData == null && !_usedBackupKey) {
+            // Swell fetch failed — retry with backup key
+            var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
+            if (backupKey != null && !backupKey.equals("")) {
+                _usedBackupKey = true;
+                System.println("SWELL: retrying with backup key");
+                var tideService = new TideService(method(:onTideComplete));
+                tideService.fetchSwell(_lat, _lng, backupKey, method(:onSwellComplete));
+                return;
+            }
+        }
 
         // Only mark as fetched when we got real data
         if (swellData != null) {
@@ -317,7 +343,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         }
 
         var tideService = new TideService(method(:onTideComplete));
-        tideService.setBackupKey(Application.Properties.getValue("StormGlassBackupApiKey") as String or Null);
         tideService.fetchSwell(_lat, _lng, apiKey, method(:onSwellComplete));
     }
 
@@ -330,7 +355,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         }
 
         var tideService = new TideService(method(:onTideComplete));
-        tideService.setBackupKey(Application.Properties.getValue("StormGlassBackupApiKey") as String or Null);
         tideService.fetch(_lat, _lng, apiKey);
     }
 
