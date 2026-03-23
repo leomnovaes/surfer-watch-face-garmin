@@ -237,7 +237,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (code == 800) { return isNight ? "a" : "A"; }
         // Clouds
         if (code == 801 || code == 802) { return isNight ? "b" : "C"; }     // few/scattered → day-cloudy / night-cloudy
-        if (code == 803) { return isNight ? "g" : "Q"; }                     // broken → cloudy-gusts
+        if (code == 803) { return "D"; }                                      // broken clouds → cloudy (same day/night)
         if (code == 804) { return "D"; }                                      // overcast → cloudy (same day/night)
         // Thunderstorm (200-232)
         if (code >= 200 && code <= 202) { return isNight ? "e" : "F"; }      // thunderstorm with rain
@@ -251,13 +251,14 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (code >= 501 && code <= 504) { return isNight ? "c" : "H"; }      // rain
         if (code == 511) { return "K"; }                                      // freezing rain → rain-mix
         if (code >= 520 && code <= 522) { return isNight ? "d" : "I"; }      // showers
-        if (code == 531) { return "L"; }                                      // storm-showers
+        if (code == 531) { return isNight ? "d" : "I"; }                      // ragged showers
         // Snow (600-622)
         if (code == 600 || code == 601 || code == 621 || code == 622) { return isNight ? "f" : "J"; } // snow
-        if (code == 602) { return "M"; }                                      // sleet
-        if (code >= 611 && code <= 620) { return "K"; }                       // rain-mix
+        if (code == 602) { return isNight ? "f" : "J"; }                      // heavy snow
+        if (code >= 611 && code <= 612) { return "M"; }                       // sleet
+        if (code >= 613 && code <= 620) { return "K"; }                       // rain-mix
         // Atmosphere (700-781)
-        if (code == 701) { return isNight ? "d" : "I"; }                     // mist → showers
+        if (code == 701) { return "E"; }                                      // mist → fog
         if (code == 711) { return "N"; }                                      // smoke
         if (code == 721) { return "O"; }                                      // haze
         if (code == 731 || code == 761 || code == 762) { return "P"; }       // dust
