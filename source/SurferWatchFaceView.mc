@@ -909,8 +909,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     // Surf mode bottom section — tide curve view
     // Filled area under curve, gap at "now", triangle marker, tick marks + time labels at events
     private function drawTideCurve(dc as Dc, dm as DataManager) as Void {
-        var curveTopY = 118;
-        var curveBottomY = 166;
+        var curveTopY = 130;
+        var curveBottomY = 158;
         var leftX = 14;
         var rightX = 162;
         var nowGapHalf = 2; // half-width of the "now" gap in pixels
@@ -1024,10 +1024,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 nowHeight = ph + (nh - ph) * (1.0 - Math.cos(frac * Math.PI)) / 2.0;
                 nowPy = curveBottomY - ((nowHeight - minH) / hRange * (curveBottomY - curveTopY)).toNumber();
             }
-            // Small downward triangle above the curve
-            var triTop = nowPy - 6;
-            if (triTop < curveTopY) { triTop = curveTopY; }
-            dc.fillPolygon([[nowX, nowPy - 1], [nowX - 3, triTop], [nowX + 3, triTop]]);
+            // Small downward triangle above the curve (2px gap, 4px tall)
+            var triBottom = nowPy - 3;
+            var triTop = triBottom - 5;
+            if (triTop < curveTopY - 6) { triTop = curveTopY - 6; }
+            dc.fillPolygon([[nowX, triBottom], [nowX - 4, triTop], [nowX + 4, triTop]]);
         }
 
         // Draw tick marks and time labels at tide events
@@ -1061,14 +1062,14 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                         timeLabel = hr.toString() + suffix;
                     }
 
-                    // Place label: above for lows (near bottom), below for highs (near top)
+                    // Place label: above for highs, below for lows, with 2px spacing
                     var isHigh = (entry["type"] as String).equals("high");
                     if (isHigh) {
-                        // Label above the peak
-                        dc.drawText(ex, epy - 14, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
+                        // Label above the peak — bottom of text 2px above the tick
+                        drawTextAligned(dc, ex, epy - 16, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
                     } else {
-                        // Label below the valley (but above bottom line)
-                        dc.drawText(ex, curveBottomY - 12, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
+                        // Label below the valley — top of text 2px below the tick
+                        drawTextAligned(dc, ex, epy + 3, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
                     }
                 }
             }
