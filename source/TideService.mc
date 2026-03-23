@@ -144,4 +144,130 @@ class TideService {
         return moment.value();
     }
 
+    // =========================================================
+    // fetchSwell() — fetches swell + wind data from StormGlass
+    // /v2/weather/point endpoint. Uses a separate callback from
+    // tide fetching. Returns closest hourly entry to now.
+    // =========================================================
+    function fetchSwell(lat as Float, lng as Float, apiKey as String, callback as Method) as Void {
+        var now = Time.now();
+        var todayInfo = Gregorian.info(now, Time.FORMAT_SHORT);
+        var startMoment = Gregorian.moment({
+            :year => todayInfo.year,
+            :month => todayInfo.month,
+            :day => todayInfo.day,
+            :hour => 0,
+            :minute => 0,
+            :second => 0
+        });
+        var startUnix = startMoment.value();
+        var endUnix = startUnix + 86400;
+
+        var url = "https://api.stormglass.io/v2/weather/point"
+            + "?lat=" + lat.toString()
+            + "&lng=" + lng.toString()
+            + "&params=swellHeight,swellPeriod,swellDirection,windSpeed,windDirection"
+            + "&start=" + startUnix.toString()
+            + "&end=" + endUnix.toString();
+
+        var options = {
+            :method => Communications.HTTP_REQUEST_METHOD_GET,
+            :headers => {
+                "Authorization" => apiKey
+            },
+            :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON
+        };
+
+        // Store callback for swell response
+        _swellCallback = callback;
+        Communications.makeWebRequest(url, null, options, method(:onSwellResponse));
+    }
+
+    private var _swellCallback as Method or Null;
+
+    function onSwellResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
+        if (responseCode != 200 || data == null || !(data instanceof Dictionary)) {
+            if (_swellCallback != null) {
+                _swellCallback.invoke(null);
+            }
+            return;
+        }
+
+        // Check quota
+        var meta = data["meta"];
+        if (meta != null && meta instanceof Dictionary) {
+            var requestCount = meta["requestCount"];
+            var dailyQuota = meta["dailyQuota"];
+            if (requestCount != null && dailyQuota != null) {
+                if (requestCount >= dailyQuota) {
+                    Application.Storage.setValue("surf_stormGlassQuotaExhausted", true);
+                }
+            }
+        }
+
+        var hours = data["hours"];
+        if (hours == null || !(hours instanceof Array) || hours.size() == 0) {
+            if (_swellCallback != null) {
+                _swellCallback.invoke(null);
+            }
+            return;
+        }
+
+        // Find hourly entry closest to now
+        var now = Time.now().value();
+        var bestEntry = null;
+        var bestDiff = 999999999;
+
+        for (var i = 0; i < hours.size(); i++) {
+            var entry = hours[i];
+            if (entry != null && entry instanceof Dictionary) {
+                var timeStr = entry["time"];
+                if (timeStr != null) {
+                    var entryTime = parseISOToUnix(timeStr as String);
+                    if (entryTime != null) {
+                        var diff = (entryTime - now).abs();
+                        if (diff < bestDiff) {
+                            bestDiff = diff;
+                            bestEntry = entry;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (bestEntry == null) {
+            if (_swellCallback != null) {
+                _swellCallback.invoke(null);
+            }
+            return;
+        }
+
+        // Extract sg values
+        var result = {} as Dictionary<String, Application.PropertyValueType>;
+        var sh = bestEntry["swellHeight"];
+        if (sh != null && sh instanceof Dictionary) {
+            result["swellHeight"] = sh["sg"] as Application.PropertyValueType;
+        }
+        var sp = bestEntry["swellPeriod"];
+        if (sp != null && sp instanceof Dictionary) {
+            result["swellPeriod"] = sp["sg"] as Application.PropertyValueType;
+        }
+        var sd = bestEntry["swellDirection"];
+        if (sd != null && sd instanceof Dictionary) {
+            result["swellDirection"] = sd["sg"] as Application.PropertyValueType;
+        }
+        var ws = bestEntry["windSpeed"];
+        if (ws != null && ws instanceof Dictionary) {
+            result["windSpeed"] = ws["sg"] as Application.PropertyValueType;
+        }
+        var wd = bestEntry["windDirection"];
+        if (wd != null && wd instanceof Dictionary) {
+            result["windDeg"] = wd["sg"] as Application.PropertyValueType;
+        }
+
+        if (_swellCallback != null) {
+            _swellCallback.invoke(result);
+        }
+    }
+
 }

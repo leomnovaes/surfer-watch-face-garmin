@@ -14,16 +14,25 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     private var _weatherResult as Dictionary or Null;
     // Track whether tide fetch is needed this cycle
     private var _tideNeeded as Boolean;
+    // Track whether swell fetch is needed this cycle (surf mode only)
+    private var _swellNeeded as Boolean;
+    // Track surf mode for this cycle
+    private var _isSurfMode as Boolean;
     // Current position for this cycle
     private var _lat as Float;
     private var _lng as Float;
+    // Swell result holder
+    private var _swellResult as Dictionary or Null;
 
     function initialize() {
         ServiceDelegate.initialize();
         _weatherResult = null;
         _tideNeeded = false;
+        _swellNeeded = false;
+        _isSurfMode = false;
         _lat = 0.0f;
         _lng = 0.0f;
+        _swellResult = null;
     }
 
     // Haversine distance in meters between two lat/lon pairs
@@ -92,6 +101,56 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         return false;
     }
 
+    // Determine if StormGlass swell refresh is needed (surf mode only)
+    private function isSwellRefreshNeeded() as Boolean {
+        var swellFetchedDay = Application.Storage.getValue("surf_swellFetchedDay") as String or Null;
+        var today = todayUTC();
+
+        var quotaExhausted = Application.Storage.getValue("surf_stormGlassQuotaExhausted");
+        if (quotaExhausted != null && quotaExhausted == true) {
+            if (swellFetchedDay != null && !swellFetchedDay.equals(today)) {
+                Application.Storage.setValue("surf_stormGlassQuotaExhausted", false);
+            } else {
+                return false;
+            }
+        }
+
+        if (swellFetchedDay == null) { return true; }
+        if (!swellFetchedDay.equals(today)) { return true; }
+        return false;
+    }
+
+    // Determine if surf-mode tide refresh is needed (uses surf_ prefixed keys)
+    private function isSurfTideRefreshNeeded(lat as Float, lng as Float) as Boolean {
+        var tideFetchedDay = Application.Storage.getValue("surf_tideFetchedDay") as String or Null;
+        var today = todayUTC();
+
+        var quotaExhausted = Application.Storage.getValue("surf_stormGlassQuotaExhausted");
+        if (quotaExhausted != null && quotaExhausted == true) {
+            if (tideFetchedDay != null && !tideFetchedDay.equals(today)) {
+                Application.Storage.setValue("surf_stormGlassQuotaExhausted", false);
+            } else {
+                return false;
+            }
+        }
+
+        if (tideFetchedDay == null) { return true; }
+        if (!tideFetchedDay.equals(today)) { return true; }
+
+        var tideFetchLat = Application.Storage.getValue("surf_tideFetchLat") as Float or Null;
+        var tideFetchLng = Application.Storage.getValue("surf_tideFetchLng") as Float or Null;
+        if (tideFetchLat != null && tideFetchLng != null) {
+            if (distanceBetween(lat, lng, tideFetchLat, tideFetchLng) > 50000.0f) {
+                return true;
+            }
+        }
+
+        var tideDataExpired = Application.Storage.getValue("surf_tideDataExpired");
+        if (tideDataExpired != null && tideDataExpired == true) { return true; }
+
+        return false;
+    }
+
     function onTemporalEvent() as Void {
         // Guard: skip if no phone connection
         var btConnected = Application.Storage.getValue("bluetoothConnected");
@@ -100,47 +159,71 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             return;
         }
 
-        // Read current position from Storage (written by main process)
-        var lat = Application.Storage.getValue("lastKnownLat") as Float or Null;
-        var lng = Application.Storage.getValue("lastKnownLng") as Float or Null;
+        // Determine mode and coordinates
+        var surfMode = Application.Properties.getValue("SurfMode");
+        _isSurfMode = (surfMode != null && surfMode == 1);
 
-        // Guard: skip if no location available
-        if (lat == null || lng == null) {
-            Background.exit(null);
-            return;
+        if (_isSurfMode) {
+            // Surf mode: use surf spot coordinates
+            var surfLat = Application.Properties.getValue("SurfSpotLat");
+            var surfLng = Application.Properties.getValue("SurfSpotLng");
+            if (surfLat == null || surfLng == null) {
+                Background.exit(null);
+                return;
+            }
+            var lat = surfLat.toFloat();
+            var lng = surfLng.toFloat();
+            if (lat == 0.0 && lng == 0.0) {
+                Background.exit(null);
+                return;
+            }
+            _lat = lat;
+            _lng = lng;
+        } else {
+            // Shore mode: use current GPS
+            var lat = Application.Storage.getValue("lastKnownLat") as Float or Null;
+            var lng = Application.Storage.getValue("lastKnownLng") as Float or Null;
+            if (lat == null || lng == null) {
+                Background.exit(null);
+                return;
+            }
+            _lat = lat;
+            _lng = lng;
         }
 
-        _lat = lat;
-        _lng = lng;
-
-        // Check weather source setting — only fetch OWM if WeatherSource=1
-        var weatherSource = Application.Properties.getValue("WeatherSource");
+        // Check what needs fetching
         var owmNeeded = false;
-        if (weatherSource != null && weatherSource == 1) {
-            var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
-            if (apiKey != null && !apiKey.equals("")) {
-                owmNeeded = true;
+        if (!_isSurfMode) {
+            var weatherSource = Application.Properties.getValue("WeatherSource");
+            if (weatherSource != null && weatherSource == 1) {
+                var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
+                if (apiKey != null && !apiKey.equals("")) {
+                    owmNeeded = true;
+                }
             }
         }
 
-        // Check if tide refresh is needed (design §4.2)
-        _tideNeeded = isTideRefreshNeeded(lat, lng);
+        if (_isSurfMode) {
+            _tideNeeded = isSurfTideRefreshNeeded(_lat, _lng);
+            _swellNeeded = isSwellRefreshNeeded();
+        } else {
+            _tideNeeded = isTideRefreshNeeded(_lat, _lng);
+            _swellNeeded = false;
+        }
 
         if (owmNeeded) {
             var apiKey = Application.Properties.getValue("OWMApiKey") as String;
-
             var units = "metric";
             if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) {
                 units = "imperial";
             }
-
             var weatherService = new WeatherService(method(:onWeatherComplete));
-            weatherService.fetch(lat, lng, apiKey, units);
+            weatherService.fetch(_lat, _lng, apiKey, units);
         } else if (_tideNeeded) {
-            // Only tide needed
             startTideFetch();
+        } else if (_swellNeeded) {
+            startSwellFetch();
         } else {
-            // Nothing needed
             Background.exit(null);
         }
     }
@@ -151,37 +234,81 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
 
         if (_tideNeeded) {
             startTideFetch();
+        } else if (_swellNeeded) {
+            startSwellFetch();
         } else {
             exitWithResults();
         }
     }
 
-    // Called when TideService completes — exits with both results
+    // Called when TideService completes — chains into swell if needed, then exits
     function onTideComplete(tideData as Array or Null) as Void {
         if (tideData != null) {
-            // Write tide fetch metadata to Application.Storage
             var today = todayUTC();
-            Application.Storage.setValue("tideFetchedDay", today);
-            Application.Storage.setValue("tideFetchLat", _lat);
-            Application.Storage.setValue("tideFetchLng", _lng);
-            // Clear expired flag since we have fresh data
-            Application.Storage.setValue("tideDataExpired", false);
+            var prefix = _isSurfMode ? "surf_" : "";
+            Application.Storage.setValue(prefix + "tideFetchedDay", today);
+            Application.Storage.setValue(prefix + "tideFetchLat", _lat);
+            Application.Storage.setValue(prefix + "tideFetchLng", _lng);
+            Application.Storage.setValue(prefix + "tideDataExpired", false);
+            if (_isSurfMode) {
+                Application.Storage.setValue("surf_tideExtremes", tideData);
+            }
         }
 
-        // Package and exit with both weather and tide results
+        if (_swellNeeded) {
+            startSwellFetch();
+        } else {
+            // Package and exit
+            var result = {} as Dictionary<String, Application.PropertyValueType>;
+            if (_weatherResult != null) {
+                result["weather"] = _weatherResult as Application.PropertyValueType;
+            }
+            if (tideData != null) {
+                result["tides"] = tideData as Application.PropertyValueType;
+            }
+            if (result.size() > 0) {
+                Background.exit(result);
+            } else {
+                Background.exit(null);
+            }
+        }
+    }
+
+    // Called when swell fetch completes — exits with all results
+    function onSwellComplete(swellData as Dictionary or Null) as Void {
+        _swellResult = swellData;
+
         var result = {} as Dictionary<String, Application.PropertyValueType>;
         if (_weatherResult != null) {
             result["weather"] = _weatherResult as Application.PropertyValueType;
         }
-        if (tideData != null) {
-            result["tides"] = tideData as Application.PropertyValueType;
+        // Include tide data if it was fetched this cycle (stored in surf_ keys)
+        if (_isSurfMode) {
+            var surfTides = Application.Storage.getValue("surf_tideExtremes");
+            if (surfTides != null) {
+                result["tides"] = surfTides as Application.PropertyValueType;
+            }
         }
-
+        if (swellData != null) {
+            result["swell"] = swellData as Application.PropertyValueType;
+        }
         if (result.size() > 0) {
             Background.exit(result);
         } else {
             Background.exit(null);
         }
+    }
+
+    // Start a swell fetch using StormGlass weather endpoint
+    private function startSwellFetch() as Void {
+        var apiKey = Application.Properties.getValue("StormGlassApiKey") as String or Null;
+        if (apiKey == null || apiKey.equals("")) {
+            exitWithResults();
+            return;
+        }
+
+        var tideService = new TideService(method(:onTideComplete));
+        tideService.fetchSwell(_lat, _lng, apiKey, method(:onSwellComplete));
     }
 
     // Start a tide fetch using StormGlass API
