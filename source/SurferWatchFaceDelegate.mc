@@ -204,6 +204,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         }
 
         if (owmNeeded) {
+            System.println("DECISION: owmNeeded");
             var apiKey = Application.Properties.getValue("OWMApiKey") as String;
             var units = "metric";
             if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) {
@@ -212,7 +213,8 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             var weatherService = new WeatherService(method(:onWeatherComplete));
             weatherService.fetch(_lat, _lng, apiKey, units);
         } else if (_surfWindNeeded) {
-            // Surf mode: fetch OWM wind for surf spot, then chain to tide/swell
+            System.println("DECISION: surfWindNeeded");
+            // Surf mode: fetch OWM wind for surf spot
             var apiKey = Application.Properties.getValue("OWMApiKey") as String;
             var units = "metric";
             if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) {
@@ -221,8 +223,10 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             var weatherService = new WeatherService(method(:onWeatherComplete));
             weatherService.fetch(_lat, _lng, apiKey, units);
         } else if (_tideNeeded) {
+            System.println("DECISION: tideNeeded");
             startTideFetch();
         } else if (_swellNeeded) {
+            System.println("DECISION: swellNeeded");
             startSwellFetch();
         } else {
             Background.exit(null);
@@ -251,19 +255,11 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             Application.Storage.setValue(prefix + "tideFetchLat", _lat);
             Application.Storage.setValue(prefix + "tideFetchLng", _lng);
             Application.Storage.setValue(prefix + "tideDataExpired", false);
-            Application.Storage.setValue("sgPrimaryFailed", false);
             if (_isSurfMode) {
                 Application.Storage.setValue("surf_tideExtremes", tideData);
             }
         } else {
-            // Only mark primary as failed on 402 (quota/payment) — not on -403 (memory) or other errors
-            var lastCode = Application.Storage.getValue("sgLastResponseCode") as Number or Null;
-            if (lastCode != null && lastCode == 402) {
-                Application.Storage.setValue("sgPrimaryFailed", true);
-                System.println("TIDE: 402 quota — marked primary as failed for backup next cycle");
-            } else {
-                System.println("TIDE: failed with code " + lastCode + " — not switching to backup");
-            }
+            System.println("TIDE: failed");
         }
 
         if (_swellNeeded) {
@@ -291,13 +287,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         System.println("SWELL: onSwellComplete data=" + (swellData != null ? "received" : "null"));
 
         if (swellData == null) {
-            var lastCode = Application.Storage.getValue("sgLastResponseCode") as Number or Null;
-            if (lastCode != null && lastCode == 402) {
-                Application.Storage.setValue("sgPrimaryFailed", true);
-                System.println("SWELL: 402 quota — marked primary as failed for backup next cycle");
-            } else {
-                System.println("SWELL: failed with code " + lastCode + " — not switching to backup");
-            }
+            System.println("SWELL: failed");
         }
 
         // Only mark as fetched when we got real data
@@ -306,7 +296,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             Application.Storage.setValue(prefix + "swellFetchedDay", todayUTC());
             Application.Storage.setValue(prefix + "swellFetchLat", _lat);
             Application.Storage.setValue(prefix + "swellFetchLng", _lng);
-            Application.Storage.setValue("sgPrimaryFailed", false);
         }
 
         var result = {} as Dictionary<String, Application.PropertyValueType>;
@@ -333,19 +322,11 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Get the active StormGlass API key
     // If primary failed last time (stored flag), try backup first
     private function getStormGlassApiKey() as String or Null {
-        var primaryFailed = Application.Storage.getValue("sgPrimaryFailed");
         var apiKey = Application.Properties.getValue("StormGlassApiKey") as String or Null;
-        var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
-
-        if (primaryFailed != null && primaryFailed == true) {
-            // Try backup first
-            if (backupKey != null && !backupKey.equals("")) {
-                return backupKey;
-            }
-        }
         if (apiKey != null && !apiKey.equals("")) {
             return apiKey;
         }
+        var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
         if (backupKey != null && !backupKey.equals("")) {
             return backupKey;
         }
