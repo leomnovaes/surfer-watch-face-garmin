@@ -769,13 +769,14 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         }
         drawStressArc(dc, HR_CENTER_X, HR_CENTER_Y, HR_RADIUS, STRESS_ARC_WIDTH, solarVal);
 
-        // Tide direction arrow (up=rising, down=falling)
+        // Tide direction arrow (up=rising, down=falling) — uses tide icons from surfer-icons
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        var arrowText = "--";
-        if (dm.nextTideType != null) {
-            arrowText = dm.nextTideType.equals("high") ? "^" : "v";
+        if (dm.nextTideType != null && surferIconsFont != null) {
+            var tideGlyph = dm.nextTideType.equals("high") ? "H" : "L";
+            dc.drawText(HR_HEART_X, HR_HEART_Y, surferIconsFont, tideGlyph, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        } else {
+            dc.drawText(HR_HEART_X, HR_HEART_Y, Graphics.FONT_XTINY, "--", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
-        dc.drawText(HR_HEART_X, HR_HEART_Y, Graphics.FONT_XTINY, arrowText, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
         // Tide height text
         var tideText = "--";
