@@ -115,8 +115,17 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             }
         }
 
+        // Never fetched
         if (swellFetchedDay == null) { return true; }
+        // New calendar day
         if (!swellFetchedDay.equals(today)) { return true; }
+
+        // Settings location changed (any change triggers re-fetch)
+        var swellFetchLat = Application.Storage.getValue("surf_swellFetchLat") as Float or Null;
+        var swellFetchLng = Application.Storage.getValue("surf_swellFetchLng") as Float or Null;
+        if (swellFetchLat == null || swellFetchLng == null) { return true; }
+        if (swellFetchLat != _lat || swellFetchLng != _lng) { return true; }
+
         return false;
     }
 
@@ -134,17 +143,18 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             }
         }
 
+        // Never fetched
         if (tideFetchedDay == null) { return true; }
+        // New calendar day
         if (!tideFetchedDay.equals(today)) { return true; }
 
+        // Settings location changed (any change, no distance threshold)
         var tideFetchLat = Application.Storage.getValue("surf_tideFetchLat") as Float or Null;
         var tideFetchLng = Application.Storage.getValue("surf_tideFetchLng") as Float or Null;
-        if (tideFetchLat != null && tideFetchLng != null) {
-            if (distanceBetween(lat, lng, tideFetchLat, tideFetchLng) > 50000.0f) {
-                return true;
-            }
-        }
+        if (tideFetchLat == null || tideFetchLng == null) { return true; }
+        if (tideFetchLat != lat || tideFetchLng != lng) { return true; }
 
+        // Tide data expired
         var tideDataExpired = Application.Storage.getValue("surf_tideDataExpired");
         if (tideDataExpired != null && tideDataExpired == true) { return true; }
 
@@ -281,6 +291,8 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         // Always mark swell as fetched today to prevent retries (even on failure)
         var prefix = _isSurfMode ? "surf_" : "";
         Application.Storage.setValue(prefix + "swellFetchedDay", todayUTC());
+        Application.Storage.setValue(prefix + "swellFetchLat", _lat);
+        Application.Storage.setValue(prefix + "swellFetchLng", _lng);
 
         var result = {} as Dictionary<String, Application.PropertyValueType>;
         if (_weatherResult != null) {
@@ -321,7 +333,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     private function startSwellFetch() as Void {
         var apiKey = getStormGlassApiKey();
         if (apiKey == null) {
-            // No key — mark swell as fetched today to prevent retries
             var prefix = _isSurfMode ? "surf_" : "";
             Application.Storage.setValue(prefix + "swellFetchedDay", todayUTC());
             exitWithResults();
@@ -329,6 +340,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         }
 
         var tideService = new TideService(method(:onTideComplete));
+        tideService.setBackupKey(Application.Properties.getValue("StormGlassBackupApiKey") as String or Null);
         tideService.fetchSwell(_lat, _lng, apiKey, method(:onSwellComplete));
     }
 
@@ -341,6 +353,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         }
 
         var tideService = new TideService(method(:onTideComplete));
+        tideService.setBackupKey(Application.Properties.getValue("StormGlassBackupApiKey") as String or Null);
         tideService.fetch(_lat, _lng, apiKey);
     }
 

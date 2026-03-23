@@ -10,13 +10,26 @@ import Toybox.Time.Gregorian;
 class TideService {
 
     private var _callback as Method;
+    private var _backupApiKey as String or Null;
+    private var _fetchLat as Float;
+    private var _fetchLng as Float;
 
     function initialize(callback as Method) {
         _callback = callback;
+        _backupApiKey = null;
+        _fetchLat = 0.0f;
+        _fetchLng = 0.0f;
+    }
+
+    // Set backup API key for retry on failure
+    function setBackupKey(key as String or Null) as Void {
+        _backupApiKey = key;
     }
 
     // Builds StormGlass URL with 48h window, sets Authorization header, makes async request
     function fetch(lat as Float, lng as Float, apiKey as String) as Void {
+        _fetchLat = lat;
+        _fetchLng = lng;
         // Calculate 48h window: start of current day UTC to end of next day UTC
         var now = Time.now();
         var todayInfo = Gregorian.info(now, Time.FORMAT_SHORT);
@@ -54,7 +67,13 @@ class TideService {
     // Callback for StormGlass response
     function onTideResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
         if (responseCode != 200 || data == null || !(data instanceof Dictionary)) {
-            // On error, invoke callback with null
+            // Try backup key if available
+            if (_backupApiKey != null && !_backupApiKey.equals("")) {
+                var backupKey = _backupApiKey;
+                _backupApiKey = null; // Prevent infinite retry
+                fetch(_fetchLat, _fetchLng, backupKey);
+                return;
+            }
             _callback.invoke(null);
             return;
         }
@@ -150,6 +169,8 @@ class TideService {
     // tide fetching. Returns closest hourly entry to now.
     // =========================================================
     function fetchSwell(lat as Float, lng as Float, apiKey as String, callback as Method) as Void {
+        _fetchLat = lat;
+        _fetchLng = lng;
         var now = Time.now();
         var todayInfo = Gregorian.info(now, Time.FORMAT_SHORT);
         var startMoment = Gregorian.moment({
@@ -187,6 +208,13 @@ class TideService {
 
     function onSwellResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
         if (responseCode != 200 || data == null || !(data instanceof Dictionary)) {
+            // Try backup key if available
+            if (_backupApiKey != null && !_backupApiKey.equals("") && _swellCallback != null) {
+                var backupKey = _backupApiKey;
+                _backupApiKey = null;
+                fetchSwell(_fetchLat, _fetchLng, backupKey, _swellCallback);
+                return;
+            }
             if (_swellCallback != null) {
                 _swellCallback.invoke(null);
             }
