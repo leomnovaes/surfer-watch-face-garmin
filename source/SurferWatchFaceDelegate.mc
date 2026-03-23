@@ -255,6 +255,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             Application.Storage.setValue(prefix + "tideFetchLat", _lat);
             Application.Storage.setValue(prefix + "tideFetchLng", _lng);
             Application.Storage.setValue(prefix + "tideDataExpired", false);
+            Application.Storage.setValue("sgUseBackup", false);
             if (_isSurfMode) {
                 Application.Storage.setValue("surf_tideExtremes", tideData);
             }
@@ -296,6 +297,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             Application.Storage.setValue(prefix + "swellFetchedDay", todayUTC());
             Application.Storage.setValue(prefix + "swellFetchLat", _lat);
             Application.Storage.setValue(prefix + "swellFetchLng", _lng);
+            Application.Storage.setValue("sgUseBackup", false);
         }
 
         var result = {} as Dictionary<String, Application.PropertyValueType>;
@@ -322,11 +324,19 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Get the active StormGlass API key
     // If primary failed last time (stored flag), try backup first
     private function getStormGlassApiKey() as String or Null {
+        var useBackup = Application.Storage.getValue("sgUseBackup");
         var apiKey = Application.Properties.getValue("StormGlassApiKey") as String or Null;
+        var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
+
+        if (useBackup != null && useBackup == true) {
+            if (backupKey != null && !backupKey.equals("")) {
+                System.println("SG: using backup key (primary got 402)");
+                return backupKey;
+            }
+        }
         if (apiKey != null && !apiKey.equals("")) {
             return apiKey;
         }
-        var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
         if (backupKey != null && !backupKey.equals("")) {
             return backupKey;
         }
