@@ -836,15 +836,24 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     // Surf mode middle section: wind, time, moon/ampm/seconds
     private function drawMiddleSection_Surf(dc as Dc, dm as DataManager) as Void {
-        // Left column — Wind direction + speed (replaces sunrise/sunset)
-        if (dm.surfWindDeg != null) {
-            drawWindArrow(dc, MID_LEFT_X, MID_ICON_Y + WIND_ARROW_Y_OFFSET, dm.surfWindDeg, WIND_ARROW_SIZE);
+        // Left column — Wind from Garmin built-in weather (replaces sunrise/sunset)
+        var windDeg = null as Number or Null;
+        var windSpd = null as Float or Null;
+        if (Weather has :getCurrentConditions) {
+            var conditions = Weather.getCurrentConditions();
+            if (conditions != null) {
+                windDeg = conditions.windBearing != null ? conditions.windBearing.toNumber() : null;
+                windSpd = conditions.windSpeed != null ? conditions.windSpeed.toFloat() : null;
+            }
+        }
+        if (windDeg != null) {
+            drawWindArrow(dc, MID_LEFT_X, MID_ICON_Y + WIND_ARROW_Y_OFFSET, windDeg, WIND_ARROW_SIZE);
         }
         var windText = "--";
-        if (dm.surfWindSpeed != null) {
+        if (windSpd != null) {
             var windUnit = Application.Properties.getValue("WindSpeedUnit");
             var speed;
-            var speedMs = dm.surfWindSpeed; // StormGlass returns m/s
+            var speedMs = windSpd; // Garmin returns m/s
             if (windUnit == null || windUnit == 0) {
                 var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
                 speed = isMetric ? speedMs * 3.6 : speedMs * 2.237;

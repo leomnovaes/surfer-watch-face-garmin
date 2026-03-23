@@ -160,7 +160,7 @@ class TideService {
         var url = "https://api.stormglass.io/v2/weather/point"
             + "?lat=" + lat.toString()
             + "&lng=" + lng.toString()
-            + "&params=swellHeight,swellPeriod,swellDirection,windSpeed,windDirection"
+            + "&params=swellHeight,swellPeriod,swellDirection"
             + "&start=" + startUnix.toString()
             + "&end=" + endUnix.toString();
 
@@ -245,15 +245,6 @@ class TideService {
         if (sd != null && sd instanceof Dictionary) {
             result["swellDirection"] = sd["sg"] as Application.PropertyValueType;
         }
-        var ws = bestEntry["windSpeed"];
-        if (ws != null && ws instanceof Dictionary) {
-            result["windSpeed"] = ws["sg"] as Application.PropertyValueType;
-        }
-        var wd = bestEntry["windDirection"];
-        if (wd != null && wd instanceof Dictionary) {
-            result["windDeg"] = wd["sg"] as Application.PropertyValueType;
-        }
-
         if (_swellCallback != null) {
             _swellCallback.invoke(result);
         }
