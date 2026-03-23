@@ -120,7 +120,11 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         // New calendar day
         if (!swellFetchedDay.equals(today)) { return true; }
 
-        // Settings location changed (any change triggers re-fetch)
+        // No actual swell data cached (fetch day was written but data wasn't)
+        var cachedHeight = Application.Storage.getValue("surf_swellHeight");
+        if (cachedHeight == null) { return true; }
+
+        // Settings location changed
         var swellFetchLat = Application.Storage.getValue("surf_swellFetchLat") as Float or Null;
         var swellFetchLng = Application.Storage.getValue("surf_swellFetchLng") as Float or Null;
         if (swellFetchLat == null || swellFetchLng == null) { return true; }

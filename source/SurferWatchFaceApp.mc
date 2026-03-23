@@ -63,7 +63,7 @@ class SurferWatchFaceApp extends Application.AppBase {
             try {
                 Background.registerForTemporalEvent(Time.now());
             } catch (e) {
-                // 5-min minimum enforced — will fetch on next scheduled event
+                // 5-min minimum enforced
             }
         }
         WatchUi.requestUpdate();
