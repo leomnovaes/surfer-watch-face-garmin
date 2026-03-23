@@ -809,8 +809,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         }
         // Text right-justified to same anchor as notification count
         drawTextAligned(dc, TOP_COL2_X - 6 - SPACER, TOP_ROW2_Y, Graphics.FONT_XTINY, tempText, Graphics.TEXT_JUSTIFY_RIGHT);
-        // Thermometer placeholder icon where notification icon was (TODO: rasterize proper icon)
-        drawTextAligned(dc, TOP_COL2_X - 6, TOP_ROW2_Y, Graphics.FONT_XTINY, "T", Graphics.TEXT_JUSTIFY_LEFT);
+        // Thermometer icon where notification icon was
+        if (surferIconsFont != null) {
+            drawTextAligned(dc, TOP_COL2_X - 6, TOP_ROW2_Y, surferIconsFont, "T", Graphics.TEXT_JUSTIFY_LEFT);
+        }
 
         // Row 3 — Tide (same as shore)
         var tideIsHigh = true;
@@ -896,8 +898,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 htText = (dm.swellHeight * 3.281).format("%.1f") + "ft";
             }
         }
+        // Col 1: Swell height — surfing icon
         if (surferIconsFont != null) {
-            drawTextAligned(dc, WX_COL1_X, swellY, Graphics.FONT_XTINY, "~", Graphics.TEXT_JUSTIFY_CENTER);
+            drawTextAligned(dc, WX_COL1_X, swellY, surferIconsFont, "S", Graphics.TEXT_JUSTIFY_CENTER);
         }
         drawTextAligned(dc, WX_COL1_X, swellTextY, Graphics.FONT_XTINY, htText, Graphics.TEXT_JUSTIFY_CENTER);
 
@@ -906,7 +909,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (dm.swellPeriod != null) {
             perText = dm.swellPeriod.toNumber().toString() + "s";
         }
-        drawTextAligned(dc, WX_COL2_X, swellY + 4, Graphics.FONT_XTINY, "~", Graphics.TEXT_JUSTIFY_CENTER);
+        // Col 2: Swell period — timer-sand icon
+        if (surferIconsFont != null) {
+            drawTextAligned(dc, WX_COL2_X, swellY + 4, surferIconsFont, "P", Graphics.TEXT_JUSTIFY_CENTER);
+        }
         drawTextAligned(dc, WX_COL2_X, swellTextY + 4, Graphics.FONT_XTINY, perText, Graphics.TEXT_JUSTIFY_CENTER);
 
         // Col 3: Swell direction arrow
