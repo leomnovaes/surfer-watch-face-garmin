@@ -492,7 +492,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private static const TC_TRI_WIDTH = 4;          // half-width of the "now" triangle
     private static const TC_TRI_HEIGHT = 5;         // height of the "now" triangle
     private static const TC_TRI_GAP = 3;            // gap between triangle tip and curve top
-    private static const TC_HEIGHT_PAD = 0.1;       // padding fraction added to height range (0.1 = 10%)
+    private static const TC_HEIGHT_PAD = 0.1;       // padding fraction added to top of height range
+    private static const TC_HEIGHT_PAD_BOTTOM = 0.25; // padding fraction added to bottom of height range (thicker base at low tide)
 
     // --- Layout constants — HR Circle content positions (tweak these) ---
     private static const HR_HEART_X = 144;
@@ -955,7 +956,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         }
         if (maxH <= minH) { maxH = minH + 1.0; }
         var hRange = maxH - minH;
-        minH -= hRange * TC_HEIGHT_PAD;
+        minH -= hRange * TC_HEIGHT_PAD_BOTTOM;
         maxH += hRange * TC_HEIGHT_PAD;
         hRange = maxH - minH;
 
