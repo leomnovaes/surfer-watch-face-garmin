@@ -1000,7 +1000,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 // Now marker: dithered checkerboard for "gray" effect, solid fill elsewhere
                 var inNowGap = (x >= nowX - nowGapHalf && x <= nowX + nowGapHalf);
                 if (inNowGap) {
-                    for (var dy = py; dy <= curveBottomY; dy++) {
+                    for (var dy = py; dy < curveBottomY; dy++) {
                         if ((x + dy) % 2 == 0) {
                             dc.drawPoint(x, dy);
                         }
