@@ -70,6 +70,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     // --- Sleep state: true when watch is in low power mode (no wrist gesture) ---
     private var isSleeping = false;
+    // --- Last wrist raise timestamp for double-gesture detection (surf mode) ---
+    private var lastWristRaiseTime as Number = 0;
 
     // --- Crystal Icons glyph characters (from Crystal Face) ---
     private static const IC_NOTIFICATIONS = "5";
@@ -1010,6 +1012,21 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     function onExitSleep() as Void {
         isSleeping = false;
+
+        // Double wrist gesture detection for surf mode bottom toggle
+        var surfMode = Application.Properties.getValue("SurfMode");
+        if (surfMode != null && surfMode == 1) {
+            var now = Time.now().value();
+            if (now - lastWristRaiseTime < 4) {
+                // Double raise within 4 seconds — toggle bottom view
+                var dm = (Application.getApp() as SurferWatchFaceApp).getDataManager();
+                if (dm != null) {
+                    dm.bottomToggleState = (dm.bottomToggleState == 0) ? 1 : 0;
+                }
+            }
+            lastWristRaiseTime = now;
+        }
+
         WatchUi.requestUpdate();
     }
 
