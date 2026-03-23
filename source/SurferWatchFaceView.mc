@@ -483,8 +483,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     // --- Layout constants — Tide Curve (tweak these) ---
     private static const TC_Y = 114;               // top Y of entire tide curve section (including labels)
-    private static const TC_LABEL_HEIGHT = 14;      // vertical space reserved for labels above/below curve
-    private static const TC_CURVE_HEIGHT = 28;      // height of the filled curve area in pixels
+    private static const TC_LABEL_HEIGHT = 14;      // vertical space reserved for labels above curve
+    private static const TC_CURVE_HEIGHT = 32;      // height of the filled curve area in pixels
     private static const TC_LABEL_GAP = 2;          // gap between label text and curve edge
     private static const TC_LEFT_X = 14;            // left edge of curve
     private static const TC_RIGHT_X = 162;          // right edge of curve
@@ -492,7 +492,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private static const TC_TRI_WIDTH = 4;          // half-width of the "now" triangle
     private static const TC_TRI_HEIGHT = 5;         // height of the "now" triangle
     private static const TC_TRI_GAP = 3;            // gap between triangle tip and curve top
-    private static const TC_TICK_HALF = 2;          // half-width of tick marks at events
     private static const TC_HEIGHT_PAD = 0.1;       // padding fraction added to height range (0.1 = 10%)
 
     // --- Layout constants — HR Circle content positions (tweak these) ---
@@ -1039,49 +1038,35 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 nowPy = curveBottomY - ((nowHeight - minH) / hRange * TC_CURVE_HEIGHT).toNumber();
             }
             var triBottom = nowPy - TC_TRI_GAP;
-            var triTop = triBottom - TC_TRI_HEIGHT;
-            dc.fillPolygon([[nowX, triBottom], [nowX - TC_TRI_WIDTH, triTop], [nowX + TC_TRI_WIDTH, triTop]]);
+            var triTopPt = triBottom - TC_TRI_HEIGHT;
+            dc.fillPolygon([[nowX, triBottom], [nowX - TC_TRI_WIDTH, triTopPt], [nowX + TC_TRI_WIDTH, triTopPt]]);
         }
 
-        // Draw tick marks and time labels at tide events
+        // Time labels at tide events (above curve only, aligned with event time)
         for (var i = 0; i < dm.tideExtremes.size(); i++) {
             var entry = dm.tideExtremes[i] as Dictionary;
             var et = entry["time"] as Number;
-            var eh = entry["height"];
-            if (et != null && eh != null) {
+            if (et != null) {
                 var etf = et.toFloat();
                 if (etf >= startTime && etf <= endTime) {
                     var ex = leftX + ((etf - startTime) / (endTime - startTime) * (rightX - leftX)).toNumber();
 
-                    // Tick marks at curve edges
-                    dc.setPenWidth(2);
-                    dc.drawLine(ex - TC_TICK_HALF, curveTopY, ex + TC_TICK_HALF, curveTopY);
-                    dc.drawLine(ex - TC_TICK_HALF, curveBottomY, ex + TC_TICK_HALF, curveBottomY);
-                    dc.setPenWidth(1);
-
-                    // Time label — short format
                     var moment = new Time.Moment(et);
                     var info = Gregorian.info(moment, Time.FORMAT_SHORT);
                     var hr = info.hour;
+                    var mn = info.min;
                     var is24 = System.getDeviceSettings().is24Hour;
                     var timeLabel;
                     if (is24) {
-                        timeLabel = hr.toString();
+                        timeLabel = hr.toString() + ":" + mn.format("%02d");
                     } else {
                         var suffix = hr >= 12 ? "p" : "a";
                         hr = hr % 12;
                         if (hr == 0) { hr = 12; }
-                        timeLabel = hr.toString() + suffix;
+                        timeLabel = hr.toString() + ":" + mn.format("%02d") + suffix;
                     }
 
-                    var isHigh = (entry["type"] as String).equals("high");
-                    if (isHigh) {
-                        // Label above curve area, referenced from curveTopY
-                        drawTextAligned(dc, ex, curveTopY - TC_LABEL_GAP - 13, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
-                    } else {
-                        // Label below curve area, referenced from curveBottomY
-                        drawTextAligned(dc, ex, curveBottomY + TC_LABEL_GAP, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
-                    }
+                    drawTextAligned(dc, ex, curveTopY - TC_LABEL_GAP - 13, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
                 }
             }
         }
