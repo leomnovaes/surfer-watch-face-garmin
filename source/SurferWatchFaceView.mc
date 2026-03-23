@@ -907,11 +907,13 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     // Surf mode bottom section — tide curve view
+    // Filled area under curve, gap at "now", triangle marker, tick marks + time labels at events
     private function drawTideCurve(dc as Dc, dm as DataManager) as Void {
-        var topY = 114;
-        var bottomY = 170;
-        var leftX = 12;
-        var rightX = 164;
+        var curveTopY = 118;
+        var curveBottomY = 166;
+        var leftX = 14;
+        var rightX = 162;
+        var nowGapHalf = 2; // half-width of the "now" gap in pixels
 
         if (dm.tideExtremes == null || dm.tideExtremes.size() < 2) {
             drawTextAligned(dc, 88, 142, Graphics.FONT_XTINY, "--", Graphics.TEXT_JUSTIFY_CENTER);
@@ -928,8 +930,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var startTime = startMoment.value().toFloat();
         var endTime = startTime + 86400.0;
         var nowVal = now.value().toFloat();
+        var nowX = leftX + ((nowVal - startTime) / (endTime - startTime) * (rightX - leftX)).toNumber();
 
-        // Find height range
+        // Find height range from all extremes
         var minH = 999.0;
         var maxH = -999.0;
         for (var i = 0; i < dm.tideExtremes.size(); i++) {
@@ -943,15 +946,18 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         }
         if (maxH <= minH) { maxH = minH + 1.0; }
         var hRange = maxH - minH;
-        var padding = hRange * 0.1;
-        minH -= padding;
-        maxH += padding;
+        var pad = hRange * 0.1;
+        minH -= pad;
+        maxH += pad;
         hRange = maxH - minH;
 
-        // Draw curve: for each x pixel, interpolate height and plot
-        var prevPy = -1;
+        // Helper: interpolate height at time t
+        // (inline since Monkey C doesn't support closures)
+
+        // Draw filled area under curve + curve line
         for (var x = leftX; x <= rightX; x++) {
             var t = startTime + (x - leftX).toFloat() / (rightX - leftX).toFloat() * (endTime - startTime);
+
             // Find surrounding events
             var prev = null;
             var next = null;
@@ -963,6 +969,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                     else if (next == null) { next = entry; }
                 }
             }
+
             var height = null;
             if (prev != null && next != null) {
                 var pt = (prev["time"] as Number).toFloat();
@@ -978,20 +985,93 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             }
 
             if (height != null) {
-                var py = bottomY - ((height - minH) / hRange * (bottomY - topY)).toNumber();
-                if (py < topY) { py = topY; }
-                if (py > bottomY) { py = bottomY; }
-                if (prevPy >= 0) {
-                    dc.drawLine(x - 1, prevPy, x, py);
+                var py = curveBottomY - ((height - minH) / hRange * (curveBottomY - curveTopY)).toNumber();
+                if (py < curveTopY) { py = curveTopY; }
+                if (py > curveBottomY) { py = curveBottomY; }
+
+                // Skip fill in the "now" gap zone
+                var inNowGap = (x >= nowX - nowGapHalf && x <= nowX + nowGapHalf);
+                if (!inNowGap) {
+                    // Fill from curve to bottom
+                    if (py < curveBottomY) {
+                        dc.drawLine(x, py, x, curveBottomY);
+                    }
                 }
-                prevPy = py;
             }
         }
 
-        // Draw "now" marker
+        // Draw triangle marker at "now" position (above the curve)
         if (nowVal >= startTime && nowVal <= endTime) {
-            var nowX = leftX + ((nowVal - startTime) / (endTime - startTime) * (rightX - leftX)).toNumber();
-            dc.drawLine(nowX, topY, nowX, bottomY);
+            // Interpolate height at now to find the curve Y
+            var nowHeight = null;
+            var prev2 = null;
+            var next2 = null;
+            for (var i = 0; i < dm.tideExtremes.size(); i++) {
+                var entry = dm.tideExtremes[i] as Dictionary;
+                var et = entry["time"] as Number;
+                if (et != null) {
+                    if (et.toFloat() <= nowVal) { prev2 = entry; }
+                    else if (next2 == null) { next2 = entry; }
+                }
+            }
+            var nowPy = curveBottomY;
+            if (prev2 != null && next2 != null) {
+                var pt = (prev2["time"] as Number).toFloat();
+                var nt = (next2["time"] as Number).toFloat();
+                var ph = (prev2["height"] as Float).toFloat();
+                var nh = (next2["height"] as Float).toFloat();
+                var frac = (nowVal - pt) / (nt - pt);
+                nowHeight = ph + (nh - ph) * (1.0 - Math.cos(frac * Math.PI)) / 2.0;
+                nowPy = curveBottomY - ((nowHeight - minH) / hRange * (curveBottomY - curveTopY)).toNumber();
+            }
+            // Small downward triangle above the curve
+            var triTop = nowPy - 6;
+            if (triTop < curveTopY) { triTop = curveTopY; }
+            dc.fillPolygon([[nowX, nowPy - 1], [nowX - 3, triTop], [nowX + 3, triTop]]);
+        }
+
+        // Draw tick marks and time labels at tide events
+        for (var i = 0; i < dm.tideExtremes.size(); i++) {
+            var entry = dm.tideExtremes[i] as Dictionary;
+            var et = entry["time"] as Number;
+            var eh = entry["height"];
+            if (et != null && eh != null) {
+                var etf = et.toFloat();
+                if (etf >= startTime && etf <= endTime) {
+                    var ex = leftX + ((etf - startTime) / (endTime - startTime) * (rightX - leftX)).toNumber();
+                    var epy = curveBottomY - (((eh as Float).toFloat() - minH) / hRange * (curveBottomY - curveTopY)).toNumber();
+
+                    // Horizontal tick mark (5px wide, 2px thick)
+                    dc.setPenWidth(2);
+                    dc.drawLine(ex - 2, epy, ex + 2, epy);
+                    dc.setPenWidth(1);
+
+                    // Time label — short format
+                    var moment = new Time.Moment(et);
+                    var info = Gregorian.info(moment, Time.FORMAT_SHORT);
+                    var hr = info.hour;
+                    var is24 = System.getDeviceSettings().is24Hour;
+                    var timeLabel;
+                    if (is24) {
+                        timeLabel = hr.toString();
+                    } else {
+                        var suffix = hr >= 12 ? "p" : "a";
+                        hr = hr % 12;
+                        if (hr == 0) { hr = 12; }
+                        timeLabel = hr.toString() + suffix;
+                    }
+
+                    // Place label: above for lows (near bottom), below for highs (near top)
+                    var isHigh = (entry["type"] as String).equals("high");
+                    if (isHigh) {
+                        // Label above the peak
+                        dc.drawText(ex, epy - 14, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
+                    } else {
+                        // Label below the valley (but above bottom line)
+                        dc.drawText(ex, curveBottomY - 12, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
+                    }
+                }
+            }
         }
     }
 
