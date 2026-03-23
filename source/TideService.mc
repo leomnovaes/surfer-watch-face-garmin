@@ -207,6 +207,7 @@ class TideService {
     private var _swellCallback as Method or Null;
 
     function onSwellResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
+        System.println("SWELL: onSwellResponse code=" + responseCode);
         if (responseCode != 200 || data == null || !(data instanceof Dictionary)) {
             // Try backup key if available
             if (_backupApiKey != null && !_backupApiKey.equals("") && _swellCallback != null) {

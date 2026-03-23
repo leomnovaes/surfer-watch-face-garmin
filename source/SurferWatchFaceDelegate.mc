@@ -220,6 +220,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         if (_isSurfMode) {
             _tideNeeded = isSurfTideRefreshNeeded(_lat, _lng);
             _swellNeeded = isSwellRefreshNeeded();
+            System.println("SURF: tideNeeded=" + _tideNeeded + " swellNeeded=" + _swellNeeded + " lat=" + _lat + " lng=" + _lng);
         } else {
             _tideNeeded = isTideRefreshNeeded(_lat, _lng);
             _swellNeeded = false;
@@ -291,6 +292,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Called when swell fetch completes — exits with all results
     function onSwellComplete(swellData as Dictionary or Null) as Void {
         _swellResult = swellData;
+        System.println("SWELL: onSwellComplete data=" + (swellData != null ? "received" : "null"));
 
         // Only mark as fetched when we got real data
         if (swellData != null) {
@@ -338,6 +340,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Start a swell fetch using StormGlass weather endpoint
     private function startSwellFetch() as Void {
         var apiKey = getStormGlassApiKey();
+        System.println("SWELL: startSwellFetch apiKey=" + (apiKey != null ? "set" : "null"));
         if (apiKey == null) {
             exitWithResults();
             return;
