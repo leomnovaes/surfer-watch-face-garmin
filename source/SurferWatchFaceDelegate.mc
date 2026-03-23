@@ -288,11 +288,13 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     function onSwellComplete(swellData as Dictionary or Null) as Void {
         _swellResult = swellData;
 
-        // Always mark swell as fetched today to prevent retries (even on failure)
-        var prefix = _isSurfMode ? "surf_" : "";
-        Application.Storage.setValue(prefix + "swellFetchedDay", todayUTC());
-        Application.Storage.setValue(prefix + "swellFetchLat", _lat);
-        Application.Storage.setValue(prefix + "swellFetchLng", _lng);
+        // Only mark as fetched when we got real data
+        if (swellData != null) {
+            var prefix = _isSurfMode ? "surf_" : "";
+            Application.Storage.setValue(prefix + "swellFetchedDay", todayUTC());
+            Application.Storage.setValue(prefix + "swellFetchLat", _lat);
+            Application.Storage.setValue(prefix + "swellFetchLng", _lng);
+        }
 
         var result = {} as Dictionary<String, Application.PropertyValueType>;
         if (_weatherResult != null) {
@@ -333,8 +335,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     private function startSwellFetch() as Void {
         var apiKey = getStormGlassApiKey();
         if (apiKey == null) {
-            var prefix = _isSurfMode ? "surf_" : "";
-            Application.Storage.setValue(prefix + "swellFetchedDay", todayUTC());
             exitWithResults();
             return;
         }
