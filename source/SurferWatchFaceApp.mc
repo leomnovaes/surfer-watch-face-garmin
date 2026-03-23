@@ -51,12 +51,19 @@ class SurferWatchFaceApp extends Application.AppBase {
     function onSettingsChanged() as Void {
         if (dataManager != null) {
             dataManager.clearWeatherData();
-            // Load correct cache based on mode
             var surfMode = Application.Properties.getValue("SurfMode");
             if (surfMode != null && surfMode == 1) {
                 dataManager.loadSurfCache();
             } else {
                 dataManager.loadShoreCache();
+            }
+        }
+        // Try to trigger immediate background fetch for fresh data
+        if (Background has :registerForTemporalEvent) {
+            try {
+                Background.registerForTemporalEvent(Time.now());
+            } catch (e) {
+                // 5-min minimum enforced — will fetch on next scheduled event
             }
         }
         WatchUi.requestUpdate();
