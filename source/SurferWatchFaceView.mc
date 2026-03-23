@@ -881,7 +881,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             }
         }
         if (surferIconsFont != null) {
-            drawTextAligned(dc, WX_COL1_X, swellY, surferIconsFont, "H", Graphics.TEXT_JUSTIFY_CENTER);
+            drawTextAligned(dc, WX_COL1_X, swellY, Graphics.FONT_XTINY, "~", Graphics.TEXT_JUSTIFY_CENTER);
         }
         drawTextAligned(dc, WX_COL1_X, swellTextY, Graphics.FONT_XTINY, htText, Graphics.TEXT_JUSTIFY_CENTER);
 
