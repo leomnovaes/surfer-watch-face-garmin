@@ -490,23 +490,23 @@ private function drawTextAligned(dc, x, y, font, text, justify) {
 Uses Erik Flowers Weather Icons rasterized at 17px. 29 glyphs total: 22 day (A-V) + 7 night (a-g).
 Night variants are selected when current time is before sunrise or after sunset.
 
-Based on the official erikflowers OWM mapping (https://erikflowers.github.io/weather-icons/api-list.html):
+Based on the official erikflowers OWM mapping with community-validated overrides (tbranyen gist):
 
 ```
 Day glyphs (A-V):
   A = wi-day-sunny (clear, 800)
   B = wi-day-cloudy (few/scattered clouds, 801-802) — night: b
   C = wi-day-cloudy (same as B, used for 801-802) — night: b
-  D = wi-cloudy (overcast, 804) — same day/night
-  E = wi-fog (741)
+  D = wi-cloudy (overcast 804, broken clouds 803) — same day/night
+  E = wi-fog (741, 701 mist)
   F = wi-thunderstorm (200-232) — night: e
   G = wi-sprinkle (300, 301, 321, 500) — night: d
   H = wi-rain (302-314, 501-504) — night: c
-  I = wi-showers (520-522, 701 mist) — night: d
-  J = wi-snow (600, 601, 621, 622) — night: f
-  K = wi-rain-mix (511, 611-620)
-  L = wi-storm-showers (531, 901)
-  M = wi-sleet (602)
+  I = wi-showers (520-522, 531) — night: d
+  J = wi-snow (600, 601, 602, 621, 622) — night: f
+  K = wi-rain-mix (511, 613-620)
+  L = wi-storm-showers (901)
+  M = wi-sleet (611-612)
   N = wi-smoke (711)
   O = wi-day-haze (721)
   P = wi-dust (731, 761, 762)

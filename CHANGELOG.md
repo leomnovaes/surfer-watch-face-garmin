@@ -22,6 +22,7 @@
 
 ### Fixed
 - Re-rasterized weather-icons font: 3 glyphs (B/day-cloudy, f/night-snow, g/night-cloudy-gusts) had wrong codepoints from manual .fnt remapping
+- Override 5 misleading Erik Flowers OWM icon mappings (community-validated): 803 broken clouds→cloudy, 701 mist→fog, 602 heavy snow→snow, 531 ragged showers→showers, 611-612 sleet→sleet icon
 - Removed dead `precipPop` field from DataManager
 - Fixed `owmFetchedAt` dual-source: DataManager reads from Storage (single source of truth)
 - Fixed notification icon described as "bell" — it's a speech bubble
