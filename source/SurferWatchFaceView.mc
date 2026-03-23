@@ -1019,14 +1019,17 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var surfMode = Application.Properties.getValue("SurfMode");
         if (surfMode != null && surfMode == 1) {
             var now = Time.now().value();
-            if (now - lastWristRaiseTime < 4) {
-                // Double raise within 4 seconds — toggle bottom view
+            var diff = now - lastWristRaiseTime;
+            if (lastWristRaiseTime > 0 && diff < 10) {
+                // Double raise detected — toggle bottom view
                 var dm = (Application.getApp() as SurferWatchFaceApp).getDataManager();
                 if (dm != null) {
                     dm.bottomToggleState = (dm.bottomToggleState == 0) ? 1 : 0;
                 }
+                lastWristRaiseTime = 0;
+            } else {
+                lastWristRaiseTime = now;
             }
-            lastWristRaiseTime = now;
         }
 
         WatchUi.requestUpdate();
