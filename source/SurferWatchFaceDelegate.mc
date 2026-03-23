@@ -66,12 +66,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         return null;
     }
 
-    private function getStormGlassBackupKey() as String or Null {
-        var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
-        if (backupKey != null && !backupKey.equals("")) { return backupKey; }
-        return null;
-    }
-
     // =========================================================
     // Refresh checks
     // =========================================================
@@ -125,6 +119,9 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // =========================================================
 
     function onTemporalEvent() as Void {
+        // Clear previous cycle's response code
+        Application.Storage.setValue("sgLastResponseCode", 0);
+
         var btConnected = Application.Storage.getValue("bluetoothConnected");
         if (btConnected == null || btConnected == false) {
             Background.exit(null);
@@ -180,7 +177,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             }
 
             if (owmNeeded) {
-                startWindFetch(); // reuse same OWM fetch for shore weather
+                startShoreWeatherFetch();
             } else if (_tideNeeded) {
                 startTideFetch();
             } else {
@@ -216,6 +213,20 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         var units = "metric";
         if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) { units = "imperial"; }
         var ws = new WeatherService(method(:onWindDone));
+        ws.fetch(_lat, _lng, apiKey, units);
+    }
+
+    // Shore mode: OWM weather fetch, chains to tide
+    private function startShoreWeatherFetch() as Void {
+        var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
+        System.println("SHORE WEATHER: startFetch key=" + (apiKey != null ? "set" : "null"));
+        if (apiKey == null || apiKey.equals("")) {
+            if (_tideNeeded) { startTideFetch(); } else { exitWithAllResults(); }
+            return;
+        }
+        var units = "metric";
+        if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) { units = "imperial"; }
+        var ws = new WeatherService(method(:onShoreWeatherDone));
         ws.fetch(_lat, _lng, apiKey, units);
     }
 
@@ -284,11 +295,22 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         }
     }
 
-    // Wind/weather done → exit
+    // Wind/weather done → exit (surf mode, last in chain)
     function onWindDone(weatherData as Dictionary or Null) as Void {
         System.println("WIND: done data=" + (weatherData != null ? "received" : "null"));
         _weatherResult = weatherData;
         exitWithAllResults();
+    }
+
+    // Shore weather done → chain to tide
+    function onShoreWeatherDone(weatherData as Dictionary or Null) as Void {
+        System.println("SHORE WEATHER: done data=" + (weatherData != null ? "received" : "null"));
+        _weatherResult = weatherData;
+        if (_tideNeeded) {
+            startTideFetch();
+        } else {
+            exitWithAllResults();
+        }
     }
 
     // =========================================================
