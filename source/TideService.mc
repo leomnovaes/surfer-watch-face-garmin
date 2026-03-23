@@ -10,21 +10,13 @@ import Toybox.Time.Gregorian;
 class TideService {
 
     private var _callback as Method;
-    private var _fetchLat as Float;
-    private var _fetchLng as Float;
-    private var _retriedBackup as Boolean;
 
     function initialize(callback as Method) {
         _callback = callback;
-        _fetchLat = 0.0f;
-        _fetchLng = 0.0f;
-        _retriedBackup = false;
     }
 
     // Builds StormGlass URL with 48h window, sets Authorization header, makes async request
     function fetch(lat as Float, lng as Float, apiKey as String) as Void {
-        _fetchLat = lat;
-        _fetchLng = lng;
         // Calculate 48h window: start of current day UTC to end of next day UTC
         var now = Time.now();
         var todayInfo = Gregorian.info(now, Time.FORMAT_SHORT);
@@ -62,17 +54,10 @@ class TideService {
     // Callback for StormGlass response
     function onTideResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
         System.println("TIDE: onTideResponse code=" + responseCode);
+        if (responseCode == 402) {
+            Application.Storage.setValue("sgPrimaryFailed", true);
+        }
         if (responseCode != 200 || data == null || !(data instanceof Dictionary)) {
-            // On 402 (quota), retry immediately with backup key
-            if (responseCode == 402 && !_retriedBackup) {
-                var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
-                if (backupKey != null && !backupKey.equals("")) {
-                    System.println("TIDE: 402 — retrying with backup key");
-                    _retriedBackup = true;
-                    fetch(_fetchLat, _fetchLng, backupKey);
-                    return;
-                }
-            }
             _callback.invoke(null);
             return;
         }
@@ -162,20 +147,10 @@ class TideService {
     // tide fetching. Returns closest hourly entry to now.
     // =========================================================
     function fetchSwell(lat as Float, lng as Float, apiKey as String, callback as Method) as Void {
-        _fetchLat = lat;
-        _fetchLng = lng;
-        var now = Time.now();
-        var todayInfo = Gregorian.info(now, Time.FORMAT_SHORT);
-        var startMoment = Gregorian.moment({
-            :year => todayInfo.year,
-            :month => todayInfo.month,
-            :day => todayInfo.day,
-            :hour => 0,
-            :minute => 0,
-            :second => 0
-        });
-        var startUnix = startMoment.value();
-        var endUnix = startUnix + 86400;
+        // 6-hour window centered on now to keep response within 28KB background memory
+        var nowUnix = Time.now().value();
+        var startUnix = nowUnix - (3 * 3600);
+        var endUnix = nowUnix + (3 * 3600);
 
         var url = "https://api.stormglass.io/v2/weather/point"
             + "?lat=" + lat.toString()
@@ -201,17 +176,10 @@ class TideService {
 
     function onSwellResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
         System.println("SWELL: onSwellResponse code=" + responseCode);
+        if (responseCode == 402) {
+            Application.Storage.setValue("sgPrimaryFailed", true);
+        }
         if (responseCode != 200 || data == null || !(data instanceof Dictionary)) {
-            // On 402 (quota), retry immediately with backup key
-            if (responseCode == 402 && !_retriedBackup) {
-                var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
-                if (backupKey != null && !backupKey.equals("")) {
-                    System.println("SWELL: 402 — retrying with backup key");
-                    _retriedBackup = true;
-                    fetchSwell(_fetchLat, _fetchLng, backupKey, _swellCallback);
-                    return;
-                }
-            }
             if (_swellCallback != null) {
                 _swellCallback.invoke(null);
             }
