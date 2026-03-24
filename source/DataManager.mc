@@ -76,9 +76,6 @@ class DataManager {
     // --- Surf mode: UI state ---
     var bottomToggleState as Number;
 
-    // --- Sunrise/sunset recomputation tracking (once per minute, not every tick) ---
-    private var _lastSunComputeMinute as Number = -1;
-    private var _lastSurfSunComputeMinute as Number = -1;
     // --- Storage write tracking (avoid flash I/O every tick) ---
     private var _prevStoredLat as Float or Null;
     private var _prevStoredLng as Float or Null;
@@ -256,10 +253,12 @@ class DataManager {
     // requires CIQ 4.1 and we target 3.4.
     // =========================================================
     function computeSunriseSunset() as Void {
-        // Only recompute once per minute — sunrise/sunset don't change within a minute
-        var currentMinute = System.getClockTime().min;
-        if (currentMinute == _lastSunComputeMinute && sunrise != null) { return; }
-        _lastSunComputeMinute = currentMinute;
+        // Only compute when needed: first time, or after midnight (sunrise becomes stale)
+        if (sunrise != null) {
+            // Check if sunrise is still for today
+            var now = Time.now().value();
+            if (now < sunrise + 86400) { return; } // still valid for today
+        }
 
         if (lastKnownLat == null || lastKnownLng == null) {
             return;
@@ -338,10 +337,11 @@ class DataManager {
     // Stores in separate surfSunrise/surfSunset fields.
     // =========================================================
     function computeSurfSunriseSunset() as Void {
-        // Only recompute once per minute
-        var currentMinute = System.getClockTime().min;
-        if (currentMinute == _lastSurfSunComputeMinute && surfSunrise != null) { return; }
-        _lastSurfSunComputeMinute = currentMinute;
+        // Only compute when needed: first time, or after midnight
+        if (surfSunrise != null) {
+            var now = Time.now().value();
+            if (now < surfSunrise + 86400) { return; }
+        }
 
         var surfLatStr = Application.Properties.getValue("SurfSpotLat");
         var surfLngStr = Application.Properties.getValue("SurfSpotLng");
