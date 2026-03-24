@@ -52,6 +52,8 @@ class SurferWatchFaceApp extends Application.AppBase {
         if (surfMode != null && surfMode == 1) {
             dataManager.loadSurfCache();
         }
+        // Read sensor data first so GPS is available for sunrise/sunset computation
+        dataManager.updateSensorData();
         // Compute sunrise/sunset + Garmin weather if applicable
         dataManager.refreshWeatherOnBackgroundEvent();
         return [ new SurferWatchFaceView() ];
@@ -78,6 +80,8 @@ class SurferWatchFaceApp extends Application.AppBase {
             }
             // Compute sunrise/sunset + Garmin weather if applicable
             dataManager.refreshWeatherOnBackgroundEvent();
+            // Copy GPS to surf spot if toggled (works regardless of current mode)
+            dataManager.checkCopyGPS();
         }
         // Try to trigger immediate background fetch for fresh data
         if (Background has :registerForTemporalEvent) {
