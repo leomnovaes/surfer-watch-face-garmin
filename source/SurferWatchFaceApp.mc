@@ -9,6 +9,7 @@ import Toybox.WatchUi;
 class SurferWatchFaceApp extends Application.AppBase {
 
     var dataManager as DataManager or Null;
+    private var _lastWeatherSource as Number = -1;
 
     function initialize() {
         AppBase.initialize();
@@ -44,17 +45,23 @@ class SurferWatchFaceApp extends Application.AppBase {
     // Return the initial view — only called in foreground process
     function getInitialView() as [Views] or [Views, InputDelegates] {
         dataManager = new DataManager();
+        var ws = Application.Properties.getValue("WeatherSource");
+        _lastWeatherSource = (ws != null) ? ws : 0;
         return [ new SurferWatchFaceView() ];
     }
 
     // New app settings have been received so trigger a UI update
     function onSettingsChanged() as Void {
         if (dataManager != null) {
-            // Always clear weather data on settings change to prevent
+            // Clear weather data only if WeatherSource changed — prevents
             // condition code mismatch between mappers (WMO vs OWM vs Garmin).
-            // Display shows "--" until next background fetch brings fresh data.
-            dataManager.clearWeatherData();
-            dataManager.clearPersistedWeatherData();
+            var ws = Application.Properties.getValue("WeatherSource");
+            var currentSource = (ws != null) ? ws : 0;
+            if (currentSource != _lastWeatherSource) {
+                dataManager.clearWeatherData();
+                dataManager.clearPersistedWeatherData();
+                _lastWeatherSource = currentSource;
+            }
 
             var surfMode = Application.Properties.getValue("SurfMode");
             if (surfMode != null && surfMode == 1) {
