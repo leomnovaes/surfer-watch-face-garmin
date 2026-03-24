@@ -52,8 +52,8 @@ class SurferWatchFaceApp extends Application.AppBase {
         if (surfMode != null && surfMode == 1) {
             dataManager.loadSurfCache();
         }
-        // Populate Garmin weather + sunrise/sunset if in Garmin mode
-        dataManager.refreshGarminWeatherData();
+        // Compute sunrise/sunset + Garmin weather if applicable
+        dataManager.refreshWeatherOnBackgroundEvent();
         return [ new SurferWatchFaceView() ];
     }
 
@@ -76,8 +76,8 @@ class SurferWatchFaceApp extends Application.AppBase {
             } else {
                 dataManager.loadShoreCache();
             }
-            // Refresh Garmin weather data if in Garmin mode (no API call needed)
-            dataManager.refreshGarminWeatherData();
+            // Compute sunrise/sunset + Garmin weather if applicable
+            dataManager.refreshWeatherOnBackgroundEvent();
         }
         // Try to trigger immediate background fetch for fresh data
         if (Background has :registerForTemporalEvent) {
@@ -113,9 +113,9 @@ class SurferWatchFaceApp extends Application.AppBase {
                 }
             }
         }
-        // For Garmin mode: refresh weather + sunrise/sunset on every background cycle
+        // Compute sunrise/sunset + Garmin weather on every background cycle
         if (dataManager != null) {
-            dataManager.refreshGarminWeatherData();
+            dataManager.refreshWeatherOnBackgroundEvent();
         }
         // Re-register for next background event in 5 minutes
         if (Background has :registerForTemporalEvent) {

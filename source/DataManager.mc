@@ -189,41 +189,47 @@ class DataManager {
     }
 
     // =========================================================
-    // refreshGarminWeatherData() — called when background event
-    // completes or settings change. For Garmin mode, reads
-    // Weather.getCurrentConditions() and computes sunrise/sunset,
-    // then flows through onWeatherData() / onSurfWindData() —
-    // same path as API sources. No special-casing.
+    // refreshWeatherOnBackgroundEvent() — called on every
+    // background event, settings change, and startup.
+    //
+    // 1. Always computes sunrise/sunset for the current mode
+    //    (shore from GPS, surf from surf spot coordinates).
+    //    API responses overwrite these when they arrive.
+    // 2. For Garmin mode: also reads built-in weather and flows
+    //    through onWeatherData() same as API sources.
     // =========================================================
-    function refreshGarminWeatherData() as Void {
-        var weatherSource = Application.Properties.getValue("WeatherSource");
-        if (weatherSource != null && weatherSource != 0) { return; } // Not Garmin mode
-
+    function refreshWeatherOnBackgroundEvent() as Void {
         var surfMode = Application.Properties.getValue("SurfMode");
+        var weatherSource = Application.Properties.getValue("WeatherSource");
+
         if (surfMode != null && surfMode == 1) {
-            // Surf mode + Garmin: compute surf sunrise/sunset, pass through onSurfWindData
-            // (no wind available from Garmin for remote surf spot)
+            // Surf mode: always compute surf sunrise/sunset as baseline
             computeSurfSunriseSunset();
         } else {
-            // Shore mode + Garmin: build weather dict from built-in, pass through onWeatherData
-            var weatherDict = {} as Dictionary<String, Application.PropertyValueType>;
-            if (Weather has :getCurrentConditions) {
-                var conditions = Weather.getCurrentConditions();
-                if (conditions != null) {
-                    weatherDict["temp"] = conditions.temperature != null ? conditions.temperature.toFloat() as Application.PropertyValueType : null;
-                    weatherDict["conditionId"] = conditions.condition as Application.PropertyValueType;
-                    weatherDict["windSpeed"] = conditions.windSpeed != null ? conditions.windSpeed.toFloat() as Application.PropertyValueType : null;
-                    weatherDict["windDeg"] = conditions.windBearing != null ? conditions.windBearing.toNumber() as Application.PropertyValueType : null;
-                }
-            }
-            // Compute sunrise/sunset from GPS and include in the same dict
+            // Shore mode: always compute sunrise/sunset from GPS as baseline
             computeSunriseSunset();
-            weatherDict["sunrise"] = sunrise as Application.PropertyValueType;
-            weatherDict["sunset"] = sunset as Application.PropertyValueType;
-            // Store fetch timestamp
-            Application.Storage.setValue("owmFetchedAt", Time.now().value());
-            // Flow through the same path as API weather data
-            onWeatherData(weatherDict);
+        }
+
+        // Garmin mode: also read built-in weather (API modes get weather from background fetch)
+        if (weatherSource == null || weatherSource == 0) {
+            if (surfMode == null || surfMode == 0) {
+                // Shore + Garmin: build weather dict with computed sunrise/sunset
+                var weatherDict = {} as Dictionary<String, Application.PropertyValueType>;
+                if (Weather has :getCurrentConditions) {
+                    var conditions = Weather.getCurrentConditions();
+                    if (conditions != null) {
+                        weatherDict["temp"] = conditions.temperature != null ? conditions.temperature.toFloat() as Application.PropertyValueType : null;
+                        weatherDict["conditionId"] = conditions.condition as Application.PropertyValueType;
+                        weatherDict["windSpeed"] = conditions.windSpeed != null ? conditions.windSpeed.toFloat() as Application.PropertyValueType : null;
+                        weatherDict["windDeg"] = conditions.windBearing != null ? conditions.windBearing.toNumber() as Application.PropertyValueType : null;
+                    }
+                }
+                weatherDict["sunrise"] = sunrise as Application.PropertyValueType;
+                weatherDict["sunset"] = sunset as Application.PropertyValueType;
+                Application.Storage.setValue("owmFetchedAt", Time.now().value());
+                onWeatherData(weatherDict);
+            }
+            // Surf + Garmin: no wind API, surfSunrise/surfSunset already computed above
         }
     }
 
@@ -232,7 +238,7 @@ class DataManager {
     // Weather.getCurrentConditions(). Called from onUpdate() when
     // WeatherSource=0 (Garmin). This is an OS-cached memory read,
     // not flash I/O — safe to call every tick. Does NOT compute
-    // sunrise/sunset (that's done in refreshGarminWeatherData).
+    // sunrise/sunset (that's done in refreshWeatherOnBackgroundEvent).
     // =========================================================
     function updateGarminWeather() as Void {
         if (Weather has :getCurrentConditions) {
