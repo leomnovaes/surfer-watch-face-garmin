@@ -20,11 +20,17 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private static const SPACER = 4;
 
     // --- Layout constants — Heart Rate Circle ---
-    // Sub-screen circle from simulator.json: x=113, y=1, 62x62
-    // Center = (144, 31), radius = 31
-    private static const HR_CENTER_X = 144;
-    private static const HR_CENTER_Y = 31;
-    private static const HR_RADIUS = 31;
+    // Subscreen geometry — hardcoded for Instinct 2/2X (API 3.4).
+    // Will be replaced with dynamic values from dc.getSubscreen() on API 4.1+ devices.
+    private var hrCenterX as Number = 144;
+    private var hrCenterY as Number = 31;
+    private var hrRadius as Number = 31;
+    // Content positions derived from center/radius
+    private var hrIconX as Number = 144;
+    private var hrIconY as Number = 14;
+    private var hrTextX as Number = 144;
+    private var hrTextY as Number = 34;
+    private static const STRESS_ARC_WIDTH = 6;
 
     // --- Layout constants — Middle Section ---
     private static const MID_Y = 76;
@@ -91,6 +97,23 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         heartIconFont = WatchUi.loadResource(Rez.Fonts.HeartIcon);
         clockSaira40 = WatchUi.loadResource(Rez.Fonts.ClockSaira40);
         clockRajdhani40 = WatchUi.loadResource(Rez.Fonts.ClockRajdhani40);
+
+        // Derive subscreen circle geometry
+        // Default: Instinct 2/2X hardcoded values (API 3.4, no getSubscreen)
+        hrCenterX = 144;
+        hrCenterY = 31;
+        hrRadius = 31;
+        computeSubScreenLayout();
+    }
+
+    // Derives icon/text positions from subscreen center and radius.
+    // Called once from onLayout. Ensures content is centered regardless
+    // of the exact subscreen geometry.
+    private function computeSubScreenLayout() as Void {
+        hrIconX = hrCenterX;
+        hrIconY = hrCenterY - (hrRadius * 0.55).toNumber();  // icon in upper portion
+        hrTextX = hrCenterX;
+        hrTextY = hrCenterY + (hrRadius * 0.1).toNumber();   // text just below center
     }
 
     function onShow() as Void {
@@ -540,12 +563,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private static const TC_TRI_HEIGHT = 5;         // height of the "now" triangle
     private static const TC_TRI_GAP = 3;            // gap between triangle tip and curve top
 
-    // --- Layout constants — HR Circle content positions (tweak these) ---
-    private static const HR_HEART_X = 144;
-    private static const HR_HEART_Y = 14;
-    private static const HR_TEXT_X = 144;
-    private static const HR_TEXT_Y = 34;
-    private static const STRESS_ARC_WIDTH = 6;
+    // (HR circle content positions now derived from hrCenterX/Y and hrRadius above)
 
     // =========================================================
     // Section renderers — called from onUpdate()
@@ -554,25 +572,25 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
         // Filled white circle
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.fillCircle(HR_CENTER_X, HR_CENTER_Y, HR_RADIUS);
+        dc.fillCircle(hrCenterX, hrCenterY, hrRadius);
 
         // Stress arc
         var stressVal = 0;
         if (dm.stress != null) {
             stressVal = dm.stress;
         }
-        drawStressArc(dc, HR_CENTER_X, HR_CENTER_Y, HR_RADIUS, STRESS_ARC_WIDTH, stressVal);
+        drawStressArc(dc, hrCenterX, hrCenterY, hrRadius, STRESS_ARC_WIDTH, stressVal);
 
         // Heart icon
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        drawHrHeart(dc, HR_HEART_X, HR_HEART_Y);
+        drawHrHeart(dc, hrIconX, hrIconY);
 
         // Heart rate text
         var hrText = "--";
         if (dm.heartRate != null) {
             hrText = dm.heartRate.toString();
         }
-        drawHrText(dc, HR_TEXT_X, HR_TEXT_Y, hrText);
+        drawHrText(dc, hrTextX, hrTextY, hrText);
 
         // Restore white for subsequent drawing
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
@@ -812,22 +830,22 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private function drawHrCircle_Surf(dc as Dc, dm as DataManager) as Void {
         // Filled white circle
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.fillCircle(HR_CENTER_X, HR_CENTER_Y, HR_RADIUS);
+        dc.fillCircle(hrCenterX, hrCenterY, hrRadius);
 
         // Solar intensity arc (reuses stress arc geometry)
         var solarVal = 0;
         if (dm.solarIntensity != null) {
             solarVal = dm.solarIntensity;
         }
-        drawStressArc(dc, HR_CENTER_X, HR_CENTER_Y, HR_RADIUS, STRESS_ARC_WIDTH, solarVal);
+        drawStressArc(dc, hrCenterX, hrCenterY, hrRadius, STRESS_ARC_WIDTH, solarVal);
 
         // Tide direction arrow (up=rising, down=falling) — uses tide icons from surfer-icons
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
         if (dm.nextTideType != null && surferIconsFont != null) {
             var tideGlyph = dm.nextTideType.equals("high") ? "H" : "L";
-            dc.drawText(HR_HEART_X, HR_HEART_Y, surferIconsFont, tideGlyph, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.drawText(hrIconX, hrIconY, surferIconsFont, tideGlyph, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         } else {
-            dc.drawText(HR_HEART_X, HR_HEART_Y, Graphics.FONT_XTINY, "--", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.drawText(hrIconX, hrIconY, Graphics.FONT_XTINY, "--", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
 
         // Tide height text
@@ -840,7 +858,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 tideText = (dm.interpTideHeight * 3.281).format("%.1f");
             }
         }
-        dc.drawText(HR_TEXT_X, HR_TEXT_Y, Graphics.FONT_XTINY, tideText, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(hrTextX, hrTextY, Graphics.FONT_XTINY, tideText, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
     }
