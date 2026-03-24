@@ -17,7 +17,7 @@ Surf Mode is an alternate watch face layout optimized for surfers actively in th
 - **Tide_Curve**: A graphical representation of today's tide extremes plotted as a filled curve with a dithered "now" marker and triangle indicator
 - **Bottom_Toggle**: The mechanism by which the user performs a double wrist gesture (two raises within a time window) in Surf_Mode to switch the bottom section between Swell_Data view and Tide_Curve view
 - **CopyGPS_Action**: A boolean setting that, when toggled ON, copies current GPS coordinates to SurfSpotLat/SurfSpotLng and auto-resets to OFF
-- **Solar_Intensity**: A 0-100% value from SensorHistory.getSolarIntensityHistory() representing current solar radiation
+- **Solar_Intensity**: A 0-100% value from System.getSystemStats().solarIntensity representing current solar radiation
 - **Water_Temperature**: An approximate water temperature reading from SensorHistory.getTemperatureHistory() (body temperature sensor, approximate when submerged)
 
 ---
@@ -65,7 +65,7 @@ Surf Mode is an alternate watch face layout optimized for surfers actively in th
 2. WHILE `SurfMode` is set to 1, THE Watch_Face SHALL display a tide direction arrow icon inside the Subscreen_Circle, replacing the heart icon
 3. THE tide direction arrow SHALL point up for a rising tide (next event is high) and down for a falling tide (next event is low)
 4. WHILE `SurfMode` is set to 1, THE Watch_Face SHALL display Solar_Intensity as a 0-100% arc gauge around the Subscreen_Circle, replacing the stress arc
-5. THE Watch_Face SHALL read Solar_Intensity from SensorHistory.getSolarIntensityHistory() with a period of 1 sample
+5. THE Watch_Face SHALL read Solar_Intensity from System.getSystemStats().solarIntensity (0-100 on solar devices, null on non-solar)
 6. IF Solar_Intensity data is unavailable, THEN THE Watch_Face SHALL display an empty arc (0% fill)
 7. IF tide height data is unavailable, THEN THE Watch_Face SHALL display "--" inside the Subscreen_Circle
 

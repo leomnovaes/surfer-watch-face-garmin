@@ -209,7 +209,7 @@ var surfWindDeg as Number or Null;      // degrees from OWM
 
 // --- Surf mode: sensor data ---
 var waterTemp as Float or Null;         // Celsius (from SensorHistory.getTemperatureHistory)
-var solarIntensity as Number or Null;   // 0-100 (from SensorHistory.getSolarIntensityHistory)
+var solarIntensity as Number or Null;   // 0-100 (from System.getSystemStats().solarIntensity)
 
 // --- Surf mode: interpolated tide ---
 var interpTideHeight as Float or Null;  // meters, cosine-interpolated each onUpdate()
@@ -365,12 +365,9 @@ Called from `onUpdate()` when `SurfMode=1`. Reads surf-specific sensor data:
    else: waterTemp = null
 
 2. Solar intensity:
-   if SensorHistory has :getSolarIntensityHistory
-     iter = SensorHistory.getSolarIntensityHistory({:period => 1})
-     sample = iter.next()
-     if sample != null and sample.data != null:
-       solarIntensity = sample.data.toNumber()  // 0-100
-     else: solarIntensity = null
+   var stats = System.getSystemStats()
+   if stats has :solarIntensity and stats.solarIntensity != null:
+     solarIntensity = stats.solarIntensity.toNumber()  // 0-100
    else: solarIntensity = null
 ```
 
@@ -625,7 +622,7 @@ The 4-second window balances intentional activation with comfort — a natural d
 | OWM wind API returns non-200 | Skip wind, display "--" for wind in surf mode. |
 | No OWM API key configured | Skip wind fetch entirely. Display "--" for wind. |
 | SensorHistory.getTemperatureHistory unavailable | `waterTemp = null`, display "--". |
-| SensorHistory.getSolarIntensityHistory unavailable | `solarIntensity = null`, display 0% arc (empty). |
+| System.getSystemStats().solarIntensity unavailable | `solarIntensity = null`, display 0% arc (empty). |
 | Tide extremes array empty or null in surf mode | `interpTideHeight = null`, display "--" in subscreen. Tide curve shows "--". |
 | Only one tide extreme available (before first or after last event) | Use nearest event's height directly (no interpolation). |
 | No phone connection (BT disconnected) | Skip all background fetches (existing guard). Render from cached data. |

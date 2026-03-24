@@ -152,7 +152,7 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 - The `SurferWatchFaceBehaviorDelegate` class exists in `SurferWatchFaceView.mc` but is NOT used (watch faces can't receive button input)
 - Double wrist gesture (onExitSleep timing) is the toggle mechanism instead
 - Surf mode uses `surf_` prefixed Application.Storage keys to isolate cache from shore mode
-- Solar intensity (`getSolarIntensityHistory`) may not be available on Instinct 2X — guarded with `has` check, falls back to null/empty arc
+- Solar intensity read from System.getSystemStats().solarIntensity (works on all Instinct Solar models)
 
 
 ### Task 26 (previously 22): Clean up debug println statements

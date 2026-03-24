@@ -53,6 +53,7 @@
 - Sunrise/sunset computed on startup for all modes (not just Garmin) — fixes "--" until first background event
 - Dynamic subscreen layout via dc.getSubscreen() on API 4.1+ devices (Instinct 3)
 - Multi-device support: Instinct 2, Instinct 2X Solar, Instinct 3 Solar 45/50mm
+- Solar intensity read from System.getSystemStats().solarIntensity (was using wrong API)
 
 ### Fixed
 - Weather icon mapping: 5 community-validated overrides for misleading Erik Flowers mappings
