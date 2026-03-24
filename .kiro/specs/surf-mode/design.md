@@ -232,7 +232,6 @@ Surf mode uses `"surf_"` prefixed keys to keep caches separate:
 | `"surf_swellHeights"` | Array | 24h hourly swell heights (meters) from Open-Meteo |
 | `"surf_swellPeriods"` | Array | 24h hourly swell periods (seconds) from Open-Meteo |
 | `"surf_swellDirections"` | Array | 24h hourly swell directions (degrees) from Open-Meteo |
-| `"sgUseBackup"` | Boolean | Flag to use backup StormGlass key on next cycle |
 | `"sgLastResponseCode"` | Number | Last StormGlass HTTP response code |
 
 Shore mode continues using unprefixed keys (`"tideExtremes"`, `"tideFetchedDay"`, etc.) — no changes to existing cache.
@@ -617,7 +616,7 @@ The 4-second window balances intentional activation with comfort — a natural d
 | SurfSpotLat/Lng = "0.0" or empty | Display "--" for all location-dependent surf fields. Skip all surf fetches. |
 | Open-Meteo swell API returns non-200 | Skip swell parsing, retain cached swell forecast arrays. Chain continues to tide. |
 | Open-Meteo swell response missing `"hourly"` | Return null from swell parsing. Display "--" for swell fields. |
-| StormGlass tide API returns 402 (quota) | Set `sgUseBackup=true` flag. Next cycle uses backup key. |
+| StormGlass tide API returns 402 (quota) | Immediately retry with backup key in the same cycle. If backup also fails, skip tide. |
 | StormGlass tide API returns non-200 (not 402) | Skip tide, retain cached data. Do NOT try backup (avoid exhausting both keys). |
 | StormGlass response returns -403 | Background memory exhausted. Stop chain immediately, exit with partial results. |
 | OWM wind API returns non-200 | Skip wind, display "--" for wind in surf mode. |

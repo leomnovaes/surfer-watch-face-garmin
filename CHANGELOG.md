@@ -44,6 +44,9 @@
 - Garmin weather flows through onWeatherData() same as API sources — no special-casing
 - Storage I/O eliminated from per-tick render: writes only on change, forecast arrays cached in memory
 - Sunrise/sunset computed together with weather data, not separately per-tick
+- Tide window: 72h from local midnight (Time.today()) instead of 48h from UTC midnight
+- StormGlass backup key: immediate retry on 402 in same cycle (not flag-based next-cycle)
+- Tide curve triggers refresh when no data available for rendering
 
 ### Fixed
 - Weather icon mapping: 5 community-validated overrides for misleading Erik Flowers mappings

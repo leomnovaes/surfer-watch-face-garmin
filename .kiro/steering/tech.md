@@ -62,10 +62,10 @@ The watch face supports two weather sources, configurable via `WeatherSource` se
 - Note: uses `lng` not `lon`
 - Datum: `MLLW` (Mean Lower Low Water) — heights are always positive and match tide websites. Default MSL gives small values around 0 which are confusing.
 - Returns: array of `{ height: float, time: string (UTC ISO), type: "high"|"low" }`
-- Request 48h window (start of today UTC to end of tomorrow UTC)
-- Rate limit: max 1 request per calendar day; refresh also triggered if GPS moves >50km
+- Request 72h window (local midnight today to midnight+3 days via Time.today() + 72h)
+- Rate limit: max 1 request per calendar day; refresh also triggered if GPS moves >50km or tide data expired
 - Free tier: 10 calls/day — persist response to `Application.Storage`
-- Backup key: `StormGlassBackupApiKey` setting, used automatically when primary returns 402 (quota exhausted). Flag-based: set `sgUseBackup=true` in Storage, next cycle uses backup key, flag clears on success.
+- Backup key: `StormGlassBackupApiKey` setting, immediate retry on 402 in the same background cycle. TideService handles retry internally.
 
 ### Open-Meteo Marine API (surf mode swell)
 - Endpoint: `GET https://marine-api.open-meteo.com/v1/marine?latitude={lat}&longitude={lon}&hourly=swell_wave_height,swell_wave_period,swell_wave_direction&forecast_days=1`

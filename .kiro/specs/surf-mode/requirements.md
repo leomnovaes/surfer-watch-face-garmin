@@ -184,8 +184,8 @@ Surf Mode is an alternate watch face layout optimized for surfers actively in th
 1. WHILE `SurfMode` is set to 1, THE ServiceDelegate SHALL make at most 1 StormGlass API call per day for tide extremes (swell and wind use Open-Meteo or OWM which have no daily quota concern)
 2. THE ServiceDelegate SHALL chain requests based on WeatherSource: Open-Meteo swell → StormGlass tide → wind source (Open-Meteo hourly / OWM current / none for Garmin)
 3. THE ServiceDelegate SHALL support a backup StormGlass API key (`StormGlassBackupApiKey` setting) for tide fetches
-4. WHEN the primary StormGlass key returns HTTP 402 (quota exhausted), THE ServiceDelegate SHALL set a `sgUseBackup` flag in Application.Storage and use the backup key on the next background cycle
-5. THE `sgUseBackup` flag SHALL be cleared on a successful tide fetch
+4. WHEN the primary StormGlass key returns HTTP 402 (quota exhausted), THE TideService SHALL immediately retry with the backup key in the same background cycle
+5. THE TideService SHALL NOT retry more than once per fetch (primary → backup, no further retries)
 6. IF any request in the chain returns -403 (background memory exhausted), THE ServiceDelegate SHALL stop the chain immediately and exit with whatever partial results have been accumulated
 7. Open-Meteo swell and weather fetches have no quota limit and are fetched on every background temporal event
 8. OWM wind fetches for surf mode have no daily limit (free tier: 1M calls/month)
