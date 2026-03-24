@@ -36,7 +36,7 @@ Switch to Surf Mode via the Garmin Connect app settings. The display replaces fi
 - **Tide curve** — filled area graph of today's tide pattern with dithered "now" marker and triangle indicator. Toggle between swell view and tide curve with a double wrist gesture.
 - **Tide height** — interpolated current height displayed in the subscreen circle (replaces heart rate)
 - **Wind** — direction arrow + speed for the surf spot (from OWM, separate from shore wind)
-- **Water temperature** — from watch body temperature sensor (approximate when submerged)
+- **Water temperature** — configurable: watch body sensor (default) or ocean surface temperature from Open-Meteo Marine API (hourly, works offline)
 - **Solar intensity** — arc gauge around subscreen circle (replaces stress arc)
 - **Battery** — same as shore mode
 - **Moon phase** — same as shore mode
@@ -202,6 +202,7 @@ Note: OWM 3.0 (One Call) API keys also work — the watch face uses the 2.5 endp
 | Surf Mode | 0 = Shore (default), 1 = Surf |
 | Surf Spot Lat | Latitude of your surf spot (e.g., `48.4992`) |
 | Surf Spot Lng | Longitude of your surf spot (e.g., `-124.3003`) |
+| Surf Temperature Source | 0 = Watch Sensor (default), 1 = Ocean Surface (from Open-Meteo Marine API) |
 | Copy GPS to Surf Spot | Toggle ON to copy current GPS to surf spot coordinates (auto-resets to OFF) |
 
 ## Installation

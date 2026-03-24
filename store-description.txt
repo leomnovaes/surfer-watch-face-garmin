@@ -23,7 +23,7 @@ SURF MODE
 • Tide curve graph with "now" marker (toggle with double wrist gesture)
 • Interpolated current tide height in subscreen circle
 • Wind direction and speed for your surf spot (Open-Meteo: hourly forecast works offline; OWM: current only)
-• Water temperature from watch sensor
+• Water temperature: watch sensor or ocean surface (Open-Meteo Marine, hourly, works offline)
 • Solar intensity arc gauge
 • Surf spot location: manual entry or one-tap GPS copy
 
