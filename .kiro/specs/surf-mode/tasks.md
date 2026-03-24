@@ -131,19 +131,19 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 - [x] 23.7 When WeatherSource=2 (OWM), keep existing OWM wind fetch (current only, no forecast array)
 
 ### Task 24: Checkpoint — Open-Meteo weather works in both modes
-- [ ] 24.1 Verify shore mode with WeatherSource=1: temp, condition icon, wind, precip, sunrise/sunset all display correctly
-- [ ] 24.2 Verify surf mode with WeatherSource=1: wind advances hourly through forecast array
-- [ ] 24.3 Verify shore mode with WeatherSource=2 (OWM): unchanged behavior
-- [ ] 24.4 Verify surf mode with WeatherSource=2 (OWM): current wind only, freezes offline
-- [ ] 24.5 Verify shore mode with WeatherSource=0 (Garmin): unchanged behavior
-- [ ] 24.6 Verify surf mode with WeatherSource=0 (Garmin): wind shows "--"
-- [ ] 24.7 Verify weather data clears on source switch (no condition code mismatch)
+- [x] 24.1 Verify shore mode with WeatherSource=1: temp, condition icon, wind, precip, sunrise/sunset all display correctly
+- [x] 24.2 Verify surf mode with WeatherSource=1: wind advances hourly through forecast array
+- [x] 24.3 Verify shore mode with WeatherSource=2 (OWM): unchanged behavior
+- [x] 24.4 Verify surf mode with WeatherSource=2 (OWM): current wind only, freezes offline
+- [x] 24.5 Verify shore mode with WeatherSource=0 (Garmin): unchanged behavior
+- [x] 24.6 Verify surf mode with WeatherSource=0 (Garmin): wind shows "--"
+- [x] 24.7 Verify weather data clears on source switch (no condition code mismatch)
 
 ### Task 25: Update docs and release
-- [ ] 25.1 Update README: document 3-tier weather source, Open-Meteo tradeoffs (fewer condition icons), surf mode wind behavior per source
-- [ ] 25.2 Update store-description.txt
-- [ ] 25.3 Update CHANGELOG
-- [ ] 25.4 Update steering files (tech.md, product.md) with Open-Meteo weather API docs
+- [x] 25.1 Update README: document 3-tier weather source, Open-Meteo tradeoffs (fewer condition icons), surf mode wind behavior per source
+- [x] 25.2 Update store-description.txt
+- [x] 25.3 Update CHANGELOG
+- [x] 25.4 Update steering files (tech.md, product.md) with Open-Meteo weather API docs
 - [ ] 25.5 Regenerate screenshots and annotated diagrams for both modes
 
 ## Notes

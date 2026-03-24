@@ -16,6 +16,11 @@
 - Separate surf/shore wind fields (surfWindSpeed/surfWindDeg vs windSpeed/windDeg)
 - Background chain for surf mode: Open-Meteo swell → StormGlass tide → OWM wind
 - -403 detection stops background chain immediately (memory exhausted safety)
+- Open-Meteo Weather API as third weather source (no key, WMO codes, hourly wind forecast for surf offline)
+- 3-tier weather source setting: Garmin (default), Open-Meteo (no key), OpenWeatherMap (needs key)
+- WMO weather code mapper for Open-Meteo conditions
+- Precipitation probability from Open-Meteo when selected as source
+- Surf mode hourly wind forecast (Open-Meteo): 24h array, advances offline when phone disconnects
 
 ### Changed
 - Swell data source: StormGlass weather → Open-Meteo Marine (free, no quota)

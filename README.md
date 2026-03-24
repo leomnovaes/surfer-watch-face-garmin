@@ -117,8 +117,9 @@ Seconds are hidden by default to save battery. They appear automatically when yo
 | Heart rate | Optical HR sensor | ~Every 15s at rest, up to 1s on wrist movement |
 | Stress | Garmin stress algorithm | ~Every 3 minutes |
 | Weather, wind, sunrise/sunset | Garmin built-in (default) | Every second (cached by OS, refreshed ~hourly via phone) |
-| Weather, wind, sunrise/sunset | OpenWeatherMap 2.5 (optional) | Every 5 min via background fetch |
-| Precipitation | Garmin built-in weather | Every second (cached by OS) |
+| Weather, wind, sunrise/sunset | Open-Meteo (no key needed) | Every 5 min via background fetch |
+| Weather, wind, sunrise/sunset | OpenWeatherMap 2.5 (needs key) | Every 5 min via background fetch |
+| Precipitation | Garmin built-in or Open-Meteo | Every second (Garmin) or every 5 min (Open-Meteo) |
 | Tide | StormGlass API | Once per day or 50km move |
 | Moon phase | Local computation | Every second (cheap math) |
 
@@ -129,7 +130,7 @@ Seconds are hidden by default to save battery. They appear automatically when yo
 | Swell (height, period, direction) | Open-Meteo Marine API | Every 5 min (fresh forecast); display advances hourly through 24h array |
 | Tide extremes | StormGlass API | Once per day (same as shore) |
 | Tide height (interpolated) | Local computation | Every second (cosine interpolation) |
-| Wind (speed, direction) | OpenWeatherMap 2.5 | Every 5 min via background fetch |
+| Wind (speed, direction) | Open-Meteo or OWM (depends on Weather Source) | Open-Meteo: hourly forecast, advances offline. OWM: current only, freezes offline. Garmin: not available for surf spot. |
 | Water temperature | Watch body temp sensor | Every second |
 | Solar intensity | Watch solar sensor | Every second |
 | Moon phase | Local computation | Every second |
@@ -142,15 +143,26 @@ The watch face works out of the box using Garmin's built-in weather data. Just i
 
 Sunrise/sunset times are computed locally from your GPS position.
 
-### Optional: OpenWeatherMap (more frequent updates)
+### Optional: Open-Meteo (no key needed, more frequent updates)
 
-If you want weather data refreshed every 5 minutes instead of relying on Garmin's ~hourly updates:
+If you want weather data refreshed every 5 minutes without signing up for anything:
+
+1. In Garmin Connect app settings: set Weather Source to "Open-Meteo (no key)"
+2. That's it — no API key needed
+
+Open-Meteo uses WMO weather codes which cover all common conditions (clear, cloudy, fog, rain, snow, thunderstorm). Some rare conditions available in OWM (smoke, haze, dust, tornado) are not distinguished — they show as the nearest common icon.
+
+In surf mode, Open-Meteo provides hourly wind forecast that continues updating even when your phone disconnects.
+
+### Optional: OpenWeatherMap (most granular weather icons)
+
+If you want the most detailed weather condition icons (50+ conditions including smoke, haze, dust, tropical storms):
 
 1. Sign up at [openweathermap.org](https://openweathermap.org/api) (free, no credit card)
 2. Copy your API key
 3. In Garmin Connect app settings: set Weather Source to "OpenWeatherMap" and paste your key
 
-Note: OWM 3.0 (One Call) API keys also work — the watch face uses the 2.5 endpoint which is included in all OWM accounts.
+Note: OWM 3.0 (One Call) API keys also work — the watch face uses the 2.5 endpoint which is included in all OWM accounts. In surf mode, OWM provides current wind only (freezes when phone disconnects).
 
 ### Optional: StormGlass (tide data)
 
@@ -168,7 +180,7 @@ Note: OWM 3.0 (One Call) API keys also work — the watch face uses the 2.5 endp
    - **GPS copy:** Go to your surf spot, toggle "Copy GPS to Surf Spot" to ON — coordinates are copied automatically and the toggle resets
 3. Swell data works immediately (Open-Meteo, no key needed)
 4. For tide data, you need a StormGlass API key (see above)
-5. For wind data in surf mode, you need an OWM API key (see above)
+5. For wind data in surf mode: Open-Meteo (no key) provides hourly forecast that works offline. OWM provides current-only wind (needs key, freezes offline). Garmin built-in doesn't provide wind for remote surf spots.
 6. Double wrist gesture (raise, lower, raise quickly) toggles between swell view and tide curve in the bottom section
 
 ### Settings Reference
@@ -177,7 +189,7 @@ Note: OWM 3.0 (One Call) API keys also work — the watch face uses the 2.5 endp
 |---------|-------------|
 | Clock Font | 0 = Saira Condensed Bold (default), 1 = Rajdhani Bold |
 | Wind Speed Unit | 0 = Auto (device default), 1 = km/h, 2 = knots, 3 = mph, 4 = m/s |
-| Weather Source | 0 = Garmin built-in (default), 1 = OpenWeatherMap |
+| Weather Source | 0 = Garmin built-in (default), 1 = Open-Meteo (no key), 2 = OpenWeatherMap (needs key) |
 | OWM API Key | Your OpenWeatherMap API key (only needed if Weather Source = OWM or surf mode wind) |
 | StormGlass API Key | Your StormGlass API key (for tide data) |
 | StormGlass Backup API Key | Optional backup key, used automatically if primary returns 402 (quota exhausted) |

@@ -38,7 +38,18 @@ The watch face supports two weather sources, configurable via `WeatherSource` se
 - Sunrise/sunset computed locally via solar position algorithm (Weather.getSunrise requires CIQ 4.1, we target 3.4)
 - Updates: cached by OS, refreshed ~hourly via phone connection
 
-**OpenWeatherMap 2.5 (optional, WeatherSource=1)**
+**Open-Meteo Weather (optional, WeatherSource=1)**
+- Shore mode endpoint: `GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation_probability,is_day&daily=sunrise,sunset&timezone=auto&forecast_days=1&wind_speed_unit=ms`
+- Surf mode wind endpoint: `GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=wind_speed_10m,wind_direction_10m&forecast_days=1&timezone=auto&wind_speed_unit=ms`
+- Auth: none (free, no API key, <10K calls/day for non-commercial)
+- Shore mode: current snapshot (~670 bytes) with temp, WMO weather code, wind, precip probability, is_day, sunrise/sunset
+- Surf mode: 24h hourly wind forecast (~986 bytes), stored as flat arrays, advances offline
+- WMO weather codes (0-99): fewer conditions than OWM (~20 vs ~50), no smoke/haze/dust/tornado/tropical storm
+- Wind always returned in m/s (wind_speed_unit=ms)
+- Sunrise/sunset returned as ISO local time strings, converted to Unix via utc_offset_seconds
+- Models: auto-selects best for location (GEM 2.5km for Canada, HRRR 3km for US, etc.)
+
+**OpenWeatherMap 2.5 (optional, WeatherSource=2)**
 - Endpoint: `GET https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={key}&units={metric|imperial}`
 - Returns: current weather in a single compact response
 - Fields used: `main.temp`, `weather[0].id`, `wind.speed`, `wind.deg`, `sys.sunrise`, `sys.sunset`

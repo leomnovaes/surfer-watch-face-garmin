@@ -15,13 +15,13 @@ Surfers and outdoor athletes who wear the Garmin Instinct 2X Solar and want a si
 - Bluetooth connectivity status
 - Next tide time and direction (high/low), current tide height — via StormGlass API
 - Next sunrise/sunset time and direction icon — via OWM API or local computation
-- Weather condition icon and temperature — via Garmin built-in (default) or OWM API
-- Wind direction and speed — via Garmin built-in or OWM API
-- Precipitation chance — via Garmin built-in weather
+- Weather condition icon and temperature — via Garmin built-in (default), Open-Meteo (no key), or OWM API
+- Wind direction and speed — via Garmin built-in, Open-Meteo, or OWM API
+- Precipitation chance — via Garmin built-in weather or Open-Meteo
 - Moon phase icon — computed locally from synodic period (28 phases)
 - Seconds display (hidden by default, revealed on wrist gesture to save battery)
 - AM/PM indicator
-- Surf mode: swell height/period/direction (Open-Meteo Marine API, free), tide curve graph, interpolated tide height, water temperature, solar intensity arc, surf spot wind (OWM)
+- Surf mode: swell height/period/direction (Open-Meteo Marine API, free), tide curve graph, interpolated tide height, water temperature, solar intensity arc, surf spot wind (Open-Meteo hourly forecast or OWM current)
 - Double wrist gesture toggles surf mode bottom section between swell view and tide curve
 
 ## Design Principles

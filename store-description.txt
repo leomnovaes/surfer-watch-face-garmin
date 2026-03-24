@@ -20,14 +20,15 @@ SURF MODE
 • Swell height, period, and direction from Open-Meteo Marine API (free, no key)
 • Tide curve graph with "now" marker (toggle with double wrist gesture)
 • Interpolated current tide height in subscreen circle
-• Wind direction and speed for your surf spot (from OWM)
+• Wind direction and speed for your surf spot (Open-Meteo: hourly forecast works offline; OWM: current only)
 • Water temperature from watch sensor
 • Solar intensity arc gauge
 • Surf spot location: manual entry or one-tap GPS copy
 
 WEATHER SOURCES
 • Default: Garmin built-in weather (zero config, updates via phone)
-• Optional: OpenWeatherMap 2.5 (free, no credit card, updates every 5 min)
+• Optional: Open-Meteo (no key needed, updates every 5 min, hourly wind forecast for surf mode offline use)
+• Optional: OpenWeatherMap 2.5 (free, no credit card, most granular weather icons)
 
 SWELL DATA
 • Open-Meteo Marine API — free, no key, no quota
