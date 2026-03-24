@@ -181,29 +181,31 @@ Surf Mode is an alternate watch face layout optimized for surfers actively in th
 
 #### Acceptance Criteria
 
-1. WHILE `SurfMode` is set to 1, THE ServiceDelegate SHALL make at most 1 StormGlass API call per day for tide extremes (swell uses Open-Meteo which has no quota)
-2. THE ServiceDelegate SHALL chain requests in order: Open-Meteo swell → StormGlass tide → OWM wind, within a single onTemporalEvent() cycle
+1. WHILE `SurfMode` is set to 1, THE ServiceDelegate SHALL make at most 1 StormGlass API call per day for tide extremes (swell and wind use Open-Meteo or OWM which have no daily quota concern)
+2. THE ServiceDelegate SHALL chain requests based on WeatherSource: Open-Meteo swell → StormGlass tide → wind source (Open-Meteo hourly / OWM current / none for Garmin)
 3. THE ServiceDelegate SHALL support a backup StormGlass API key (`StormGlassBackupApiKey` setting) for tide fetches
 4. WHEN the primary StormGlass key returns HTTP 402 (quota exhausted), THE ServiceDelegate SHALL set a `sgUseBackup` flag in Application.Storage and use the backup key on the next background cycle
 5. THE `sgUseBackup` flag SHALL be cleared on a successful tide fetch
 6. IF any request in the chain returns -403 (background memory exhausted), THE ServiceDelegate SHALL stop the chain immediately and exit with whatever partial results have been accumulated
-7. Open-Meteo swell fetches have no quota limit and are fetched on every background temporal event
+7. Open-Meteo swell and weather fetches have no quota limit and are fetched on every background temporal event
 8. OWM wind fetches for surf mode have no daily limit (free tier: 1M calls/month)
 
 ---
 
-### Requirement 12: Surf Mode Wind Data Source
+### Requirement 12: Surf Mode Wind Data Source (Legacy OWM)
 
-**User Story:** As a surfer, I want wind data in surf mode to come from OWM for the surf spot, so that wind readings are live and match the location I'm surfing.
+**User Story:** As a surfer using OWM, I want wind data in surf mode to come from OWM for the surf spot, so that wind readings are live and match the location I'm surfing.
+
+Note: This requirement describes the OWM (WeatherSource=2) behavior. Open-Meteo wind behavior is in Requirement 18. Garmin behavior is in Requirement 20.
 
 #### Acceptance Criteria
 
-1. WHILE `SurfMode` is set to 1, THE ServiceDelegate SHALL fetch wind data from OWM 2.5 Current Weather API using the surf spot coordinates (`SurfSpotLat`/`SurfSpotLng`)
-2. WHILE `SurfMode` is set to 1, THE ServiceDelegate SHALL extract only wind speed and wind direction from the OWM response — temperature, condition, sunrise, and sunset SHALL NOT be stored (surf mode does not display shore weather fields)
+1. WHILE `SurfMode` is set to 1 and `WeatherSource` is set to 2 (OWM), THE ServiceDelegate SHALL fetch wind data from OWM 2.5 Current Weather API using the surf spot coordinates (`SurfSpotLat`/`SurfSpotLng`)
+2. WHILE `SurfMode` is set to 1 and `WeatherSource` is set to 2, THE ServiceDelegate SHALL extract only wind speed and wind direction from the OWM response — temperature, condition, sunrise, and sunset SHALL NOT be stored (surf mode does not display shore weather fields)
 3. WHILE `SurfMode` is set to 1, THE DataManager SHALL store surf wind data in separate fields (`surfWindSpeed`, `surfWindDeg`) that do not overwrite shore wind fields (`windSpeed`, `windDeg`)
-4. WHILE `SurfMode` is set to 0, THE DataManager SHALL source wind data from the existing weather source (Garmin built-in or OWM), unchanged from current behavior
+4. WHILE `SurfMode` is set to 0, THE DataManager SHALL source wind data from the existing weather source (Garmin built-in, Open-Meteo, or OWM), unchanged from current behavior
 5. THE wind speed unit conversion in surf mode SHALL follow the same logic as shore mode (normalize to m/s, then convert per `WindSpeedUnit` setting)
-6. IF no OWM API key is configured, THE ServiceDelegate SHALL skip the wind fetch and display "--" for wind in surf mode
+6. IF no OWM API key is configured and `WeatherSource` is 2, THE ServiceDelegate SHALL skip the wind fetch and display "--" for wind in surf mode
 
 ---
 
@@ -232,3 +234,109 @@ Surf Mode is an alternate watch face layout optimized for surfers actively in th
 2. WHILE `SurfMode` is set to 1, THE Watch_Face SHALL display the interpolated current tide height in the Subscreen_Circle
 3. IF only one surrounding tide event is available (e.g., before the first event of the day), THEN THE DataManager SHALL use the nearest event's height as the current height
 4. THE DataManager SHALL update the interpolated tide height on each onUpdate() call
+
+
+---
+
+## Phase 3 — Open-Meteo Weather Source & Offline Wind
+
+### Requirement 15: Three-Tier Weather Source Setting
+
+**User Story:** As a user, I want to choose between Garmin built-in, Open-Meteo, or OpenWeatherMap as my weather source, so that I can pick the best balance of convenience, accuracy, and features for my needs.
+
+#### Acceptance Criteria
+
+1. THE Watch_Face SHALL change the `WeatherSource` setting from a 2-value list to a 3-value list: 0 = Garmin (default), 1 = Open-Meteo, 2 = OpenWeatherMap
+2. THE Watch_Face SHALL update the setting UI labels and string resources to reflect the three options
+3. WHEN `WeatherSource` is set to 0 (Garmin), THE Watch_Face SHALL behave identically to the current Garmin built-in mode — no background HTTP for weather, reads from `Weather.getCurrentConditions()`, computes sunrise/sunset locally
+4. WHEN `WeatherSource` is set to 1 (Open-Meteo), THE ServiceDelegate SHALL fetch weather from the Open-Meteo Forecast API (no API key required)
+5. WHEN `WeatherSource` is set to 2 (OWM), THE ServiceDelegate SHALL fetch weather from OWM 2.5 Current Weather API (requires `OWMApiKey`)
+6. WHEN the user changes `WeatherSource`, THE DataManager SHALL clear all weather fields to prevent condition code mismatch between mappers (existing `clearWeatherData()` behavior)
+7. THE existing `OWMApiKey` setting SHALL remain — it is only required when `WeatherSource` = 2 (OWM)
+
+---
+
+### Requirement 16: Open-Meteo Weather for Shore Mode
+
+**User Story:** As a user, I want Open-Meteo as a weather source that requires no API key, so that I can get more frequent weather updates than Garmin built-in without signing up for anything.
+
+#### Acceptance Criteria
+
+1. WHEN `WeatherSource` is set to 1 (Open-Meteo) and `SurfMode` is 0 (Shore), THE ServiceDelegate SHALL fetch current weather from: `GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation_probability,is_day&daily=sunrise,sunset&timezone=auto&forecast_days=1&wind_speed_unit=ms`
+2. THE ServiceDelegate SHALL use current GPS or HomeLat/HomeLng coordinates for the request
+3. THE ServiceDelegate SHALL parse the response and extract: `current.temperature_2m`, `current.weather_code`, `current.wind_speed_10m`, `current.wind_direction_10m`, `current.precipitation_probability`, `current.is_day`, `daily.sunrise[0]`, `daily.sunset[0]`
+4. THE ServiceDelegate SHALL convert sunrise/sunset from ISO 8601 local time strings to Unix timestamps
+5. THE DataManager SHALL store the weather code as `weatherConditionId` (WMO code, not OWM code)
+6. THE Watch_Face SHALL use a new `wmoToWeatherGlyph()` mapper to convert WMO codes to icon glyphs when `WeatherSource` = 1
+7. THE Watch_Face SHALL use the `is_day` field from Open-Meteo to determine day/night icon variants (instead of comparing current time to sunrise/sunset)
+8. THE Watch_Face SHALL display precipitation probability from the Open-Meteo response when `WeatherSource` = 1, replacing the Garmin built-in `precipitationChance`
+9. THE Open-Meteo response is ~670 bytes for current-only — fits comfortably in background memory
+10. THE ServiceDelegate SHALL fetch Open-Meteo weather on every background temporal event (no time/distance gating — same as current OWM behavior)
+
+---
+
+### Requirement 17: WMO Weather Code Mapping
+
+**User Story:** As a user using Open-Meteo, I want weather condition icons that accurately represent the current conditions, even though WMO codes are less granular than OWM codes.
+
+#### Acceptance Criteria
+
+1. THE Watch_Face SHALL implement a `wmoToWeatherGlyph(code, isNight)` function mapping WMO codes to the existing Erik Flowers weather icon glyphs
+2. THE mapping SHALL cover all WMO codes: 0 (clear), 1-3 (partly cloudy to overcast), 45/48 (fog/rime fog), 51/53/55 (drizzle), 56/57 (freezing drizzle), 61/63/65 (rain), 66/67 (freezing rain), 71/73/75 (snow), 77 (snow grains), 80/81/82 (rain showers), 85/86 (snow showers), 95 (thunderstorm), 96/99 (thunderstorm with hail)
+3. THE mapping SHALL support day/night variants for clear, partly cloudy, drizzle, rain, showers, snow, and thunderstorm conditions
+4. THE following OWM-only conditions SHALL NOT have WMO equivalents and are documented as unavailable when using Open-Meteo: smoke, haze, dust/sand, squalls, tornado, tropical storm, hurricane, cold, hot, windy
+5. FOR any unrecognized WMO code, THE mapper SHALL fall back to the clear sky glyph
+
+---
+
+### Requirement 18: Surf Mode Wind — Open-Meteo Hourly Forecast (Offline)
+
+**User Story:** As a surfer, I want hourly wind forecast data stored on the watch, so that wind readings continue to update even when my phone is disconnected while I'm in the water.
+
+#### Acceptance Criteria
+
+1. WHEN `WeatherSource` is set to 1 (Open-Meteo) and `SurfMode` is 1, THE ServiceDelegate SHALL fetch hourly wind forecast from: `GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&hourly=wind_speed_10m,wind_direction_10m&forecast_days=1&timezone=auto&wind_speed_unit=ms`
+2. THE ServiceDelegate SHALL use `SurfSpotLat`/`SurfSpotLng` coordinates for the request
+3. THE ServiceDelegate SHALL store the 24-hour hourly wind forecast as two flat arrays (`surf_windSpeeds`, `surf_windDirections`) in Application.Storage
+4. THE DataManager SHALL pick the current hour's wind entry from the stored forecast arrays on each onUpdate() call via `updateSurfWindFromForecast()`, so the display advances through the forecast over time (same pattern as swell)
+5. THE ServiceDelegate SHALL fetch fresh wind forecast on every background temporal event (Open-Meteo is free)
+6. WHEN a fresh fetch succeeds, THE DataManager SHALL use the latest fetched current-hour value; WHEN offline, THE DataManager SHALL advance through the stored forecast array
+7. THE Open-Meteo wind-only response is ~986 bytes — fits in background memory alongside swell (~1.2KB) and tide
+8. IF the Open-Meteo API returns an error, THEN THE ServiceDelegate SHALL skip the wind fetch and retain previously cached forecast data
+
+---
+
+### Requirement 19: Surf Mode Wind — OWM Behavior (Current Only)
+
+**User Story:** As a surfer using OWM, I want wind data for my surf spot even though it won't update offline, so that I have live wind readings when my phone is connected.
+
+#### Acceptance Criteria
+
+1. WHEN `WeatherSource` is set to 2 (OWM) and `SurfMode` is 1, THE ServiceDelegate SHALL fetch current wind from OWM 2.5 using surf spot coordinates (existing behavior, unchanged)
+2. THE DataManager SHALL store OWM surf wind in `surfWindSpeed`/`surfWindDeg` fields (existing behavior)
+3. WHEN the phone disconnects, THE wind display SHALL show the last fetched value (stale, does not advance)
+4. THE Watch_Face SHALL document that OWM surf wind freezes when offline, while Open-Meteo surf wind advances hourly
+
+---
+
+### Requirement 20: Surf Mode Wind — Garmin Source Behavior
+
+**User Story:** As a surfer using Garmin built-in weather, I understand that Garmin weather is GPS-based and cannot provide wind for a remote surf spot.
+
+#### Acceptance Criteria
+
+1. WHEN `WeatherSource` is set to 0 (Garmin) and `SurfMode` is 1, THE Watch_Face SHALL display "--" for wind speed and omit the wind arrow
+2. THE Watch_Face SHALL document that Garmin built-in weather uses the watch's GPS location, not the configured surf spot, so wind data is not available in surf mode with Garmin source
+
+---
+
+### Requirement 21: Surf Mode Background Chain Update
+
+**User Story:** As a surfer, I want the background fetch chain to use the correct weather source for wind data, so that the right API is called based on my settings.
+
+#### Acceptance Criteria
+
+1. WHEN `SurfMode` is 1 and `WeatherSource` is 1 (Open-Meteo), THE ServiceDelegate SHALL chain: Open-Meteo swell → StormGlass tide → Open-Meteo weather (wind forecast)
+2. WHEN `SurfMode` is 1 and `WeatherSource` is 2 (OWM), THE ServiceDelegate SHALL chain: Open-Meteo swell → StormGlass tide → OWM wind (current only, existing behavior)
+3. WHEN `SurfMode` is 1 and `WeatherSource` is 0 (Garmin), THE ServiceDelegate SHALL chain: Open-Meteo swell → StormGlass tide (no wind fetch)
+4. THE -403 memory exhaustion guard SHALL apply to all chain variants — stop immediately and exit with partial results

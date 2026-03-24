@@ -104,24 +104,47 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 - [x] Update README with surf mode documentation
 - [x] Update store-description.txt with surf mode features
 
-### Task 21: Research hourly wind forecast source for offline use
-- [ ] Evaluate options:
-  - Open-Meteo Weather API (free, no key, has hourly wind forecast)
-  - OWM One Call 3.0 (hourly but requires credit card)
-  - Other sources
-- [ ] Test response size and memory fit
-- [ ] If viable: store hourly wind forecast array, advance with time offline
-- [ ] If not viable: document limitation (wind freezes when offline)
+### Task 21: Add Open-Meteo as third weather source
+- [ ] 21.1 Update `WeatherSource` setting from 2-value to 3-value list: 0=Garmin, 1=Open-Meteo, 2=OWM
+- [ ] 21.2 Update `properties.xml`, `settings.xml`, `strings.xml` with new option
+- [ ] 21.3 Update all code that reads `WeatherSource` to handle value 2 for OWM (was 1)
+- [ ] 21.4 Implement `OpenMeteoService` class (`:background` annotated) with `fetchCurrent()` for shore mode
+- [ ] 21.5 Parse Open-Meteo current response: temperature_2m, weather_code, wind_speed_10m, wind_direction_10m, precipitation_probability, is_day
+- [ ] 21.6 Parse sunrise/sunset from daily response (ISO local time → Unix timestamp using utc_offset_seconds)
+- [ ] 21.7 Add `precipProbability` field to DataManager, populated from Open-Meteo response
+- [ ] 21.8 Update view to use `dm.precipProbability` when WeatherSource=1, Garmin built-in otherwise
+- [ ] 21.9 Wire Open-Meteo shore weather into delegate chain (WeatherSource=1 → OpenMeteoService.fetchCurrent() → onShoreWeatherDone())
 
-### Task 22: Clean up debug println statements
-- [x] Remove all `System.println()` debug statements from delegate, TideService, view
+### Task 22: Implement WMO weather code mapper
+- [ ] 22.1 Implement `wmoToWeatherGlyph(code, isNight)` in SurferWatchFaceView
+- [ ] 22.2 Map all WMO codes (0, 1-3, 45/48, 51-57, 61-67, 71-77, 80-86, 95-99) to existing glyphs
+- [ ] 22.3 Use `is_day` from Open-Meteo response for day/night variant selection
+- [ ] 22.4 Update `drawIconWeather()` to select mapper based on WeatherSource (0=Garmin, 1=WMO, 2=OWM)
 
-### Task 23: Release v2.0.0 (surf mode)
-- [ ] Follow release checklist from structure.md
-- [ ] Update all specs, README, CHANGELOG, store description
-- [ ] Regenerate screenshots (shore + surf mode)
-- [ ] Regenerate annotated diagrams for both modes
-- [ ] Build and upload to Connect IQ
+### Task 23: Implement surf mode hourly wind forecast (Open-Meteo)
+- [ ] 23.1 Add `fetchSurfWind()` to OpenMeteoService — hourly wind_speed_10m + wind_direction_10m, forecast_days=1
+- [ ] 23.2 Store 24h wind arrays in Application.Storage (`surf_windSpeeds`, `surf_windDirections`)
+- [ ] 23.3 Implement `updateSurfWindFromForecast()` in DataManager — picks current hour's entry (same pattern as swell)
+- [ ] 23.4 Wire into onUpdate() surf mode: call `updateSurfWindFromForecast()` when WeatherSource=1
+- [ ] 23.5 Update delegate surf chain: when WeatherSource=1, chain to OpenMeteoService.fetchSurfWind() instead of WeatherService.fetch()
+- [ ] 23.6 When WeatherSource=0 (Garmin), skip wind fetch in surf mode (display "--")
+- [ ] 23.7 When WeatherSource=2 (OWM), keep existing OWM wind fetch (current only, no forecast array)
+
+### Task 24: Checkpoint — Open-Meteo weather works in both modes
+- [ ] 24.1 Verify shore mode with WeatherSource=1: temp, condition icon, wind, precip, sunrise/sunset all display correctly
+- [ ] 24.2 Verify surf mode with WeatherSource=1: wind advances hourly through forecast array
+- [ ] 24.3 Verify shore mode with WeatherSource=2 (OWM): unchanged behavior
+- [ ] 24.4 Verify surf mode with WeatherSource=2 (OWM): current wind only, freezes offline
+- [ ] 24.5 Verify shore mode with WeatherSource=0 (Garmin): unchanged behavior
+- [ ] 24.6 Verify surf mode with WeatherSource=0 (Garmin): wind shows "--"
+- [ ] 24.7 Verify weather data clears on source switch (no condition code mismatch)
+
+### Task 25: Update docs and release
+- [ ] 25.1 Update README: document 3-tier weather source, Open-Meteo tradeoffs (fewer condition icons), surf mode wind behavior per source
+- [ ] 25.2 Update store-description.txt
+- [ ] 25.3 Update CHANGELOG
+- [ ] 25.4 Update steering files (tech.md, product.md) with Open-Meteo weather API docs
+- [ ] 25.5 Regenerate screenshots and annotated diagrams for both modes
 
 ## Notes
 
@@ -130,3 +153,14 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 - Double wrist gesture (onExitSleep timing) is the toggle mechanism instead
 - Surf mode uses `surf_` prefixed Application.Storage keys to isolate cache from shore mode
 - Solar intensity (`getSolarIntensityHistory`) may not be available on Instinct 2X — guarded with `has` check, falls back to null/empty arc
+
+
+### Task 26 (previously 22): Clean up debug println statements
+- [x] Remove all `System.println()` debug statements from delegate, TideService, view
+
+### Task 27 (previously 23): Release v2.0.0 (surf mode)
+- [ ] Follow release checklist from structure.md
+- [ ] Update all specs, README, CHANGELOG, store description
+- [ ] Regenerate screenshots (shore + surf mode)
+- [ ] Regenerate annotated diagrams for both modes
+- [ ] Build and upload to Connect IQ

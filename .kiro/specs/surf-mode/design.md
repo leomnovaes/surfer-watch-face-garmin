@@ -682,3 +682,164 @@ function testTideInterpolationCorrectness(logger as Logger) as Boolean {
 | P10: Closest entry | Random hourly array (1-24 entries), random now | Selected entry minimizes |time - now| |
 | P11: Cache isolation | Random data, random mode | Keys prefixed correctly per mode |
 | P14: 24h window | Random date | start = midnight UTC, end = start + 86400 |
+
+---
+
+## Phase 3 — Open-Meteo Weather Source & Offline Wind
+
+### Overview
+
+Add Open-Meteo as a third weather source option (alongside Garmin built-in and OWM). This enables:
+1. Zero-config weather updates for shore mode (no API key needed)
+2. Hourly wind forecast for surf mode offline use (advances through stored array when phone disconnects)
+3. Precipitation probability from Open-Meteo (replaces Garmin built-in when Open-Meteo selected)
+
+### WeatherSource Setting Change
+
+Current: `WeatherSource` list with 2 values (0=Garmin, 1=OWM)
+New: `WeatherSource` list with 3 values (0=Garmin, 1=Open-Meteo, 2=OWM)
+
+Note: OWM moves from value 1 to value 2. This is a breaking change for users who had OWM selected — they'll need to re-select it. Acceptable since the watch face is pre-release.
+
+### Updated Request Chaining
+
+```
+onTemporalEvent()
+  ├─ Shore mode (SurfMode=0):
+  │    ├─ WeatherSource=0 (Garmin): no weather fetch, only tide if needed
+  │    ├─ WeatherSource=1 (Open-Meteo): OpenMeteoService.fetchCurrent() → onShoreWeatherDone()
+  │    │    └─ if tide needed: TideService.fetch() → onTideComplete() → exit
+  │    └─ WeatherSource=2 (OWM): WeatherService.fetch() → onShoreWeatherDone()
+  │         └─ if tide needed: TideService.fetch() → onTideComplete() → exit
+  │
+  └─ Surf mode (SurfMode=1):
+       ├─ Open-Meteo swell (always): TideService.fetchSwell() → onSwellDone()
+       │    └─ if tide needed: TideService.fetch(SG) → onTideComplete()
+       │         ├─ WeatherSource=0 (Garmin): no wind fetch → exit
+       │         ├─ WeatherSource=1 (Open-Meteo): OpenMeteoService.fetchSurfWind() → onSurfWindDone()
+       │         │    └─ exit (stores 24h hourly wind arrays)
+       │         └─ WeatherSource=2 (OWM): WeatherService.fetch() → onWindDone()
+       │              └─ exit (stores current wind only)
+       └─ if -403 at any point: stop chain, exit with partial results
+```
+
+### Open-Meteo API Endpoints
+
+**Shore mode (current weather):**
+```
+GET https://api.open-meteo.com/v1/forecast
+  ?latitude={lat}&longitude={lon}
+  &current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation_probability,is_day
+  &daily=sunrise,sunset
+  &timezone=auto
+  &forecast_days=1
+  &wind_speed_unit=ms
+```
+Response: ~670 bytes. Contains current snapshot + today's sunrise/sunset.
+
+**Surf mode (hourly wind forecast):**
+```
+GET https://api.open-meteo.com/v1/forecast
+  ?latitude={lat}&longitude={lon}
+  &hourly=wind_speed_10m,wind_direction_10m
+  &forecast_days=1
+  &timezone=auto
+  &wind_speed_unit=ms
+```
+Response: ~986 bytes. Contains 24 hourly wind entries.
+
+Both use `wind_speed_unit=ms` to get m/s directly — matches our internal normalization (all wind speeds stored as m/s, converted at display time per WindSpeedUnit setting).
+
+### New Service: OpenMeteoService
+
+A new class in `WeatherService.mc` (or a separate file — TBD based on background memory). Annotated with `:background`.
+
+```monkeyc
+(:background)
+class OpenMeteoService {
+    private var _callback as Method;
+
+    function initialize(callback as Method) {
+        _callback = callback;
+    }
+
+    // Shore mode: fetch current weather + sunrise/sunset
+    function fetchCurrent(lat as Float, lon as Float) as Void { ... }
+
+    // Surf mode: fetch 24h hourly wind forecast
+    function fetchSurfWind(lat as Float, lon as Float, callback as Method) as Void { ... }
+}
+```
+
+### WMO Weather Code Mapping
+
+WMO codes (0-99) mapped to existing Erik Flowers glyphs:
+
+| WMO Code | Condition | Day Glyph | Night Glyph |
+|----------|-----------|-----------|-------------|
+| 0 | Clear sky | A | a |
+| 1 | Mainly clear | B | b |
+| 2 | Partly cloudy | C | b |
+| 3 | Overcast | D | D |
+| 45, 48 | Fog, rime fog | E | E |
+| 51, 53, 55 | Drizzle (light/mod/dense) | G | d |
+| 56, 57 | Freezing drizzle | K | K |
+| 61, 63, 65 | Rain (slight/mod/heavy) | H | c |
+| 66, 67 | Freezing rain | K | K |
+| 71, 73, 75 | Snow (slight/mod/heavy) | J | f |
+| 77 | Snow grains | M | M |
+| 80, 81, 82 | Rain showers | I | d |
+| 85, 86 | Snow showers | J | f |
+| 95 | Thunderstorm | F | e |
+| 96, 99 | Thunderstorm with hail | F | e |
+| Other | Fallback: clear | A | a |
+
+**Conditions NOT available in WMO (OWM-only):**
+smoke, haze, dust/sand, squalls, tornado, tropical storm, hurricane, cold, hot, windy.
+These are rare/extreme conditions. When using Open-Meteo, these conditions will show as the nearest WMO equivalent or clear fallback.
+
+### Sunrise/Sunset Parsing from Open-Meteo
+
+Open-Meteo returns sunrise/sunset as ISO 8601 local time strings (e.g., `"2026-03-23T07:12"`). These need to be parsed to Unix timestamps for DataManager.
+
+The parsing reuses the existing `parseISOToUnix()` pattern from TideService, but the format is shorter (no seconds, no timezone offset — it's already local time when `timezone=auto` is used).
+
+However, since `Gregorian.moment()` interprets input as UTC, and Open-Meteo returns local time when `timezone=auto`, we need to subtract the UTC offset. Open-Meteo provides `utc_offset_seconds` in the response for this purpose.
+
+### Surf Mode Wind Forecast Storage
+
+When WeatherSource=1 (Open-Meteo) and SurfMode=1:
+
+| Storage Key | Type | Description |
+|-------------|------|-------------|
+| `surf_windSpeeds` | Array<Float> | 24h hourly wind speeds (m/s) |
+| `surf_windDirections` | Array<Number> | 24h hourly wind directions (degrees) |
+
+DataManager reads these arrays via `updateSurfWindFromForecast()` on each `onUpdate()`, picking the current hour's entry — same pattern as `updateSwellFromForecast()`.
+
+When WeatherSource=2 (OWM), surf wind continues to use the current-only `surfWindSpeed`/`surfWindDeg` fields (no forecast array).
+
+### Precipitation Probability by Source
+
+| WeatherSource | Precip Source | Field |
+|---------------|--------------|-------|
+| 0 (Garmin) | `Weather.getCurrentConditions().precipitationChance` | Read in onUpdate() |
+| 1 (Open-Meteo) | `current.precipitation_probability` from API response | Stored in DataManager |
+| 2 (OWM) | `Weather.getCurrentConditions().precipitationChance` | Read in onUpdate() (OWM 2.5 doesn't have pop) |
+
+New DataManager field: `precipProbability as Number or Null` — populated from Open-Meteo response. The view checks WeatherSource: if 1, use `dm.precipProbability`; otherwise use Garmin built-in.
+
+### Memory Budget for Surf Mode Chain (Open-Meteo)
+
+Worst case: all three requests in one temporal event cycle.
+- Open-Meteo swell: ~1.2KB response
+- StormGlass tide: ~1-2KB response (4-6 extremes)
+- Open-Meteo wind: ~986 bytes response
+
+Each response is parsed and stored before the next request fires (chained callbacks). The background process only holds one response in memory at a time. Total stored data in Application.Storage grows, but Storage is persistent and doesn't count against background memory.
+
+### Impact on Shore Mode
+
+Shore mode with Open-Meteo (WeatherSource=1) uses `current=` params only — no hourly arrays. The response is ~670 bytes, parsed into the same DataManager fields as OWM (temperature, weatherConditionId, windSpeed, windDeg, sunrise, sunset). The only difference is the condition code mapper used at render time.
+
+Shore mode does NOT store hourly forecast arrays. Wind shows the latest fetched value and goes stale when offline — same behavior as current OWM mode.
