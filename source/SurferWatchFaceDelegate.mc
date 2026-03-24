@@ -311,10 +311,13 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Wind/weather done → exit (surf mode OWM, last in chain)
     function onWindDone(weatherData as Dictionary or Null) as Void {
         if (weatherData != null) {
-            // In surf mode, only extract wind — don't pollute shore weather fields
+            // In surf mode, extract wind + sunrise/sunset — don't pollute shore weather fields
             var windResult = {} as Dictionary<String, Application.PropertyValueType>;
             windResult["windSpeed"] = weatherData["windSpeed"] as Application.PropertyValueType;
             windResult["windDeg"] = weatherData["windDeg"] as Application.PropertyValueType;
+            // OWM response includes sunrise/sunset — pass them for surf spot
+            if (weatherData["sunrise"] != null) { windResult["surfSunrise"] = weatherData["sunrise"] as Application.PropertyValueType; }
+            if (weatherData["sunset"] != null) { windResult["surfSunset"] = weatherData["sunset"] as Application.PropertyValueType; }
             _weatherResult = windResult;
         }
         exitWithAllResults();
@@ -336,6 +339,9 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
                 var windResult = {} as Dictionary<String, Application.PropertyValueType>;
                 windResult["windSpeed"] = speeds[idx] as Application.PropertyValueType;
                 windResult["windDeg"] = (idx < dirs.size()) ? dirs[idx] as Application.PropertyValueType : null;
+                // Include sunrise/sunset for surf spot if available
+                if (windData["sunrise"] != null) { windResult["surfSunrise"] = windData["sunrise"] as Application.PropertyValueType; }
+                if (windData["sunset"] != null) { windResult["surfSunset"] = windData["sunset"] as Application.PropertyValueType; }
                 _weatherResult = windResult;
             }
         }

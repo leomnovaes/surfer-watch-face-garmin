@@ -613,6 +613,9 @@ class DataManager {
     function onSurfWindData(data as Dictionary) as Void {
         surfWindSpeed = data["windSpeed"] as Float or Null;
         surfWindDeg = data["windDeg"] as Number or Null;
+        // Extract surf sunrise/sunset if available (from Open-Meteo or OWM)
+        if (data["surfSunrise"] != null) { surfSunrise = data["surfSunrise"] as Number; }
+        if (data["surfSunset"] != null) { surfSunset = data["surfSunset"] as Number; }
         // Refresh cached wind forecast arrays from Storage (delegate may have written them)
         _windSpeedsCache = Application.Storage.getValue("surf_windSpeeds") as Array or Null;
         _windDirectionsCache = Application.Storage.getValue("surf_windDirections") as Array or Null;

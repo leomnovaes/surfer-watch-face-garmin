@@ -169,6 +169,7 @@ class OpenMeteoService {
             + "?latitude=" + lat.toString()
             + "&longitude=" + lon.toString()
             + "&hourly=wind_speed_10m,wind_direction_10m"
+            + "&daily=sunrise,sunset"
             + "&forecast_days=1"
             + "&timezone=auto"
             + "&wind_speed_unit=ms";
@@ -205,6 +206,23 @@ class OpenMeteoService {
         var result = {} as Dictionary<String, Application.PropertyValueType>;
         result["speeds"] = speeds as Application.PropertyValueType;
         result["directions"] = dirs as Application.PropertyValueType;
+
+        // Extract sunrise/sunset for surf spot
+        var daily = data["daily"];
+        if (daily != null && daily instanceof Dictionary) {
+            var utcOffset = data["utc_offset_seconds"] as Number or Null;
+            if (utcOffset == null) { utcOffset = 0; }
+            var sunriseArr = daily["sunrise"] as Array or Null;
+            var sunsetArr = daily["sunset"] as Array or Null;
+            if (sunriseArr != null && sunriseArr.size() > 0 && sunriseArr[0] != null) {
+                var srUnix = parseLocalISOToUnix(sunriseArr[0] as String, utcOffset);
+                if (srUnix != null) { result["sunrise"] = srUnix as Application.PropertyValueType; }
+            }
+            if (sunsetArr != null && sunsetArr.size() > 0 && sunsetArr[0] != null) {
+                var ssUnix = parseLocalISOToUnix(sunsetArr[0] as String, utcOffset);
+                if (ssUnix != null) { result["sunset"] = ssUnix as Application.PropertyValueType; }
+            }
+        }
 
         if (_surfWindCallback != null) {
             _surfWindCallback.invoke(result);

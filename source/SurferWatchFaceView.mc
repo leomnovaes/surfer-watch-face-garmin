@@ -115,10 +115,13 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             dm.computeNextTide();
             dm.interpolateTideHeight();
             dm.computeMoonPhase();
-            dm.computeSurfSunriseSunset();
+            // Surf sunrise/sunset: from API when Open-Meteo/OWM, computed locally only for Garmin
+            var surfWs = Application.Properties.getValue("WeatherSource");
+            if (surfWs == null || surfWs == 0) {
+                dm.computeSurfSunriseSunset();
+            }
             dm.updateSwellFromForecast();
-            var surfWeatherSource = Application.Properties.getValue("WeatherSource");
-            if (surfWeatherSource != null && surfWeatherSource == 1) {
+            if (surfWs != null && surfWs == 1) {
                 dm.updateSurfWindFromForecast();
             }
 
