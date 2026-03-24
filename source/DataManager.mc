@@ -41,12 +41,16 @@ class DataManager {
     var lastKnownLat as Float or Null;
     var lastKnownLng as Float or Null;
 
-    // --- Surf mode: swell data (from StormGlass /v2/weather/point) ---
+    // --- Surf mode: swell data (from Open-Meteo Marine API) ---
     var swellHeight as Float or Null;
     var swellPeriod as Float or Null;
     var swellDirection as Number or Null;
     var surfWindSpeed as Float or Null;
     var surfWindDeg as Number or Null;
+
+    // --- Surf mode: sunrise/sunset (computed from surf spot coordinates) ---
+    var surfSunrise as Number or Null;
+    var surfSunset as Number or Null;
 
     // --- Surf mode: sensor data ---
     var waterTemp as Float or Null;
@@ -280,6 +284,57 @@ class DataManager {
             doy += daysInMonth[m];
         }
         return doy + day;
+    }
+
+    // =========================================================
+    // computeSurfSunriseSunset() — calculates sunrise/sunset from
+    // surf spot coordinates + current date. Uses the same solar
+    // position algorithm as computeSunriseSunset() but reads from
+    // SurfSpotLat/SurfSpotLng settings instead of GPS.
+    // Stores in separate surfSunrise/surfSunset fields.
+    // =========================================================
+    function computeSurfSunriseSunset() as Void {
+        var surfLatStr = Application.Properties.getValue("SurfSpotLat");
+        var surfLngStr = Application.Properties.getValue("SurfSpotLng");
+        if (surfLatStr == null || surfLngStr == null) {
+            surfSunrise = null;
+            surfSunset = null;
+            return;
+        }
+        var lat = surfLatStr.toFloat();
+        var lng = surfLngStr.toFloat();
+        if (lat == 0.0 && lng == 0.0) {
+            surfSunrise = null;
+            surfSunset = null;
+            return;
+        }
+
+        var now = Time.now();
+        var info = Gregorian.info(now, Time.FORMAT_SHORT);
+        var N = dayOfYear(info.year, info.month, info.day);
+        var decl = -23.45 * Math.PI / 180.0 * Math.cos(2.0 * Math.PI / 365.0 * (N + 10));
+        var latRad = lat * Math.PI / 180.0;
+        var cosH = -Math.tan(latRad) * Math.tan(decl);
+
+        if (cosH < -1.0 || cosH > 1.0) {
+            surfSunrise = null;
+            surfSunset = null;
+            return;
+        }
+
+        var H = Math.acos(cosH) * 180.0 / Math.PI;
+        var solarNoon = 12.0 - lng / 15.0;
+        var sunriseHour = solarNoon - H / 15.0;
+        var sunsetHour = solarNoon + H / 15.0;
+
+        var startOfDay = Gregorian.moment({
+            :year => info.year, :month => info.month, :day => info.day,
+            :hour => 0, :minute => 0, :second => 0
+        });
+        var dayStart = startOfDay.value();
+
+        surfSunrise = dayStart + (sunriseHour * 3600).toNumber();
+        surfSunset = dayStart + (sunsetHour * 3600).toNumber();
     }
 
     // =========================================================

@@ -115,6 +115,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             dm.computeNextTide();
             dm.interpolateTideHeight();
             dm.computeMoonPhase();
+            dm.computeSurfSunriseSunset();
             dm.updateSwellFromForecast();
             var surfWeatherSource = Application.Properties.getValue("WeatherSource");
             if (surfWeatherSource != null && surfWeatherSource == 1) {
@@ -125,6 +126,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             drawTopSection_Surf(dc, dm);
             drawDividers(dc);
             drawMiddleSection_Surf(dc, dm);
+            drawSurfSunRow(dc, dm);
             if (dm.bottomToggleState == 0) {
                 drawSwellSection(dc, dm);
             } else {
@@ -951,9 +953,35 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         drawRightColumn(dc, ampm, seconds, dm);
     }
 
+    // Surf mode: sunrise/sunset row in the date gap (y=114 area)
+    // Uses surfSunrise/surfSunset computed from surf spot coordinates.
+    // Completely separate from shore mode sunrise/sunset fields.
+    private function drawSurfSunRow(dc as Dc, dm as DataManager) as Void {
+        var sunTime = "--";
+        var isSunrise = true;
+        if (dm.surfSunrise != null && dm.surfSunset != null) {
+            var now = Time.now().value();
+            if (now < dm.surfSunrise) {
+                isSunrise = true;
+                sunTime = formatUnixTime(dm.surfSunrise);
+            } else if (now < dm.surfSunset) {
+                isSunrise = false;
+                sunTime = formatUnixTime(dm.surfSunset);
+            } else {
+                isSunrise = true;
+                sunTime = formatUnixTime(dm.surfSunrise);
+            }
+        }
+        // Draw icon + time centered at DATE_Y, same position as date row in shore mode
+        var font = crystalIconsFont != null ? crystalIconsFont : Graphics.FONT_XTINY;
+        var glyph = isSunrise ? IC_SUNRISE : IC_SUNSET;
+        drawTextAligned(dc, DATE_TEXT_X - 20, DATE_Y, font, glyph, Graphics.TEXT_JUSTIFY_RIGHT);
+        drawTextAligned(dc, DATE_TEXT_X - 14, DATE_Y, Graphics.FONT_XTINY, sunTime, Graphics.TEXT_JUSTIFY_LEFT);
+    }
+
     // Surf mode bottom section — swell view
     private function drawSwellSection(dc as Dc, dm as DataManager) as Void {
-        var swellY = 120;
+        var swellY = 128;
         var swellTextY = swellY + 18;
 
         // Col 1: Swell height
@@ -977,11 +1005,13 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (dm.swellPeriod != null) {
             perText = dm.swellPeriod.toNumber().toString() + "s";
         }
+
+        var swellPeriodYSpacing = 10;
         // Col 2: Swell period — timer-sand icon
         if (surferIconsFont != null) {
-            drawTextAligned(dc, WX_COL2_X, swellY + 4, surferIconsFont, "P", Graphics.TEXT_JUSTIFY_CENTER);
+            drawTextAligned(dc, WX_COL2_X, swellY + swellPeriodYSpacing, surferIconsFont, "P", Graphics.TEXT_JUSTIFY_CENTER);
         }
-        drawTextAligned(dc, WX_COL2_X, swellTextY + 4, Graphics.FONT_XTINY, perText, Graphics.TEXT_JUSTIFY_CENTER);
+        drawTextAligned(dc, WX_COL2_X, swellTextY + swellPeriodYSpacing, Graphics.FONT_XTINY, perText, Graphics.TEXT_JUSTIFY_CENTER);
 
         // Col 3: Swell direction arrow
         if (dm.swellDirection != null) {
