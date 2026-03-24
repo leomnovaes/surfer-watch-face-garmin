@@ -1,6 +1,6 @@
 # Shore Watch
 
-A surfer-focused watch face for the Garmin Instinct 2X Solar. Tide times, weather, wind, moon phase, and fitness metrics — all on one screen, no menus.
+A surfer-focused watch face for the Garmin Instinct 2X Solar. Two modes: Shore Mode for daily wear with weather, tide, and fitness metrics — and Surf Mode for in-water use with swell, tide curve, wind, and water temperature. All on one screen, no menus.
 
 Built by a surfer for his own wrist, spec-driven with AI assistance. The entire project was designed and implemented using a spec-first methodology: requirements, technical design, and task list were written before any code. An AI agent (Kiro) then implemented the tasks against those specs. The specs and steering files are included in the repo so anyone can fork it, point an AI agent at the docs, and customize their own watch face.
 
@@ -11,6 +11,8 @@ Built by a surfer for his own wrist, spec-driven with AI assistance. The entire 
 ![Shore Watch on Instinct 2X Solar](screenshot.png)
 
 ## Features
+
+### Shore Mode (default)
 
 - **Time** — large custom font (Saira Condensed Bold or Rajdhani Bold, switchable via settings), seconds on wrist raise
 - **Date** — day of week + month + day
@@ -26,9 +28,23 @@ Built by a surfer for his own wrist, spec-driven with AI assistance. The entire 
 - **Precipitation** — umbrella icon + chance % (from Garmin built-in weather)
 - **Moon phase** — 28-phase icon computed locally from synodic period
 
+### Surf Mode
+
+Switch to Surf Mode via the Garmin Connect app settings. The display replaces fitness/weather data with ocean-specific data for a user-configured surf spot.
+
+- **Swell** — height (m/ft), period (s), direction arrow + compass label. Sourced from Open-Meteo Marine API (free, no key needed). 24-hour hourly forecast advances automatically.
+- **Tide curve** — filled area graph of today's tide pattern with dithered "now" marker and triangle indicator. Toggle between swell view and tide curve with a double wrist gesture.
+- **Tide height** — interpolated current height displayed in the subscreen circle (replaces heart rate)
+- **Wind** — direction arrow + speed for the surf spot (from OWM, separate from shore wind)
+- **Water temperature** — from watch body temperature sensor (approximate when submerged)
+- **Solar intensity** — arc gauge around subscreen circle (replaces stress arc)
+- **Battery** — same as shore mode
+- **Moon phase** — same as shore mode
+- **Surf spot location** — configurable via manual lat/lng entry or one-tap GPS copy
+
 ## User Guide
 
-### Screen Layout
+### Screen Layout — Shore Mode
 
 ![Annotated watch face](screenshot-annotated.png)
 
@@ -52,6 +68,26 @@ The watch face is divided into four zones:
 - Date row: day of week + month (uppercase) + day number
 - Weather widget (3 columns): weather condition icon + temp | wind arrow + speed | umbrella + precipitation %
 
+### Screen Layout — Surf Mode
+
+**Top section** (left of tide circle)
+- Row 1: Battery percentage + fill bar icon (same as shore)
+- Row 2: Water temperature (°C/°F) + thermometer icon
+- Row 3: Tide direction icon + next tide time + predicted height (same as shore)
+
+**Tide circle** (top-right, replaces HR circle)
+- Tide direction icon (H/L) + interpolated current tide height
+- Solar intensity arc: fills clockwise as solar radiation increases (0-100%)
+
+**Middle section**
+- Left: wind direction arrow + speed (for surf spot, from OWM)
+- Center: current time in large font (same as shore)
+- Right: moon phase icon, AM/PM indicator, seconds (same as shore)
+
+**Bottom section** (toggleable via double wrist gesture)
+- Swell view (default): swell height | swell period | swell direction arrow + compass
+- Tide curve view: filled area graph of today's tide pattern with "now" marker
+
 ### Icon Reference
 
 | Icon | Meaning |
@@ -73,6 +109,8 @@ Seconds are hidden by default to save battery. They appear automatically when yo
 
 ### Data Refresh Rates
 
+**Shore Mode**
+
 | Data | Source | Refresh |
 |------|--------|---------|
 | Time, battery, notifications, BT | Watch sensors | Every second |
@@ -83,6 +121,18 @@ Seconds are hidden by default to save battery. They appear automatically when yo
 | Precipitation | Garmin built-in weather | Every second (cached by OS) |
 | Tide | StormGlass API | Once per day or 50km move |
 | Moon phase | Local computation | Every second (cheap math) |
+
+**Surf Mode**
+
+| Data | Source | Refresh |
+|------|--------|---------|
+| Swell (height, period, direction) | Open-Meteo Marine API | Every 5 min (fresh forecast); display advances hourly through 24h array |
+| Tide extremes | StormGlass API | Once per day (same as shore) |
+| Tide height (interpolated) | Local computation | Every second (cosine interpolation) |
+| Wind (speed, direction) | OpenWeatherMap 2.5 | Every 5 min via background fetch |
+| Water temperature | Watch body temp sensor | Every second |
+| Solar intensity | Watch solar sensor | Every second |
+| Moon phase | Local computation | Every second |
 
 ## Setup
 
@@ -108,6 +158,18 @@ Note: OWM 3.0 (One Call) API keys also work — the watch face uses the 2.5 endp
 1. Sign up at [stormglass.io](https://stormglass.io/) (free tier: 10 calls/day)
 2. Copy your API key
 3. Paste into StormGlass API Key setting
+4. Optional: add a backup key in the StormGlass Backup API Key setting (used automatically if primary key quota is exhausted)
+
+### Surf Mode Setup
+
+1. In Garmin Connect app settings, set Surf Mode to "Surf"
+2. Enter your surf spot coordinates:
+   - **Manual:** Type latitude and longitude into Surf Spot Lat / Surf Spot Lng settings
+   - **GPS copy:** Go to your surf spot, toggle "Copy GPS to Surf Spot" to ON — coordinates are copied automatically and the toggle resets
+3. Swell data works immediately (Open-Meteo, no key needed)
+4. For tide data, you need a StormGlass API key (see above)
+5. For wind data in surf mode, you need an OWM API key (see above)
+6. Double wrist gesture (raise, lower, raise quickly) toggles between swell view and tide curve in the bottom section
 
 ### Settings Reference
 
@@ -116,10 +178,15 @@ Note: OWM 3.0 (One Call) API keys also work — the watch face uses the 2.5 endp
 | Clock Font | 0 = Saira Condensed Bold (default), 1 = Rajdhani Bold |
 | Wind Speed Unit | 0 = Auto (device default), 1 = km/h, 2 = knots, 3 = mph, 4 = m/s |
 | Weather Source | 0 = Garmin built-in (default), 1 = OpenWeatherMap |
-| OWM API Key | Your OpenWeatherMap API key (only needed if Weather Source = OWM) |
+| OWM API Key | Your OpenWeatherMap API key (only needed if Weather Source = OWM or surf mode wind) |
 | StormGlass API Key | Your StormGlass API key (for tide data) |
+| StormGlass Backup API Key | Optional backup key, used automatically if primary returns 402 (quota exhausted) |
 | Home Latitude | Fallback latitude if GPS is unavailable (e.g., `33.8688`) |
 | Home Longitude | Fallback longitude if GPS is unavailable (e.g., `151.2093`) |
+| Surf Mode | 0 = Shore (default), 1 = Surf |
+| Surf Spot Lat | Latitude of your surf spot (e.g., `48.4992`) |
+| Surf Spot Lng | Longitude of your surf spot (e.g., `-124.3003`) |
+| Copy GPS to Surf Spot | Toggle ON to copy current GPS to surf spot coordinates (auto-resets to OFF) |
 
 ## Installation
 

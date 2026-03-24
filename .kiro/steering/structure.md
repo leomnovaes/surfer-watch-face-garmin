@@ -9,7 +9,11 @@ surfer-watch-face-instinct-2x-solar/
 │   │   ├── tech.md
 │   │   └── structure.md
 │   └── specs/
-│       └── watch-face/    ← spec for the watch face feature
+│       ├── watch-face/    ← spec for the shore mode watch face feature
+│       │   ├── requirements.md
+│       │   ├── design.md
+│       │   └── tasks.md
+│       └── surf-mode/     ← spec for the surf mode feature
 │           ├── requirements.md
 │           ├── design.md
 │           └── tasks.md

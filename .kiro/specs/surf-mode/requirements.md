@@ -13,9 +13,9 @@ Surf Mode is an alternate watch face layout optimized for surfers actively in th
 - **Surf_Mode**: The alternate watch face layout optimized for in-water use, displaying time, tide height, swell, wind, water temperature, solar intensity, moon phase
 - **Surf_Spot**: A fixed geographic location (latitude/longitude) configured by the user, used as the data source location for all ocean data in Surf_Mode
 - **Subscreen_Circle**: The 62x62 pixel circular cutout at top-right of the display (center 144,31, radius 31)
-- **Swell_Data**: Hourly ocean swell forecast from StormGlass weather endpoint, including swellHeight, swellPeriod, and swellDirection
-- **Tide_Curve**: A graphical representation of today's tide extremes plotted as a curve with a "now" marker
-- **Bottom_Toggle**: The mechanism by which the user presses the START/STOP button (onSelect) in Surf_Mode to switch the bottom section between Swell_Data view and Tide_Curve view
+- **Swell_Data**: Hourly ocean swell forecast from Open-Meteo Marine API, including swellHeight, swellPeriod, and swellDirection. Stored as three flat arrays in Application.Storage.
+- **Tide_Curve**: A graphical representation of today's tide extremes plotted as a filled curve with a dithered "now" marker and triangle indicator
+- **Bottom_Toggle**: The mechanism by which the user performs a double wrist gesture (two raises within a time window) in Surf_Mode to switch the bottom section between Swell_Data view and Tide_Curve view
 - **CopyGPS_Action**: A boolean setting that, when toggled ON, copies current GPS coordinates to SurfSpotLat/SurfSpotLng and auto-resets to OFF
 - **Solar_Intensity**: A 0-100% value from SensorHistory.getSolarIntensityHistory() representing current solar radiation
 - **Water_Temperature**: An approximate water temperature reading from SensorHistory.getTemperatureHistory() (body temperature sensor, approximate when submerged)
@@ -128,33 +128,36 @@ Surf Mode is an alternate watch face layout optimized for surfers actively in th
 
 ---
 
-### Requirement 8: Bottom Section Toggle via Button Press
+### Requirement 8: Bottom Section Toggle via Double Wrist Gesture
 
-**User Story:** As a surfer, I want to press the START/STOP button to toggle between swell info and tide curve, so that I can switch views without navigating menus.
+**User Story:** As a surfer, I want to toggle between swell info and tide curve by raising my wrist twice quickly, so that I can switch views without navigating menus (watch faces cannot receive button input).
 
 #### Acceptance Criteria
 
-1. WHILE `SurfMode` is set to 1, THE Watch_Face SHALL intercept the onSelect() event (START/STOP button single press) and return true
-2. WHEN onSelect() is intercepted in Surf_Mode, THE Watch_Face SHALL toggle the Bottom_Toggle state between "swell" and "tide curve"
+1. WHILE `SurfMode` is set to 1, THE Watch_Face SHALL detect a double wrist gesture (two wrist raises within a configurable time window) via `onExitSleep()` timing
+2. WHEN a double wrist gesture is detected in Surf_Mode, THE Watch_Face SHALL toggle the Bottom_Toggle state between "swell" (0) and "tide curve" (1)
 3. WHEN the Bottom_Toggle state changes, THE Watch_Face SHALL request a UI update to re-render the bottom section
-4. THE Watch_Face SHALL default the Bottom_Toggle state to "swell" when Surf_Mode is activated
-5. WHILE `SurfMode` is set to 0, THE Watch_Face SHALL return false from onSelect(), preserving default Garmin behavior (opens activity list)
+4. THE Watch_Face SHALL default the Bottom_Toggle state to 0 ("swell") when Surf_Mode is activated
+5. THE Watch_Face SHALL use a 10-second detection window for double wrist gesture (tunable to 4-5s after real watch testing)
+6. NOTE: Watch faces cannot receive button input (no onSelect, no BehaviorDelegate). The double wrist gesture is the only available toggle mechanism.
 
 ---
 
 ### Requirement 9: Swell Data Fetching
 
-**User Story:** As a surfer, I want swell data fetched automatically from StormGlass, so that I always have current wave conditions without manual intervention.
+**User Story:** As a surfer, I want swell data fetched automatically from Open-Meteo Marine API, so that I always have current wave conditions without manual intervention or API keys.
 
 #### Acceptance Criteria
 
-1. WHILE `SurfMode` is set to 1, THE ServiceDelegate SHALL fetch Swell_Data from the StormGlass weather endpoint: `GET https://api.stormglass.io/v2/weather/point?lat={lat}&lng={lng}&params=swellHeight,swellPeriod,swellDirection&start={unix}&end={unix}`
+1. WHILE `SurfMode` is set to 1, THE ServiceDelegate SHALL fetch Swell_Data from the Open-Meteo Marine API: `GET https://marine-api.open-meteo.com/v1/marine?latitude={lat}&longitude={lon}&hourly=swell_wave_height,swell_wave_period,swell_wave_direction&forecast_days=1`
 2. THE ServiceDelegate SHALL use the `SurfSpotLat`/`SurfSpotLng` coordinates for the swell request
-3. THE ServiceDelegate SHALL request a 24-hour window (start of current day UTC to end of current day UTC) for swell data
-4. THE ServiceDelegate SHALL extract the hourly entry closest to the current time from the response for display
-5. THE ServiceDelegate SHALL refresh Swell_Data at most once per calendar day (same refresh logic as tide: new day or first fetch)
-6. THE DataManager SHALL persist Swell_Data to Application.Storage with a "surf_" prefixed key to keep it separate from Shore_Mode cache
-7. IF the StormGlass API returns an error or quota is exhausted, THEN THE ServiceDelegate SHALL skip the swell fetch and retain previously cached data
+3. THE ServiceDelegate SHALL request a 24-hour hourly forecast (forecast_days=1) for swell data
+4. THE ServiceDelegate SHALL store the full 24-hour hourly forecast as three flat arrays (heights, periods, directions) in Application.Storage
+5. THE DataManager SHALL pick the current hour's entry from the stored forecast arrays on each onUpdate() call, so the display advances through the forecast over time
+6. THE ServiceDelegate SHALL fetch fresh swell data on every background temporal event (Open-Meteo is free with no quota)
+7. THE DataManager SHALL persist swell forecast arrays to Application.Storage with `surf_` prefixed keys (`surf_swellHeights`, `surf_swellPeriods`, `surf_swellDirections`)
+8. IF the Open-Meteo API returns an error, THEN THE ServiceDelegate SHALL skip the swell fetch and retain previously cached data
+9. THE Open-Meteo Marine API requires no API key — zero configuration needed for swell data
 
 ---
 
@@ -174,27 +177,33 @@ Surf Mode is an alternate watch face layout optimized for surfers actively in th
 
 ### Requirement 11: Surf Mode API Quota Management
 
-**User Story:** As a surfer, I want the watch face to manage StormGlass API calls efficiently, so that I don't exhaust my daily quota when using surf mode.
+**User Story:** As a surfer, I want the watch face to manage API calls efficiently, so that I don't exhaust my StormGlass daily quota when using surf mode.
 
 #### Acceptance Criteria
 
-1. WHILE `SurfMode` is set to 1, THE ServiceDelegate SHALL make at most 2 StormGlass API calls per day: 1 for tide extremes and 1 for Swell_Data
-2. THE ServiceDelegate SHALL chain the swell fetch after the tide fetch within a single onTemporalEvent() cycle, following the existing request chaining pattern
-3. THE ServiceDelegate SHALL track swell fetch timestamps separately from tide fetch timestamps in Application.Storage
-4. THE ServiceDelegate SHALL respect the existing StormGlass quota exhaustion guard (stormGlassQuotaExhausted flag) for both tide and swell requests
-5. IF the combined tide + swell requests would exceed the daily quota (10 calls/day free tier), THEN THE ServiceDelegate SHALL prioritize the tide fetch over the swell fetch
+1. WHILE `SurfMode` is set to 1, THE ServiceDelegate SHALL make at most 1 StormGlass API call per day for tide extremes (swell uses Open-Meteo which has no quota)
+2. THE ServiceDelegate SHALL chain requests in order: Open-Meteo swell → StormGlass tide → OWM wind, within a single onTemporalEvent() cycle
+3. THE ServiceDelegate SHALL support a backup StormGlass API key (`StormGlassBackupApiKey` setting) for tide fetches
+4. WHEN the primary StormGlass key returns HTTP 402 (quota exhausted), THE ServiceDelegate SHALL set a `sgUseBackup` flag in Application.Storage and use the backup key on the next background cycle
+5. THE `sgUseBackup` flag SHALL be cleared on a successful tide fetch
+6. IF any request in the chain returns -403 (background memory exhausted), THE ServiceDelegate SHALL stop the chain immediately and exit with whatever partial results have been accumulated
+7. Open-Meteo swell fetches have no quota limit and are fetched on every background temporal event
+8. OWM wind fetches for surf mode have no daily limit (free tier: 1M calls/month)
 
 ---
 
 ### Requirement 12: Surf Mode Wind Data Source
 
-**User Story:** As a surfer, I want wind data in surf mode to come from the StormGlass weather endpoint for the surf spot, so that wind readings match the location I'm surfing.
+**User Story:** As a surfer, I want wind data in surf mode to come from OWM for the surf spot, so that wind readings are live and match the location I'm surfing.
 
 #### Acceptance Criteria
 
-1. WHILE `SurfMode` is set to 1, THE DataManager SHALL source wind speed and wind direction from the StormGlass weather response (same API call as Swell_Data), using the windSpeed and windDirection fields
-2. WHILE `SurfMode` is set to 1, THE DataManager SHALL store surf wind data in "surf_" prefixed Application.Storage keys
-3. WHILE `SurfMode` is set to 0, THE DataManager SHALL source wind data from the existing weather source (Garmin built-in or OWM), unchanged from current behavior
+1. WHILE `SurfMode` is set to 1, THE ServiceDelegate SHALL fetch wind data from OWM 2.5 Current Weather API using the surf spot coordinates (`SurfSpotLat`/`SurfSpotLng`)
+2. WHILE `SurfMode` is set to 1, THE ServiceDelegate SHALL extract only wind speed and wind direction from the OWM response — temperature, condition, sunrise, and sunset SHALL NOT be stored (surf mode does not display shore weather fields)
+3. WHILE `SurfMode` is set to 1, THE DataManager SHALL store surf wind data in separate fields (`surfWindSpeed`, `surfWindDeg`) that do not overwrite shore wind fields (`windSpeed`, `windDeg`)
+4. WHILE `SurfMode` is set to 0, THE DataManager SHALL source wind data from the existing weather source (Garmin built-in or OWM), unchanged from current behavior
+5. THE wind speed unit conversion in surf mode SHALL follow the same logic as shore mode (normalize to m/s, then convert per `WindSpeedUnit` setting)
+6. IF no OWM API key is configured, THE ServiceDelegate SHALL skip the wind fetch and display "--" for wind in surf mode
 
 ---
 

@@ -54,11 +54,23 @@ The watch face supports two weather sources, configurable via `WeatherSource` se
 - Request 48h window (start of today UTC to end of tomorrow UTC)
 - Rate limit: max 1 request per calendar day; refresh also triggered if GPS moves >50km
 - Free tier: 10 calls/day — persist response to `Application.Storage`
+- Backup key: `StormGlassBackupApiKey` setting, used automatically when primary returns 402 (quota exhausted). Flag-based: set `sgUseBackup=true` in Storage, next cycle uses backup key, flag clears on success.
+
+### Open-Meteo Marine API (surf mode swell)
+- Endpoint: `GET https://marine-api.open-meteo.com/v1/marine?latitude={lat}&longitude={lon}&hourly=swell_wave_height,swell_wave_period,swell_wave_direction&forecast_days=1`
+- Auth: none (free, no API key, no quota)
+- Returns: `{hourly: {time: [...], swell_wave_height: [...], swell_wave_period: [...], swell_wave_direction: [...]}}`
+- Response size: ~1.2KB for 24 hours — fits in background memory (~28KB)
+- Fetched on every background temporal event in surf mode (no gating needed)
+- Stored as 3 flat arrays in Application.Storage: `surf_swellHeights`, `surf_swellPeriods`, `surf_swellDirections`
+- DataManager picks current hour's entry on each onUpdate() via `updateSwellFromForecast()`
 
 ### API Keys
 - Stored in Connect IQ app settings (configurable via Garmin Connect mobile app)
-- Properties: `OWMApiKey`, `StormGlassApiKey`, `HomeLat`, `HomeLng`
+- Properties: `OWMApiKey`, `StormGlassApiKey`, `StormGlassBackupApiKey`, `HomeLat`, `HomeLng`
+- Surf mode properties: `SurfSpotLat`, `SurfSpotLng`, `CopyGPSToSurfSpot`
 - Never hardcoded in source
+- Open-Meteo requires no key
 
 ## Key Garmin APIs Used
 - `WatchUi.WatchFace` — base class for watch faces

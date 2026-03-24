@@ -72,21 +72,30 @@ No new source files are created. All changes are additions and branches within t
 
 ### Request Chaining in Surf Mode
 
-When `SurfMode=1`, the background delegate chains StormGlass calls:
+When `SurfMode=1`, the background delegate chains API calls:
 
 ```
 onTemporalEvent()
-  ├─ if OWM needed (WeatherSource=1, shore mode): WeatherService.fetch() → onWeatherComplete()
-  │    └─ if tide needed: TideService.fetch() → onTideComplete() → Background.exit()
+  ├─ if Shore mode (SurfMode=0):
+  │    ├─ if OWM needed (WeatherSource=1): WeatherService.fetch() → onShoreWeatherDone()
+  │    │    └─ if tide needed: TideService.fetch() → onTideComplete() → Background.exit()
+  │    └─ if only tide needed: TideService.fetch() → onTideComplete() → Background.exit()
   │
-  └─ if SurfMode=1:
-       ├─ if tide needed: TideService.fetch(surfSpotLat, surfSpotLng) → onTideComplete()
-       │    └─ if swell needed: SwellService.fetch(surfSpotLat, surfSpotLng) → onSwellComplete()
-       │         └─ Background.exit({tides, swell})
-       └─ if only swell needed: SwellService.fetch() → onSwellComplete() → Background.exit({swell})
+  └─ if Surf mode (SurfMode=1):
+       ├─ Open-Meteo swell (always): TideService.fetchSwell() → onSwellDone()
+       │    └─ if tide needed: TideService.fetch(SG) → onTideComplete()
+       │         └─ if wind needed (OWM key set): WeatherService.fetch() → onWindDone()
+       │              └─ Background.exit({swell, tides, weather})
+       └─ if -403 at any point: stop chain, exit with partial results
 ```
 
-Note: Swell data is fetched from the same StormGlass `/v2/weather/point` endpoint but with different params. It is implemented as a new `fetchSwell()` method on the existing `TideService` class (or a thin wrapper), not a separate service class, to minimize background memory usage.
+Data sources per mode:
+- **Swell**: Open-Meteo Marine API (free, no key, ~1.2KB response, fetched every temporal event)
+- **Tide**: StormGlass tide extremes (1 call/day, backup key on 402)
+- **Wind (surf)**: OWM 2.5 for surf spot coordinates → only windSpeed/windDeg extracted
+- **Wind (shore)**: OWM 2.5 or Garmin built-in for GPS coordinates → full weather fields
+
+Note: Surf mode wind uses separate DataManager fields (`surfWindSpeed`, `surfWindDeg`) to avoid cross-contaminating shore weather data. The delegate's `onWindDone()` callback only extracts wind fields when in surf mode.
 
 ---
 
@@ -189,20 +198,21 @@ private static const TIDE_CURVE_NOW_MARKER_WIDTH = 1;
 ### New DataManager Fields
 
 ```monkeyc
-// --- Surf mode: swell data (from StormGlass /v2/weather/point) ---
-var swellHeight as Float or Null;       // meters
-var swellPeriod as Float or Null;       // seconds
-var swellDirection as Number or Null;   // degrees (0=N, meteorological)
-var surfWindSpeed as Float or Null;     // m/s from StormGlass
-var surfWindDeg as Number or Null;      // degrees from StormGlass
-var swellFetchedDay as String or Null;  // "YYYY-MM-DD" UTC
+// --- Surf mode: swell data (from Open-Meteo Marine API, hourly forecast) ---
+var swellHeight as Float or Null;       // meters (current hour from forecast array)
+var swellPeriod as Float or Null;       // seconds (current hour from forecast array)
+var swellDirection as Number or Null;   // degrees (0=N, meteorological, current hour)
+
+// --- Surf mode: wind data (from OWM 2.5 for surf spot, separate from shore) ---
+var surfWindSpeed as Float or Null;     // m/s or mph from OWM (depends on units param)
+var surfWindDeg as Number or Null;      // degrees from OWM
 
 // --- Surf mode: sensor data ---
 var waterTemp as Float or Null;         // Celsius (from SensorHistory.getTemperatureHistory)
 var solarIntensity as Number or Null;   // 0-100 (from SensorHistory.getSolarIntensityHistory)
 
 // --- Surf mode: interpolated tide ---
-var interpTideHeight as Float or Null;  // meters, computed each onUpdate()
+var interpTideHeight as Float or Null;  // meters, cosine-interpolated each onUpdate()
 
 // --- Surf mode: UI state ---
 var bottomToggleState as Number;        // 0 = swell view, 1 = tide curve view
@@ -218,15 +228,16 @@ Surf mode uses `"surf_"` prefixed keys to keep caches separate:
 | `"surf_tideFetchedDay"` | String | "YYYY-MM-DD" of last surf tide fetch |
 | `"surf_tideFetchLat"` | Float | Lat used for last surf tide fetch |
 | `"surf_tideFetchLng"` | Float | Lng used for last surf tide fetch |
-| `"surf_swellHeight"` | Float | Cached swell height (m) |
-| `"surf_swellPeriod"` | Float | Cached swell period (s) |
-| `"surf_swellDirection"` | Number | Cached swell direction (deg) |
-| `"surf_windSpeed"` | Float | Cached surf wind speed (m/s) |
-| `"surf_windDeg"` | Number | Cached surf wind direction (deg) |
-| `"surf_swellFetchedDay"` | String | "YYYY-MM-DD" of last swell fetch |
-| `"surf_stormGlassQuotaExhausted"` | Boolean | Quota flag for surf requests |
+| `"surf_tideDataExpired"` | Boolean | Whether surf tide data needs refresh |
+| `"surf_swellHeights"` | Array | 24h hourly swell heights (meters) from Open-Meteo |
+| `"surf_swellPeriods"` | Array | 24h hourly swell periods (seconds) from Open-Meteo |
+| `"surf_swellDirections"` | Array | 24h hourly swell directions (degrees) from Open-Meteo |
+| `"sgUseBackup"` | Boolean | Flag to use backup StormGlass key on next cycle |
+| `"sgLastResponseCode"` | Number | Last StormGlass HTTP response code |
 
 Shore mode continues using unprefixed keys (`"tideExtremes"`, `"tideFetchedDay"`, etc.) — no changes to existing cache.
+
+Note: Surf wind (`surfWindSpeed`, `surfWindDeg`) is not persisted to Storage — it's fetched live from OWM every temporal event and held only in DataManager memory.
 
 ### New Settings (properties.xml + settings.xml)
 
@@ -237,48 +248,48 @@ Shore mode continues using unprefixed keys (`"tideExtremes"`, `"tideFetchedDay"`
 | `SurfSpotLng` | string | "0.0" | alphaNumeric | Surf spot longitude |
 | `CopyGPSToSurfSpot` | boolean | false | boolean | One-shot GPS copy trigger |
 
-### StormGlass Weather/Swell Endpoint
+### Open-Meteo Marine API (Swell)
 
 ```
-GET https://api.stormglass.io/v2/weather/point
-  ?lat={surfSpotLat}
-  &lng={surfSpotLng}
-  &params=swellHeight,swellPeriod,swellDirection,windSpeed,windDirection
-  &start={startOfDayUTC}
-  &end={endOfDayUTC}
-Headers:
-  Authorization: {StormGlassApiKey}
+GET https://marine-api.open-meteo.com/v1/marine
+  ?latitude={surfSpotLat}
+  &longitude={surfSpotLng}
+  &hourly=swell_wave_height,swell_wave_period,swell_wave_direction
+  &forecast_days=1
 ```
 
-**Response structure** (simplified):
+No API key required. No rate limit.
+
+**Response structure**:
 ```json
 {
-  "hours": [
-    {
-      "time": "2024-03-18T00:00:00+00:00",
-      "swellHeight": { "sg": 1.5 },
-      "swellPeriod": { "sg": 12.3 },
-      "swellDirection": { "sg": 245.0 },
-      "windSpeed": { "sg": 5.2 },
-      "windDirection": { "sg": 180.0 }
-    },
-    ...
-  ]
+  "hourly": {
+    "time": ["2024-03-18T00:00", "2024-03-18T01:00", ...],
+    "swell_wave_height": [1.5, 1.4, ...],
+    "swell_wave_period": [12.3, 12.1, ...],
+    "swell_wave_direction": [245.0, 243.0, ...]
+  }
 }
 ```
 
-Each param has a `"sg"` (StormGlass) source key. The delegate extracts the `"sg"` value from the hourly entry closest to `now`.
+Response is ~1.2KB for 24 hours — fits comfortably in background memory (~28KB).
 
 ### Swell Response Parsing (in background)
 
 ```
-1. Parse response["hours"] array
-2. For each entry, parse ISO time to unix timestamp
-3. Find entry with minimum |entryTime - now|
-4. Extract: swellHeight.sg, swellPeriod.sg, swellDirection.sg, windSpeed.sg, windDirection.sg
-5. Package as Dictionary: {swellHeight, swellPeriod, swellDirection, windSpeed, windDeg}
-6. Return via Background.exit({..., swell: swellDict})
+1. Parse response["hourly"] dictionary
+2. Extract flat arrays: swell_wave_height, swell_wave_period, swell_wave_direction
+3. Pass arrays directly via callback (no per-entry parsing needed)
+4. Delegate stores arrays in Application.Storage (surf_swellHeights, surf_swellPeriods, surf_swellDirections)
+5. Extract current hour's entry for immediate display in Background.exit() result
+6. DataManager.updateSwellFromForecast() picks current hour on each onUpdate()
 ```
+
+### Surf Mode Wind (OWM 2.5)
+
+Wind in surf mode is fetched from OWM 2.5 Current Weather using surf spot coordinates. The delegate's `onWindDone()` callback extracts only `windSpeed` and `windDeg` — it does NOT store temperature, condition, sunrise, or sunset to avoid polluting shore weather fields.
+
+Wind is stored in separate DataManager fields: `surfWindSpeed` and `surfWindDeg`.
 
 ---
 
@@ -328,12 +339,8 @@ Called when mode changes (detected in `onSettingsChanged()` or on startup):
 loadSurfCache():
   tideExtremes = Storage.getValue("surf_tideExtremes")
   tideFetchedDay = Storage.getValue("surf_tideFetchedDay")
-  swellHeight = Storage.getValue("surf_swellHeight")
-  swellPeriod = Storage.getValue("surf_swellPeriod")
-  swellDirection = Storage.getValue("surf_swellDirection")
-  surfWindSpeed = Storage.getValue("surf_windSpeed")
-  surfWindDeg = Storage.getValue("surf_windDeg")
-  swellFetchedDay = Storage.getValue("surf_swellFetchedDay")
+  // Swell loaded from flat arrays via updateSwellFromForecast() on each onUpdate()
+  // Wind not cached — fetched live from OWM every temporal event
 
 loadShoreCache():
   tideExtremes = Storage.getValue("tideExtremes")
@@ -411,7 +418,7 @@ Col 3 (x=134): Swell direction
 
 ### SurferWatchFaceDelegate — Surf Mode Coordinate Selection
 
-In `onTemporalEvent()`, after reading GPS from Storage:
+In `onTemporalEvent()`, coordinates are selected based on mode:
 
 ```
 surfMode = Properties.getValue("SurfMode")
@@ -422,17 +429,22 @@ if surfMode == 1:
     lat = surfLat.toFloat()
     lng = surfLng.toFloat()
     if lat == 0.0 and lng == 0.0:
-      // Not configured — skip surf fetches
+      // Not configured — skip all surf fetches
       Background.exit(null); return
-  // Use surf spot coordinates for tide + swell
-  // Still use GPS coordinates for OWM weather if WeatherSource=1
+  // Use surf spot coordinates for swell (Open-Meteo), tide (SG), and wind (OWM)
+else:
+  lat = Storage.getValue("lastKnownLat")
+  lng = Storage.getValue("lastKnownLng")
+  // Use GPS/Home coordinates for weather (OWM/Garmin) and tide (SG)
 ```
 
-### Garmin Condition Code to Surf Wind Icon Mapping
+### Surf Mode Wind Source
 
-In surf mode, wind data comes from StormGlass (degrees + m/s), not from a weather condition code. The wind arrow is drawn using the existing `drawWindArrow()` method with `surfWindDeg`. No condition-code-to-icon mapping is needed for surf wind — it's a direct degree value.
+In surf mode, wind data comes from OWM 2.5 Current Weather for the surf spot coordinates. The delegate's `onWindDone()` callback extracts only `windSpeed` and `windDeg` from the OWM response and stores them in `surfWindSpeed`/`surfWindDeg` — separate from shore mode's `windSpeed`/`windDeg`.
 
-For the swell direction arrow in the bottom section, the same `drawWindArrow()` is reused with `swellDirection` degrees.
+The wind arrow is drawn using the existing `drawWindArrow()` method with `dm.surfWindDeg`. Wind speed is normalized to m/s and converted per the `WindSpeedUnit` setting, using the same logic as shore mode.
+
+For the swell direction arrow in the bottom section, the same `drawWindArrow()` is reused with `swellDirection` degrees from the Open-Meteo forecast.
 
 ### SurferWatchFaceView.onUpdate() — Mode Branch
 
@@ -475,44 +487,36 @@ function onUpdate(dc as Dc) as Void {
 }
 ```
 
-### Button Press Handling (onSelect toggle)
+### Double Wrist Gesture Toggle (onExitSleep timing)
 
-The `SurferWatchFaceApp.getInitialView()` currently returns `[new SurferWatchFaceView()]`. To handle button presses, it must also return a `BehaviorDelegate`:
-
-```monkeyc
-// In SurferWatchFaceApp.mc:
-function getInitialView() as [Views] or [Views, InputDelegates] {
-    dataManager = new DataManager();
-    return [new SurferWatchFaceView(), new SurferWatchFaceBehaviorDelegate()];
-}
-```
-
-Wait — we said no new files. The behavior delegate can be a simple inner approach, but Monkey C doesn't support inner classes. Instead, we add `onSelect` handling to the existing view via `WatchFace` behavior. Actually, `WatchUi.WatchFace` doesn't receive `onSelect` directly. We need a `WatchUi.BehaviorDelegate` returned alongside the view.
-
-Since we want no new files, we add the `BehaviorDelegate` class to the bottom of `SurferWatchFaceView.mc`:
+Watch faces cannot receive button input (no onSelect, no BehaviorDelegate). The toggle mechanism uses `onExitSleep()` timing to detect a double wrist raise:
 
 ```monkeyc
-class SurferWatchFaceBehaviorDelegate extends WatchUi.BehaviorDelegate {
-    function initialize() {
-        BehaviorDelegate.initialize();
-    }
+// In SurferWatchFaceView.mc:
+private var lastWristRaiseTime as Number = 0;
 
-    function onSelect() as Boolean {
-        var surfMode = Application.Properties.getValue("SurfMode");
-        if (surfMode != null && surfMode == 1) {
+function onExitSleep() as Void {
+    isSleeping = false;
+    var surfMode = Application.Properties.getValue("SurfMode");
+    if (surfMode != null && surfMode == 1) {
+        var now = Time.now().value();
+        var diff = now - lastWristRaiseTime;
+        if (lastWristRaiseTime > 0 && diff < 10) {
+            // Double raise detected — toggle bottom view
             var dm = getApp().getDataManager();
             if (dm != null) {
                 dm.bottomToggleState = (dm.bottomToggleState == 0) ? 1 : 0;
-                WatchUi.requestUpdate();
             }
-            return true;
+            lastWristRaiseTime = 0;
+        } else {
+            lastWristRaiseTime = now;
         }
-        return false;  // Shore mode: default Garmin behavior
     }
+    WatchUi.requestUpdate();
 }
 ```
 
-This class lives in `SurferWatchFaceView.mc` alongside the view class.
+The 10-second window is for simulator testing. On a real watch, this should be tuned to 4-5 seconds to avoid accidental toggles.
 
 ---
 
@@ -562,11 +566,11 @@ This class lives in `SurferWatchFaceView.mc` alongside the view class.
 
 **Validates: Requirements 7.3**
 
-### Property 8: onSelect Behavior Based on Mode
+### Property 8: Double Wrist Gesture Toggle Behavior Based on Mode
 
-*For any* call to `onSelect()`, when `SurfMode=1` the method should return true, and when `SurfMode=0` the method should return false.
+*For any* double wrist gesture (two `onExitSleep()` calls within the detection window), when `SurfMode=1` the `bottomToggleState` should flip (0→1 or 1→0), and when `SurfMode=0` no toggle should occur.
 
-**Validates: Requirements 8.1, 8.5**
+**Validates: Requirements 8.1, 8.2**
 
 ### Property 9: Bottom Toggle Round Trip
 
@@ -610,11 +614,14 @@ This class lives in `SurferWatchFaceView.mc` alongside the view class.
 
 | Scenario | Behavior |
 |----------|----------|
-| SurfSpotLat/Lng = "0.0" or empty | Display "--" for all location-dependent surf fields. Skip StormGlass fetches. |
-| StormGlass swell API returns non-200 | Skip swell parsing, retain cached swell data. Log nothing (no logging API on watch). |
-| StormGlass quota exhausted (`requestCount >= dailyQuota`) | Set `surf_stormGlassQuotaExhausted = true`. Skip both tide and swell fetches until new calendar day. |
-| StormGlass swell response missing `"hours"` array | Return null from swell parsing. Display "--" for swell fields. |
-| StormGlass swell entry missing `"sg"` key | Skip that entry, try next closest hour. If no valid entries, return null. |
+| SurfSpotLat/Lng = "0.0" or empty | Display "--" for all location-dependent surf fields. Skip all surf fetches. |
+| Open-Meteo swell API returns non-200 | Skip swell parsing, retain cached swell forecast arrays. Chain continues to tide. |
+| Open-Meteo swell response missing `"hourly"` | Return null from swell parsing. Display "--" for swell fields. |
+| StormGlass tide API returns 402 (quota) | Set `sgUseBackup=true` flag. Next cycle uses backup key. |
+| StormGlass tide API returns non-200 (not 402) | Skip tide, retain cached data. Do NOT try backup (avoid exhausting both keys). |
+| StormGlass response returns -403 | Background memory exhausted. Stop chain immediately, exit with partial results. |
+| OWM wind API returns non-200 | Skip wind, display "--" for wind in surf mode. |
+| No OWM API key configured | Skip wind fetch entirely. Display "--" for wind. |
 | SensorHistory.getTemperatureHistory unavailable | `waterTemp = null`, display "--". |
 | SensorHistory.getSolarIntensityHistory unavailable | `solarIntensity = null`, display 0% arc (empty). |
 | Tide extremes array empty or null in surf mode | `interpTideHeight = null`, display "--" in subscreen. Tide curve shows "--". |

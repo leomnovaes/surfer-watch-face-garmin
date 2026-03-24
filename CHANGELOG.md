@@ -3,22 +3,25 @@
 ## v2.0.0 (unreleased)
 
 ### Added
-- Surf mode: alternate watch face layout for in-water use
-- Subscreen: interpolated tide height + solar intensity arc + tide direction icon
-- Water temperature from watch sensor
-- Swell data: height, period, direction from Open-Meteo Marine API (free, no key)
-- Tide curve graph with filled area, dithered "now" marker, time labels
-- Double wrist gesture toggles between swell view and tide curve
-- Surf spot location settings (manual entry + GPS copy)
-- StormGlass backup API key setting
-- Surfing, thermometer, timer-sand icons for surf mode
-- Open-Meteo Marine API integration (free, unlimited, flat response)
+- Surf mode: alternate watch face layout for in-water use, toggled via settings
+- Subscreen circle: interpolated tide height + solar intensity arc + tide direction icon (replaces HR + stress)
+- Water temperature from watch body temp sensor
+- Swell data: height, period, direction from Open-Meteo Marine API (free, no key, 24h hourly forecast)
+- Tide curve graph with filled area, dithered "now" marker, triangle indicator, time labels
+- Double wrist gesture toggles between swell view and tide curve in surf mode
+- Surf spot location settings: manual lat/lng entry + one-tap GPS copy
+- StormGlass backup API key setting with automatic failover on 402
+- Surfing, thermometer, timer-sand icons rasterized from Material Design Icons
+- Open-Meteo Marine API integration (free, unlimited, ~1.2KB response)
+- Separate surf/shore wind fields (surfWindSpeed/surfWindDeg vs windSpeed/windDeg)
+- Background chain for surf mode: Open-Meteo swell → StormGlass tide → OWM wind
+- -403 detection stops background chain immediately (memory exhausted safety)
 
 ### Changed
-- Swell data source: StormGlass → Open-Meteo Marine (free, no quota)
+- Swell data source: StormGlass weather → Open-Meteo Marine (free, no quota)
 - StormGlass now used only for tide extremes (1 call/day)
-- Background chain: Open-Meteo swell → SG tide → OWM wind (surf mode)
-- Swell display advances hourly through 24h forecast array
+- Swell stored as 3 flat arrays in Application.Storage, advances hourly via updateSwellFromForecast()
+- Surf mode OWM call extracts only wind — does not pollute shore weather fields
 
 ### Fixed
 - Weather icon mapping: 5 community-validated overrides for misleading Erik Flowers mappings
