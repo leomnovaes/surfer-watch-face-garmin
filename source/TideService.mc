@@ -21,14 +21,15 @@ class TideService {
         _triedBackup = false;
     }
 
-    // Builds StormGlass URL with 72h window from local midnight, sets Authorization header
+    // Builds StormGlass URL with ~78h window, sets Authorization header
     function fetch(lat as Float, lng as Float, apiKey as String) as Void {
         _lat = lat;
         _lng = lng;
-        // 72h window from local midnight today — covers today + tomorrow + day after
-        // Time.today() returns start of today in local time as a Moment
-        var startUnix = Time.today().value();
-        var endUnix = startUnix + (72 * 3600);
+        // Start 6h before local midnight to capture yesterday's last event
+        // (needed for tide curve interpolation from midnight to first event of today).
+        // End 72h after local midnight = 3 full days of coverage.
+        var startUnix = Time.today().value() - (6 * 3600);
+        var endUnix = Time.today().value() + (72 * 3600);
 
         var url = "https://api.stormglass.io/v2/tide/extremes/point"
             + "?lat=" + lat.toString()
