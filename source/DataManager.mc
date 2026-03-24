@@ -167,6 +167,21 @@ class DataManager {
     }
 
     // =========================================================
+    // clearPersistedWeatherData() — removes cached weather from
+    // Application.Storage so loadWeatherData() doesn't restore
+    // stale data from a different weather source.
+    // =========================================================
+    function clearPersistedWeatherData() as Void {
+        Application.Storage.setValue("cachedTemp", null);
+        Application.Storage.setValue("cachedConditionId", null);
+        Application.Storage.setValue("cachedWindSpeed", null);
+        Application.Storage.setValue("cachedWindDeg", null);
+        Application.Storage.setValue("cachedSunrise", null);
+        Application.Storage.setValue("cachedSunset", null);
+        Application.Storage.setValue("owmFetchedAt", null);
+    }
+
+    // =========================================================
     // updateGarminWeather() — reads weather from Garmin built-in
     // Weather.getCurrentConditions(). Called from onUpdate() when
     // WeatherSource=0 (Garmin). No background HTTP needed.

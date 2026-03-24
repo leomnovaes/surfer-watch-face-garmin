@@ -50,6 +50,12 @@ class SurferWatchFaceApp extends Application.AppBase {
     // New app settings have been received so trigger a UI update
     function onSettingsChanged() as Void {
         if (dataManager != null) {
+            // Always clear weather data on settings change to prevent
+            // condition code mismatch between mappers (WMO vs OWM vs Garmin).
+            // Display shows "--" until next background fetch brings fresh data.
+            dataManager.clearWeatherData();
+            dataManager.clearPersistedWeatherData();
+
             var surfMode = Application.Properties.getValue("SurfMode");
             if (surfMode != null && surfMode == 1) {
                 dataManager.loadSurfCache();
