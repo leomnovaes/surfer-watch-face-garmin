@@ -111,7 +111,7 @@ class OpenMeteoService {
         var url = "https://marine-api.open-meteo.com/v1/marine"
             + "?latitude=" + lat.toString()
             + "&longitude=" + lng.toString()
-            + "&hourly=swell_wave_height,swell_wave_period,swell_wave_direction"
+            + "&hourly=swell_wave_height,swell_wave_period,swell_wave_direction,sea_surface_temperature"
             + "&forecast_days=1";
 
         var options = {
@@ -149,6 +149,12 @@ class OpenMeteoService {
         result["heights"] = heights as Application.PropertyValueType;
         result["periods"] = periods as Application.PropertyValueType;
         result["directions"] = dirs as Application.PropertyValueType;
+
+        // Sea surface temperature — hourly array, same pattern as swell
+        var sst = hourly["sea_surface_temperature"] as Array or Null;
+        if (sst != null) {
+            result["seaSurfaceTemps"] = sst as Application.PropertyValueType;
+        }
 
         if (_swellCallback != null) {
             _swellCallback.invoke(result);

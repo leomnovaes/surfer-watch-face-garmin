@@ -26,5 +26,8 @@
     <string id="SurfSpotLatTitle">Surf Spot Latitude</string>
     <string id="SurfSpotLngTitle">Surf Spot Longitude</string>
     <string id="CopyGPSToSurfSpotTitle">Copy GPS to Surf Spot</string>
+    <string id="SurfTempSourceTitle">Surf Temperature Source</string>
+    <string id="SurfTempWatch">Watch Sensor (default)</string>
+    <string id="SurfTempOcean">Ocean Surface</string>
 
 </strings>

@@ -58,11 +58,13 @@ class DataManager {
     private var _swellHeightsCache as Array or Null;
     private var _swellPeriodsCache as Array or Null;
     private var _swellDirectionsCache as Array or Null;
+    private var _seaSurfaceTempsCache as Array or Null;
     private var _windSpeedsCache as Array or Null;
     private var _windDirectionsCache as Array or Null;
 
     // --- Surf mode: sensor data ---
     var waterTemp as Float or Null;
+    var seaSurfaceTemp as Float or Null;
     var solarIntensity as Number or Null;
 
     // --- Surf mode: interpolated tide ---
@@ -624,10 +626,12 @@ class DataManager {
         swellHeight = data["swellHeight"] as Float or Null;
         swellPeriod = data["swellPeriod"] as Float or Null;
         swellDirection = data["swellDirection"] as Number or Null;
+        seaSurfaceTemp = data["seaSurfaceTemp"] as Float or Null;
         // Refresh cached forecast arrays from Storage (delegate just wrote them)
         _swellHeightsCache = Application.Storage.getValue("surf_swellHeights") as Array or Null;
         _swellPeriodsCache = Application.Storage.getValue("surf_swellPeriods") as Array or Null;
         _swellDirectionsCache = Application.Storage.getValue("surf_swellDirections") as Array or Null;
+        _seaSurfaceTempsCache = Application.Storage.getValue("surf_seaSurfaceTemps") as Array or Null;
     }
 
     // onSurfWindData(data) — receives OWM wind for surf spot.
@@ -656,6 +660,11 @@ class DataManager {
         swellHeight = _swellHeightsCache[idx] != null ? (_swellHeightsCache[idx] as Float).toFloat() : null;
         swellPeriod = (_swellPeriodsCache != null && idx < _swellPeriodsCache.size() && _swellPeriodsCache[idx] != null) ? (_swellPeriodsCache[idx] as Float).toFloat() : null;
         swellDirection = (_swellDirectionsCache != null && idx < _swellDirectionsCache.size() && _swellDirectionsCache[idx] != null) ? (_swellDirectionsCache[idx] as Number).toNumber() : null;
+        // Sea surface temperature advances with the same hourly index
+        var surfTempSource = Application.Properties.getValue("SurfTempSource");
+        if (surfTempSource != null && surfTempSource == 1) {
+            seaSurfaceTemp = (_seaSurfaceTempsCache != null && idx < _seaSurfaceTempsCache.size() && _seaSurfaceTempsCache[idx] != null) ? (_seaSurfaceTempsCache[idx] as Float).toFloat() : null;
+        }
     }
 
     // updateSurfWindFromForecast() — picks the current hour's wind
@@ -678,6 +687,7 @@ class DataManager {
         _swellHeightsCache = Application.Storage.getValue("surf_swellHeights") as Array or Null;
         _swellPeriodsCache = Application.Storage.getValue("surf_swellPeriods") as Array or Null;
         _swellDirectionsCache = Application.Storage.getValue("surf_swellDirections") as Array or Null;
+        _seaSurfaceTempsCache = Application.Storage.getValue("surf_seaSurfaceTemps") as Array or Null;
         _windSpeedsCache = Application.Storage.getValue("surf_windSpeeds") as Array or Null;
         _windDirectionsCache = Application.Storage.getValue("surf_windDirections") as Array or Null;
     }

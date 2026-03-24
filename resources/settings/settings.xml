@@ -56,6 +56,13 @@
         <settingConfig type="boolean"/>
     </setting>
 
+    <setting propertyKey="@Properties.SurfTempSource" title="@Strings.SurfTempSourceTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.SurfTempWatch</listEntry>
+            <listEntry value="1">@Strings.SurfTempOcean</listEntry>
+        </settingConfig>
+    </setting>
+
     <setting propertyKey="@Properties.HomeLat" title="@Strings.HomeLatTitle">
         <settingConfig type="alphaNumeric"/>
     </setting>

@@ -258,6 +258,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             Application.Storage.setValue("surf_swellHeights", swellData["heights"]);
             Application.Storage.setValue("surf_swellPeriods", swellData["periods"]);
             Application.Storage.setValue("surf_swellDirections", swellData["directions"]);
+            Application.Storage.setValue("surf_seaSurfaceTemps", swellData["seaSurfaceTemps"]);
 
             // Extract current hour for immediate display
             var heights = swellData["heights"] as Array;
@@ -270,6 +271,11 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
                 current["swellHeight"] = heights[idx] as Application.PropertyValueType;
                 current["swellPeriod"] = (idx < periods.size()) ? periods[idx] as Application.PropertyValueType : null;
                 current["swellDirection"] = (idx < dirs.size()) ? dirs[idx] as Application.PropertyValueType : null;
+                // Sea surface temp for current hour
+                var sst = swellData["seaSurfaceTemps"] as Array or Null;
+                if (sst != null && idx < sst.size()) {
+                    current["seaSurfaceTemp"] = sst[idx] as Application.PropertyValueType;
+                }
                 _swellResult = current;
             }
         }

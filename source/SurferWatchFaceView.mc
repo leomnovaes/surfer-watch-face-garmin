@@ -874,14 +874,28 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         // Row 1 — Battery (same as shore)
         drawBatteryWithPercent(dc, TOP_COL2_X, TOP_ROW1_Y, dm.battery, dm);
 
-        // Row 2 — Water temperature (icon where notification icon was, text where count was)
+        // Row 2 — Water temperature: watch sensor (default) or ocean surface (Open-Meteo)
         var tempText = "--";
-        if (dm.waterTemp != null) {
-            var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
-            if (isMetric) {
-                tempText = dm.waterTemp.toNumber().toString() + "°C";
-            } else {
-                tempText = (dm.waterTemp * 1.8 + 32).toNumber().toString() + "°F";
+        var surfTempSource = Application.Properties.getValue("SurfTempSource");
+        if (surfTempSource != null && surfTempSource == 1) {
+            // Ocean surface temperature from Open-Meteo Marine API
+            if (dm.seaSurfaceTemp != null) {
+                var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
+                if (isMetric) {
+                    tempText = dm.seaSurfaceTemp.toNumber().toString() + "°C";
+                } else {
+                    tempText = (dm.seaSurfaceTemp * 1.8 + 32).toNumber().toString() + "°F";
+                }
+            }
+        } else {
+            // Watch body temperature sensor (default)
+            if (dm.waterTemp != null) {
+                var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
+                if (isMetric) {
+                    tempText = dm.waterTemp.toNumber().toString() + "°C";
+                } else {
+                    tempText = (dm.waterTemp * 1.8 + 32).toNumber().toString() + "°F";
+                }
             }
         }
         // Text right-justified to same anchor as notification count

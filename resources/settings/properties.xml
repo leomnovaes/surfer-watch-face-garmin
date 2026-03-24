@@ -12,5 +12,6 @@
     <property id="SurfSpotLat" type="string">0.0</property>
     <property id="SurfSpotLng" type="string">0.0</property>
     <property id="CopyGPSToSurfSpot" type="boolean">false</property>
+    <property id="SurfTempSource" type="number">0</property>
 
 </properties>
