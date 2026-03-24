@@ -132,7 +132,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
 
         var dm = (Application.getApp() as SurferWatchFaceApp).getDataManager();
-        if (dm == null) { return; }
 
         var surfMode = Application.Properties.getValue("SurfMode");
 
