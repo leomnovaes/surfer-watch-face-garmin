@@ -304,9 +304,17 @@ class DataManager {
     // =========================================================
     function onTideData(data as Array) as Void {
         tideExtremes = data;
-        // Clear expired flag since we have fresh data
-        Application.Storage.setValue("tideDataExpired", false);
-        persistTideData();
+        // Persist to the correct prefixed key based on current mode
+        var surfMode = Application.Properties.getValue("SurfMode");
+        if (surfMode != null && surfMode == 1) {
+            // Surf mode: delegate already wrote to surf_tideExtremes in onTideComplete,
+            // but we also clear the surf expired flag
+            Application.Storage.setValue("surf_tideDataExpired", false);
+        } else {
+            // Shore mode: persist to unprefixed keys
+            Application.Storage.setValue("tideDataExpired", false);
+            persistTideData();
+        }
     }
 
     // =========================================================
