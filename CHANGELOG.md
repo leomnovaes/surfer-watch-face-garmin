@@ -23,10 +23,10 @@ Initial public release of Surfer Watch.
 - Tide curve graph with filled area, dithered "now" marker, time labels
 - Interpolated current tide height in subscreen circle
 - Wind direction and speed for surf spot
-- Water temperature from watch sensor
+- Water temperature: watch sensor or ocean surface (Open-Meteo Marine, hourly, works offline)
 - Solar intensity arc gauge
 - Sunrise/sunset for surf spot
-- Double wrist gesture toggles between swell view and tide curve
+- Double wrist gesture (4s window) toggles between swell view and tide curve
 - Surf spot location: manual entry or one-tap GPS copy
 - Hourly wind forecast advances offline when phone disconnects (Open-Meteo)
 
@@ -36,8 +36,8 @@ Initial public release of Surfer Watch.
 - OpenWeatherMap 2.5 (needs key, most granular condition icons)
 
 **Data Sources**
-- StormGlass API for tide extremes (72h window, backup key with immediate 402 retry)
-- Open-Meteo Marine API for swell (free, 24h hourly forecast)
+- StormGlass API for tide extremes (78h window, backup key with immediate 402 retry)
+- Open-Meteo Marine API for swell + ocean surface temperature (free, 24h hourly forecast)
 - Open-Meteo Weather API for weather + surf wind forecast (free, no key)
 - OpenWeatherMap 2.5 for weather (optional, needs key)
 - Garmin built-in for weather, precipitation (default)
@@ -46,3 +46,10 @@ Initial public release of Surfer Watch.
 - Garmin Instinct 2
 - Garmin Instinct 2X Solar
 - Garmin Instinct 3 Solar 45/50mm
+
+**Settings**
+- Clock Font, Wind Speed Unit, Weather Source
+- Display Mode (Shore/Surf), Surf Temperature Source (Watch/Ocean)
+- Surf Spot Lat/Lng, Copy GPS to Surf Spot
+- OWM API Key, StormGlass API Key + Backup
+- Home Lat/Lng

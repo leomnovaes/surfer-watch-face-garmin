@@ -9,7 +9,7 @@ WORKS OUT OF THE BOX — no API keys required for weather or swell data.
 SHORE MODE (default)
 • Next tide time, direction (high/low), and predicted height via StormGlass API
 • Weather condition with day/night icons and temperature
-• Wind direction arrow (rotated to exact degree) and speed (configurable: km/h, knots, mph, m/s)
+• Wind direction arrow and speed (configurable: km/h, knots, mph, m/s)
 • Precipitation chance
 • Sunrise/sunset with next event time
 • Moon phase (28 phases, computed locally)
@@ -22,9 +22,10 @@ SURF MODE
 • Swell height, period, and direction from Open-Meteo Marine API (free, no key)
 • Tide curve graph with "now" marker (toggle with double wrist gesture)
 • Interpolated current tide height in subscreen circle
-• Wind direction and speed for your surf spot (Open-Meteo: hourly forecast works offline; OWM: current only)
+• Wind direction and speed for your surf spot
 • Water temperature: watch sensor or ocean surface (Open-Meteo Marine, hourly, works offline)
 • Solar intensity arc gauge
+• Sunrise/sunset for surf spot
 • Surf spot location: manual entry or one-tap GPS copy
 
 WEATHER SOURCES
@@ -32,14 +33,13 @@ WEATHER SOURCES
 • Optional: Open-Meteo (no key needed, updates every 5 min, hourly wind forecast for surf mode offline use)
 • Optional: OpenWeatherMap 2.5 (free, no credit card, most granular weather icons)
 
-SWELL DATA
+SWELL + OCEAN TEMPERATURE
 • Open-Meteo Marine API — free, no key, no quota
-• 24-hour hourly forecast, advances automatically
+• 24-hour hourly forecast, advances automatically even offline
 
 SETUP
 • Weather and swell work immediately — no setup needed
 • For tide data: get a free StormGlass API key at stormglass.io
-• For OWM weather: get a free key at openweathermap.org (optional)
 • For surf mode: set your surf spot coordinates in settings
 • Enter keys in watch face settings via Garmin Connect app
 

@@ -135,7 +135,7 @@ Seconds are hidden by default to save battery. They appear automatically when yo
 | Tide extremes | StormGlass API | Once per day (same as shore) |
 | Tide height (interpolated) | Local computation | Every second (cosine interpolation) |
 | Wind (speed, direction) | Open-Meteo or OWM (depends on Weather Source) | Open-Meteo: hourly forecast, advances offline. OWM: current only, freezes offline. Garmin: not available for surf spot. |
-| Water temperature | Watch body temp sensor | Every second |
+| Water temperature | Watch sensor (default) or Open-Meteo Marine (ocean surface) | Watch: every second. Ocean: hourly forecast, advances offline |
 | Solar intensity | Watch solar sensor | Every second |
 | Moon phase | Local computation | Every second |
 

@@ -18,7 +18,7 @@ Surf Mode is an alternate watch face layout optimized for surfers actively in th
 - **Bottom_Toggle**: The mechanism by which the user performs a double wrist gesture (two raises within a time window) in Surf_Mode to switch the bottom section between Swell_Data view and Tide_Curve view
 - **CopyGPS_Action**: A boolean setting that, when toggled ON, copies current GPS coordinates to SurfSpotLat/SurfSpotLng and auto-resets to OFF
 - **Solar_Intensity**: A 0-100% value from System.getSystemStats().solarIntensity representing current solar radiation
-- **Water_Temperature**: An approximate water temperature reading from SensorHistory.getTemperatureHistory() (body temperature sensor, approximate when submerged)
+- **Water_Temperature**: Configurable: watch body temperature sensor (SensorHistory.getTemperatureHistory, approximate when submerged) or ocean surface temperature from Open-Meteo Marine API (hourly forecast, works offline)
 
 ---
 
@@ -79,8 +79,9 @@ Surf Mode is an alternate watch face layout optimized for surfers actively in th
 
 1. WHILE `SurfMode` is set to 1, THE Watch_Face SHALL display battery percentage and battery icon on Row 1, identical to Shore_Mode
 2. WHILE `SurfMode` is set to 1, THE Watch_Face SHALL display Water_Temperature on Row 2, replacing the notification count, notification icon, and bluetooth icon
-3. THE Watch_Face SHALL read Water_Temperature from SensorHistory.getTemperatureHistory() with a period of 1 sample
-4. THE Watch_Face SHALL display Water_Temperature in °C or °F based on the device unit setting (UNIT_METRIC → °C, UNIT_STATUTE → °F, converting from Celsius by multiplying by 1.8 and adding 32)
+3. THE Watch_Face SHALL read Water_Temperature from SensorHistory.getTemperatureHistory() with a period of 1 sample when SurfTempSource=0 (Watch Sensor)
+4. THE Watch_Face SHALL display ocean surface temperature from Open-Meteo Marine API when SurfTempSource=1 (Ocean Surface), advancing hourly through the forecast array like swell
+5. THE Watch_Face SHALL display Water_Temperature in °C or °F with 1 decimal place based on the device unit setting (UNIT_METRIC → °C, UNIT_STATUTE → °F)
 5. IF Water_Temperature data is unavailable, THEN THE Watch_Face SHALL display "--" on Row 2
 6. WHILE `SurfMode` is set to 1, THE Watch_Face SHALL display the next tide event time and height on Row 3, identical to Shore_Mode
 
