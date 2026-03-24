@@ -221,6 +221,8 @@ Note: This requirement describes the OWM (WeatherSource=2) behavior. Open-Meteo 
 4. WHILE `SurfMode` is set to 1, THE Watch_Face SHALL omit the weather condition icon and temperature from the display
 5. WHILE `SurfMode` is set to 1, THE Watch_Face SHALL omit the sunrise/sunset icon and time from the display
 6. WHILE `SurfMode` is set to 1, THE Watch_Face SHALL omit the precipitation icon and percentage from the display
+7. WHILE `SurfMode` is set to 1 and the Bottom_Toggle state is "swell", THE Watch_Face SHALL display the next sunrise or sunset event for the surf spot in the date row position, computed locally from SurfSpotLat/SurfSpotLng using the solar position algorithm
+8. WHILE `SurfMode` is set to 1 and the Bottom_Toggle state is "tide curve", THE Watch_Face SHALL omit the sunrise/sunset row (the space is used by tide event time labels)
 
 ---
 

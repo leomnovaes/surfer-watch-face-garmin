@@ -126,8 +126,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             drawTopSection_Surf(dc, dm);
             drawDividers(dc);
             drawMiddleSection_Surf(dc, dm);
-            drawSurfSunRow(dc, dm);
             if (dm.bottomToggleState == 0) {
+                drawSurfSunRow(dc, dm);
                 drawSwellSection(dc, dm);
             } else {
                 drawTideCurve(dc, dm);
@@ -972,11 +972,15 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 sunTime = formatUnixTime(dm.surfSunrise);
             }
         }
+
+        var sunsetSurfDateYOffset = 4;
+        var sunsetSurfDateXOffset = 6;
+
         // Draw icon + time centered at DATE_Y, same position as date row in shore mode
         var font = crystalIconsFont != null ? crystalIconsFont : Graphics.FONT_XTINY;
         var glyph = isSunrise ? IC_SUNRISE : IC_SUNSET;
-        drawTextAligned(dc, DATE_TEXT_X - 20, DATE_Y, font, glyph, Graphics.TEXT_JUSTIFY_RIGHT);
-        drawTextAligned(dc, DATE_TEXT_X - 14, DATE_Y, Graphics.FONT_XTINY, sunTime, Graphics.TEXT_JUSTIFY_LEFT);
+        drawTextAligned(dc, sunsetSurfDateXOffset + DATE_TEXT_X - 20, DATE_Y - sunsetSurfDateYOffset-2, font, glyph, Graphics.TEXT_JUSTIFY_RIGHT);
+        drawTextAligned(dc, sunsetSurfDateXOffset + DATE_TEXT_X - 12, DATE_Y - sunsetSurfDateYOffset, Graphics.FONT_XTINY, sunTime, Graphics.TEXT_JUSTIFY_LEFT);
     }
 
     // Surf mode bottom section — swell view
@@ -1026,34 +1030,41 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     // Surf mode bottom section — tide curve view
     // Filled area under curve, gap at "now", triangle marker, tick marks + time labels at events
+    // Optimized: O(N) single pass — pre-builds segment list, no inner array walks per pixel.
     private function drawTideCurve(dc as Dc, dm as DataManager) as Void {
-        // Derived positions from constants
         var curveTopY = TC_Y + TC_LABEL_HEIGHT;
         var curveBottomY = curveTopY + TC_CURVE_HEIGHT;
         var leftX = TC_LEFT_X;
         var rightX = TC_RIGHT_X;
-        var nowGapHalf = TC_NOW_GAP_HALF; // half-width of the "now" gap in pixels
+        var nowGapHalf = TC_NOW_GAP_HALF;
+        var width = rightX - leftX;
 
         if (dm.tideExtremes == null || dm.tideExtremes.size() < 2) {
             drawTextAligned(dc, 88, curveTopY + TC_CURVE_HEIGHT / 2, Graphics.FONT_XTINY, "--", Graphics.TEXT_JUSTIFY_CENTER);
             return;
         }
 
-        // Time range: local today (midnight to midnight)
         var now = Time.now();
         var startTime = Time.today().value().toFloat();
         var endTime = startTime + 86400.0;
+        var timeSpan = endTime - startTime;
         var nowVal = now.value().toFloat();
-        var nowX = leftX + ((nowVal - startTime) / (endTime - startTime) * (rightX - leftX)).toNumber();
+        var nowX = leftX + ((nowVal - startTime) / timeSpan * width).toNumber();
 
-        // Find height range from all extremes
+        // --- Pre-extract event times and heights into flat arrays (one pass over tideExtremes) ---
+        var numEvents = dm.tideExtremes.size();
+        var evTimes = new [numEvents];
+        var evHeights = new [numEvents];
         var minH = 999.0;
         var maxH = -999.0;
-        for (var i = 0; i < dm.tideExtremes.size(); i++) {
+        for (var i = 0; i < numEvents; i++) {
             var entry = dm.tideExtremes[i] as Dictionary;
-            var h = entry["height"];
-            if (h != null) {
-                var hf = (h as Float).toFloat();
+            var et = entry["time"];
+            var eh = entry["height"];
+            evTimes[i] = (et != null) ? (et as Number).toFloat() : 0.0;
+            evHeights[i] = (eh != null) ? (eh as Float).toFloat() : 0.0;
+            if (eh != null) {
+                var hf = evHeights[i];
                 if (hf < minH) { minH = hf; }
                 if (hf > maxH) { maxH = hf; }
             }
@@ -1064,116 +1075,92 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         maxH += hRange * TC_HEIGHT_PAD;
         hRange = maxH - minH;
 
-        // Helper: interpolate height at time t
-        // (inline since Monkey C doesn't support closures)
+        // --- Find initial segment: the pair of events surrounding the first pixel's time ---
+        var segIdx = 0; // index of the "next" event in the current segment
+        // Advance segIdx so evTimes[segIdx] > startTime (first pixel's time)
+        while (segIdx < numEvents && evTimes[segIdx] <= startTime) {
+            segIdx++;
+        }
 
-        // Draw filled area under curve + curve line
+        // Pre-compute now marker height for triangle (avoids separate array walk)
+        var nowPy = curveBottomY;
+
+        // --- Single pass: draw filled area under curve ---
         for (var x = leftX; x <= rightX; x++) {
-            var t = startTime + (x - leftX).toFloat() / (rightX - leftX).toFloat() * (endTime - startTime);
+            var t = startTime + (x - leftX).toFloat() / width.toFloat() * timeSpan;
 
-            // Find surrounding events
-            var prev = null;
-            var next = null;
-            for (var i = 0; i < dm.tideExtremes.size(); i++) {
-                var entry = dm.tideExtremes[i] as Dictionary;
-                var et = entry["time"] as Number;
-                if (et != null) {
-                    if (et.toFloat() <= t) { prev = entry; }
-                    else if (next == null) { next = entry; }
-                }
+            // Advance segment pointer if we've passed the current "next" event
+            while (segIdx < numEvents && evTimes[segIdx] <= t) {
+                segIdx++;
             }
 
-            var height = null;
-            if (prev != null && next != null) {
-                var pt = (prev["time"] as Number).toFloat();
-                var nt = (next["time"] as Number).toFloat();
-                var ph = (prev["height"] as Float).toFloat();
-                var nh = (next["height"] as Float).toFloat();
+            // Interpolate height at time t
+            var height;
+            if (segIdx > 0 && segIdx < numEvents) {
+                // Between two events: cosine interpolation
+                var pt = evTimes[segIdx - 1];
+                var nt = evTimes[segIdx];
+                var ph = evHeights[segIdx - 1];
+                var nh = evHeights[segIdx];
                 var frac = (t - pt) / (nt - pt);
                 height = ph + (nh - ph) * (1.0 - Math.cos(frac * Math.PI)) / 2.0;
-            } else if (prev != null) {
-                height = (prev["height"] as Float).toFloat();
-            } else if (next != null) {
-                height = (next["height"] as Float).toFloat();
+            } else if (segIdx > 0) {
+                // After last event: use last height
+                height = evHeights[segIdx - 1];
+            } else {
+                // Before first event: use first height
+                height = evHeights[0];
             }
 
-            if (height != null) {
-                var py = curveBottomY - ((height - minH) / hRange * TC_CURVE_HEIGHT).toNumber();
-                if (py < curveTopY) { py = curveTopY; }
-                if (py > curveBottomY) { py = curveBottomY; }
+            var py = curveBottomY - ((height - minH) / hRange * TC_CURVE_HEIGHT).toNumber();
+            if (py < curveTopY) { py = curveTopY; }
+            if (py > curveBottomY) { py = curveBottomY; }
 
-                // Now marker: dithered checkerboard for "gray" effect, solid fill elsewhere
-                var inNowGap = (x >= nowX - nowGapHalf && x <= nowX + nowGapHalf);
-                if (inNowGap) {
-                    for (var dy = py; dy < curveBottomY; dy++) {
-                        if ((x + dy) % 2 == 0) {
-                            dc.drawPoint(x, dy);
-                        }
+            // Capture now marker Y for triangle
+            if (x == nowX) { nowPy = py; }
+
+            // Draw: dithered checkerboard at "now" gap, solid fill elsewhere
+            var inNowGap = (x >= nowX - nowGapHalf && x <= nowX + nowGapHalf);
+            if (inNowGap) {
+                for (var dy = py; dy < curveBottomY; dy++) {
+                    if ((x + dy) % 2 == 0) {
+                        dc.drawPoint(x, dy);
                     }
-                } else if (py < curveBottomY) {
-                    dc.drawLine(x, py, x, curveBottomY);
                 }
+            } else if (py < curveBottomY) {
+                dc.drawLine(x, py, x, curveBottomY);
             }
         }
 
-        // Draw triangle marker at "now" position (above the curve)
+        // --- Triangle marker at "now" position (above the curve) ---
         if (nowVal >= startTime && nowVal <= endTime) {
-            // Interpolate height at now to find the curve Y
-            var nowHeight = null;
-            var prev2 = null;
-            var next2 = null;
-            for (var i = 0; i < dm.tideExtremes.size(); i++) {
-                var entry = dm.tideExtremes[i] as Dictionary;
-                var et = entry["time"] as Number;
-                if (et != null) {
-                    if (et.toFloat() <= nowVal) { prev2 = entry; }
-                    else if (next2 == null) { next2 = entry; }
-                }
-            }
-            var nowPy = curveBottomY;
-            if (prev2 != null && next2 != null) {
-                var pt = (prev2["time"] as Number).toFloat();
-                var nt = (next2["time"] as Number).toFloat();
-                var ph = (prev2["height"] as Float).toFloat();
-                var nh = (next2["height"] as Float).toFloat();
-                var frac = (nowVal - pt) / (nt - pt);
-                nowHeight = ph + (nh - ph) * (1.0 - Math.cos(frac * Math.PI)) / 2.0;
-                nowPy = curveBottomY - ((nowHeight - minH) / hRange * TC_CURVE_HEIGHT).toNumber();
-            }
             var triBottom = nowPy - TC_TRI_GAP;
             var triTopPt = triBottom - TC_TRI_HEIGHT;
             dc.fillPolygon([[nowX, triBottom], [nowX - TC_TRI_WIDTH, triTopPt], [nowX + TC_TRI_WIDTH, triTopPt]]);
         }
 
-        // Time labels at tide events (above curve, short format, aligned to nearest hour)
-        for (var i = 0; i < dm.tideExtremes.size(); i++) {
-            var entry = dm.tideExtremes[i] as Dictionary;
-            var et = entry["time"] as Number;
-            if (et != null) {
-                var etf = et.toFloat();
-                if (etf >= startTime && etf <= endTime) {
-                    // Align label X with the event position
-                    var ex = leftX + ((etf - startTime) / (endTime - startTime) * (rightX - leftX)).toNumber();
-
-                    // Short format: round to nearest hour
-                    var moment = new Time.Moment(et);
-                    var info = Gregorian.info(moment, Time.FORMAT_SHORT);
-                    var hr = info.hour;
-                    // Round: if minutes >= 30, bump hour
-                    if (info.min >= 30) { hr = (hr + 1) % 24; }
-                    var is24 = System.getDeviceSettings().is24Hour;
-                    var timeLabel;
-                    if (is24) {
-                        timeLabel = hr.toString();
-                    } else {
-                        var suffix = hr >= 12 ? "p" : "a";
-                        hr = hr % 12;
-                        if (hr == 0) { hr = 12; }
-                        timeLabel = hr.toString() + suffix;
-                    }
-
-                    drawTextAligned(dc, ex, curveTopY - TC_LABEL_GAP - 13, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
+        // --- Time labels at tide events ---
+        for (var i = 0; i < numEvents; i++) {
+            var etf = evTimes[i];
+            if (etf >= startTime && etf <= endTime) {
+                var ex = leftX + ((etf - startTime) / timeSpan * width).toNumber();
+                var entry = dm.tideExtremes[i] as Dictionary;
+                var et = entry["time"] as Number;
+                var moment = new Time.Moment(et);
+                var info = Gregorian.info(moment, Time.FORMAT_SHORT);
+                var hr = info.hour;
+                if (info.min >= 30) { hr = (hr + 1) % 24; }
+                var is24 = System.getDeviceSettings().is24Hour;
+                var timeLabel;
+                if (is24) {
+                    timeLabel = hr.toString();
+                } else {
+                    var suffix = hr >= 12 ? "p" : "a";
+                    hr = hr % 12;
+                    if (hr == 0) { hr = 12; }
+                    timeLabel = hr.toString() + suffix;
                 }
+                drawTextAligned(dc, ex, curveTopY - TC_LABEL_GAP - 13, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
             }
         }
     }
