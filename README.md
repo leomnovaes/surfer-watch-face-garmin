@@ -70,6 +70,10 @@ The watch face is divided into four zones:
 
 ### Screen Layout — Surf Mode
 
+![Surf Mode — Swell View](screenshot-surf-swell-annotated.png)
+
+![Surf Mode — Tide Curve](screenshot-surf-tide-annotated.png)
+
 **Top section** (left of tide circle)
 - Row 1: Battery percentage + fill bar icon (same as shore)
 - Row 2: Water temperature (°C/°F) + thermometer icon
