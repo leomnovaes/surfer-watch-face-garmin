@@ -138,7 +138,7 @@ Surf Mode is an alternate watch face layout optimized for surfers actively in th
 2. WHEN a double wrist gesture is detected in Surf_Mode, THE Watch_Face SHALL toggle the Bottom_Toggle state between "swell" (0) and "tide curve" (1)
 3. WHEN the Bottom_Toggle state changes, THE Watch_Face SHALL request a UI update to re-render the bottom section
 4. THE Watch_Face SHALL default the Bottom_Toggle state to 0 ("swell") when Surf_Mode is activated
-5. THE Watch_Face SHALL use a 10-second detection window for double wrist gesture (tunable to 4-5s after real watch testing)
+5. THE Watch_Face SHALL use a 4-second detection window for double wrist gesture
 6. NOTE: Watch faces cannot receive button input (no onSelect, no BehaviorDelegate). The double wrist gesture is the only available toggle mechanism.
 
 ---

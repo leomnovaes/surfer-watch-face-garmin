@@ -53,7 +53,7 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 - [x] 13. Implement bottom toggle via double wrist gesture
   - [x] 13.1 Double wrist gesture detection in `onExitSleep()` — two raises within window toggles bottom view
   - Note: Watch faces cannot receive button input (onSelect). BehaviorDelegate approach was abandoned. Double wrist gesture (raise, lower, raise) is the toggle mechanism.
-  - Note: Toggle window is 10s for simulator testing, needs tuning to 4-5s on real watch.
+  - Note: Toggle window is 4s (raise, lower, raise within 4 seconds).
 
 - [x] 14. Implement tide curve rendering
   - [x] 14.1 `drawTideCurve()` — filled area under cosine-interpolated curve
@@ -78,7 +78,7 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 ## Remaining polish tasks (not blocking release)
 - [ ] Rasterize proper tide direction icon for subscreen circle (currently tide H/L icons)
 - [ ] Rasterize proper thermometer icon for water temp (currently surfer-icons "T")
-- [ ] Tune double-gesture window from 10s to 4-5s after real watch testing
+- [x] Tune double-gesture window to 4s for real watch hardware
 
 ## Phase 2 — API Refactor (data sources optimization)
 
@@ -160,7 +160,7 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 
 ### Task 27 (previously 23): Release v2.0.0 (surf mode)
 - [ ] Follow release checklist from structure.md
-- [ ] Tune double wrist gesture window from 10s (simulator) to 4-5s for real watch hardware
+- [x] Tune double wrist gesture window to 4s for real watch hardware
 - [ ] Update all specs, README, CHANGELOG, store description
 - [ ] Regenerate screenshots (shore + surf mode)
 - [ ] Regenerate annotated diagrams for both modes

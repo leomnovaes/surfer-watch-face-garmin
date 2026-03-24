@@ -1167,7 +1167,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (surfMode != null && surfMode == 1) {
             var now = Time.now().value();
             var diff = now - lastWristRaiseTime;
-            if (lastWristRaiseTime > 0 && diff < 10) {
+            if (lastWristRaiseTime > 0 && diff < 4) {
                 // Double raise detected — toggle bottom view
                 var dm = (Application.getApp() as SurferWatchFaceApp).getDataManager();
                 if (dm != null) {

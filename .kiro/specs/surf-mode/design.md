@@ -516,7 +516,7 @@ function onExitSleep() as Void {
 }
 ```
 
-The 10-second window is for simulator testing. On a real watch, this should be tuned to 4-5 seconds to avoid accidental toggles.
+The 4-second window balances intentional activation with comfort — a natural double-raise takes 2-4 seconds.
 
 ---
 
