@@ -99,10 +99,16 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         clockRajdhani40 = WatchUi.loadResource(Rez.Fonts.ClockRajdhani40);
 
         // Derive subscreen circle geometry
-        // Default: Instinct 2/2X hardcoded values (API 3.4, no getSubscreen)
-        hrCenterX = 144;
-        hrCenterY = 31;
-        hrRadius = 31;
+        // Try dynamic subscreen API (available on API 4.1+ devices like Instinct 3)
+        if (dc has :getSubscreen) {
+            var sub = dc.getSubscreen();
+            if (sub != null) {
+                hrRadius = sub.width / 2;
+                hrCenterX = sub.x + hrRadius;
+                hrCenterY = sub.y + hrRadius;
+            }
+        }
+        // Else: keeps default Instinct 2/2X values (144, 31, 31)
         computeSubScreenLayout();
     }
 
