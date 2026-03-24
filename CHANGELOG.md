@@ -21,12 +21,22 @@
 - WMO weather code mapper for Open-Meteo conditions
 - Precipitation probability from Open-Meteo when selected as source
 - Surf mode hourly wind forecast (Open-Meteo): 24h array, advances offline when phone disconnects
+- Surf mode sunrise/sunset for surf spot (computed locally, shown in swell view, hidden in tide curve view)
+- OpenMeteoService class: consolidates all Open-Meteo API calls (swell, weather, surf wind)
 
 ### Changed
 - Swell data source: StormGlass weather → Open-Meteo Marine (free, no quota)
 - StormGlass now used only for tide extremes (1 call/day)
 - Swell stored as 3 flat arrays in Application.Storage, advances hourly via updateSwellFromForecast()
 - Surf mode OWM call extracts only wind — does not pollute shore weather fields
+- WeatherSource setting: 0=Garmin, 1=Open-Meteo, 2=OWM (OWM moved from value 1 to 2)
+- Swell fetch moved from TideService to OpenMeteoService
+
+### Fixed
+- Weather data cleared on weather source switch to prevent condition code mismatch between mappers
+- Surf wind cleared on weather source switch (was showing stale data from previous source)
+- Surf tide data no longer overwrites shore tide cache (onTideData persists to correct prefixed keys)
+- Tide curve rendering optimized from O(N×M) to O(N+M) — pre-extracted flat arrays cached in DataManager
 
 ### Fixed
 - Weather icon mapping: 5 community-validated overrides for misleading Erik Flowers mappings

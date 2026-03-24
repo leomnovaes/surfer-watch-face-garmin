@@ -144,7 +144,7 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 - [x] 25.2 Update store-description.txt
 - [x] 25.3 Update CHANGELOG
 - [x] 25.4 Update steering files (tech.md, product.md) with Open-Meteo weather API docs
-- [ ] 25.5 Regenerate screenshots and annotated diagrams for both modes
+- [x] 25.5 Regenerate screenshots and annotated diagrams for both modes
 
 ## Notes
 
