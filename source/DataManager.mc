@@ -164,12 +164,16 @@ class DataManager {
         owmFetchedAt = null;
         precipProbability = null;
         isDay = null;
+        // Also clear surf wind — source change affects surf mode wind too
+        surfWindSpeed = null;
+        surfWindDeg = null;
     }
 
     // =========================================================
     // clearPersistedWeatherData() — removes cached weather from
     // Application.Storage so loadWeatherData() doesn't restore
     // stale data from a different weather source.
+    // Also clears surf wind forecast arrays.
     // =========================================================
     function clearPersistedWeatherData() as Void {
         Application.Storage.setValue("cachedTemp", null);
@@ -179,6 +183,9 @@ class DataManager {
         Application.Storage.setValue("cachedSunrise", null);
         Application.Storage.setValue("cachedSunset", null);
         Application.Storage.setValue("owmFetchedAt", null);
+        // Clear surf wind forecast arrays (source-dependent)
+        Application.Storage.setValue("surf_windSpeeds", null);
+        Application.Storage.setValue("surf_windDirections", null);
     }
 
     // =========================================================
