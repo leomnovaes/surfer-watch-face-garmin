@@ -65,12 +65,12 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 
 - [x] 15. Checkpoint — Both bottom views toggle correctly
 
-- [ ] 16. Integration and release
-  - [ ] 16.1 Verify all surf mode requirements are covered
-  - [ ] 16.2 Update `README.md` with surf mode documentation
-  - [ ] 16.3 Update `store-description.txt` with surf mode features
-  - [ ] 16.4 Add `CHANGELOG.md` entry for surf mode release
-  - [ ] 16.5 Regenerate screenshots and annotated diagram
+- [x] 16. Integration and release
+  - [x] 16.1 Verify all surf mode requirements are covered
+  - [x] 16.2 Update `README.md` with surf mode documentation
+  - [x] 16.3 Update `store-description.txt` with surf mode features
+  - [x] 16.4 Add `CHANGELOG.md` entry for surf mode release
+  - [x] 16.5 Regenerate screenshots and annotated diagram
   - [ ] 16.6 Build `.iq` package and upload to Connect IQ
 
 - [ ] 17. Final checkpoint — Ensure all tests pass

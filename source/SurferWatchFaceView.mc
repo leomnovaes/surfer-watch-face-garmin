@@ -176,10 +176,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     // =========================================================
-    // Icon drawing methods — each renders a single icon glyph.
-    // Currently uses text placeholders; will be swapped to icon
-    // font glyphs in Task 27. All go through drawTextAligned so
-    // they share the same coordinate system as text.
+    // Icon drawing methods — each renders a single icon glyph
+    // via drawTextAligned so they share the same coordinate
+    // system as text.
     // =========================================================
     private function drawIconBattery(dc as Dc, x as Number, y as Number, dm as DataManager) as Void {
         var pct = dm.battery;

@@ -37,6 +37,13 @@
 - Surf wind cleared on weather source switch (was showing stale data from previous source)
 - Surf tide data no longer overwrites shore tide cache (onTideData persists to correct prefixed keys)
 - Tide curve rendering optimized from O(N×M) to O(N+M) — pre-extracted flat arrays cached in DataManager
+- App startup in surf mode now loads correct surf cache (was loading shore data)
+- Mode switch resets nextTideTime to force recomputation from new tide data
+- tideDataExpired Storage write only fires once (was writing every tick when expired)
+- All weather computation moved out of onUpdate into data arrival path (onBackgroundData/onSettingsChanged)
+- Garmin weather flows through onWeatherData() same as API sources — no special-casing
+- Storage I/O eliminated from per-tick render: writes only on change, forecast arrays cached in memory
+- Sunrise/sunset computed together with weather data, not separately per-tick
 
 ### Fixed
 - Weather icon mapping: 5 community-validated overrides for misleading Erik Flowers mappings
