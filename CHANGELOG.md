@@ -47,6 +47,12 @@
 - Tide window: 72h from local midnight (Time.today()) instead of 48h from UTC midnight
 - StormGlass backup key: immediate retry on 402 in same cycle (not flag-based next-cycle)
 - Tide curve triggers refresh when no data available for rendering
+- Tide data stored as flat arrays (heights, times, types) instead of array-of-Dictionaries — fixes OOM on Background.exit()
+- Tide refresh guard checks actual data exists, not just fetch day — fixes infinite retry with exhausted keys
+- Tide window starts 6h before local midnight to capture previous day's last event for curve interpolation
+- Sunrise/sunset computed on startup for all modes (not just Garmin) — fixes "--" until first background event
+- Dynamic subscreen layout via dc.getSubscreen() on API 4.1+ devices (Instinct 3)
+- Multi-device support: Instinct 2, Instinct 2X Solar, Instinct 3 Solar 45/50mm
 
 ### Fixed
 - Weather icon mapping: 5 community-validated overrides for misleading Erik Flowers mappings

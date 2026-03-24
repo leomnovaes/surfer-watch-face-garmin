@@ -1,4 +1,6 @@
-Shore Watch — a surfer-focused watch face for the Garmin Instinct 2X Solar.
+Shore Watch — a surfer-focused watch face for the Garmin Instinct series.
+
+Supported: Instinct 2, Instinct 2X Solar, Instinct 3 Solar 45/50mm.
 
 Two modes: Shore Mode for daily wear, Surf Mode for in-water use. All on one screen, no menus.
 

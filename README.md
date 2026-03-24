@@ -4,7 +4,7 @@ A surfer-focused watch face for the Garmin Instinct 2X Solar. Two modes: Shore M
 
 Built by a surfer for his own wrist, spec-driven with AI assistance. The entire project was designed and implemented using a spec-first methodology: requirements, technical design, and task list were written before any code. An AI agent (Kiro) then implemented the tasks against those specs. The specs and steering files are included in the repo so anyone can fork it, point an AI agent at the docs, and customize their own watch face.
 
-> **Target device:** Garmin Instinct 2X Solar (176x176 MIP, 2-color black & white)
+> **Supported devices:** Garmin Instinct 2, Instinct 2X Solar, Instinct 3 Solar 45/50mm (176x176 MIP, 2-color black & white)
 
 ## Screenshot
 
