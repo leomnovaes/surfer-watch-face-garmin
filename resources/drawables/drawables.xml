@@ -20,5 +20,5 @@
     <bitmap id="IcWeatherFog"          filename="ic_weather_fog.bmp"/>
     <bitmap id="IcWindArrow"           filename="ic_wind_arrow.bmp"/>
     <bitmap id="IcUmbrella"            filename="ic_umbrella.bmp"/>
-    <bitmap id="LauncherIcon"          filename="launcher_icon.svg" dithering="none"/>
+    <bitmap id="LauncherIcon"          filename="launcher_icon.png"/>
 </drawables>
