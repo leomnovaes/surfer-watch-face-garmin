@@ -172,11 +172,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             _swellNeeded = false;
             _windNeeded = false;
 
-            System.println("SHORE: tideNeeded=" + _tideNeeded.toString() + " lat=" + _lat.toString() + " lng=" + _lng.toString());
-            var dbgTideFetchedDay = Application.Storage.getValue("tideFetchedDay");
-            var dbgTideExtremes = Application.Storage.getValue("tideExtremes");
-            System.println("SHORE: tideFetchedDay=" + (dbgTideFetchedDay != null ? dbgTideFetchedDay.toString() : "null") + " tideExtremes=" + (dbgTideExtremes != null ? (dbgTideExtremes as Array).size().toString() + " events" : "null") + " todayUTC=" + todayUTC());
-
             var weatherNeeded = false;
             var weatherSource = Application.Properties.getValue("WeatherSource");
             if (weatherSource != null && weatherSource == 1) {
@@ -209,7 +204,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
 
     private function startTideFetch() as Void {
         var apiKey = getStormGlassApiKey();
-        System.println("TIDE: startTideFetch apiKey=" + (apiKey != null ? "set" : "null"));
         if (apiKey == null) { chainAfterTide(); return; }
         var ts = new TideService(method(:onTideComplete));
         ts.fetch(_lat, _lng, apiKey);
@@ -294,7 +288,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
 
     // Tide done → chain to wind (surf) or exit (shore)
     function onTideComplete(tideData as Dictionary or Null) as Void {
-        System.println("TIDE: onTideComplete data=" + (tideData != null ? "received" : "null"));
         if (tideData != null) {
             // Store flat arrays to Storage — memory efficient
             var prefix = _isSurfMode ? "surf_" : "";
