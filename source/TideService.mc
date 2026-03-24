@@ -50,6 +50,7 @@ class TideService {
 
     // Callback for StormGlass response
     function onTideResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
+        System.println("TIDE: onTideResponse code=" + responseCode.toString());
         Application.Storage.setValue("sgLastResponseCode", responseCode);
 
         // On 402 (quota exhausted), immediately retry with backup key if available
@@ -74,7 +75,10 @@ class TideService {
             return;
         }
 
-        var results = [] as Array;
+        // Parse into flat arrays — much less memory than array of Dictionaries
+        var heights = [] as Array;
+        var times = [] as Array;
+        var types = [] as Array;
         for (var i = 0; i < dataArray.size(); i++) {
             var entry = dataArray[i];
             if (entry != null && entry instanceof Dictionary) {
@@ -83,25 +87,27 @@ class TideService {
                 var type = entry["type"];
 
                 if (timeStr != null && type != null) {
-                    // Convert ISO time string to Unix timestamp
                     var unixTime = parseISOToUnix(timeStr as String);
                     if (unixTime != null) {
-                        var item = {} as Dictionary<String, Application.PropertyValueType>;
-                        item["height"] = height as Application.PropertyValueType;
-                        item["time"] = unixTime as Application.PropertyValueType;
-                        item["type"] = type as Application.PropertyValueType;
-                        results.add(item);
+                        heights.add(height);
+                        times.add(unixTime);
+                        types.add(type.equals("high") ? 1 : 0);
                     }
                 }
             }
         }
 
-        if (results.size() == 0) {
+        if (heights.size() == 0) {
             _callback.invoke(null);
             return;
         }
 
-        _callback.invoke(results);
+        // Return as dict of flat arrays
+        var result = {} as Dictionary<String, Application.PropertyValueType>;
+        result["heights"] = heights as Application.PropertyValueType;
+        result["times"] = times as Application.PropertyValueType;
+        result["types"] = types as Application.PropertyValueType;
+        _callback.invoke(result);
     }
 
     // Parse ISO 8601 time string (e.g. "2024-03-18T14:32:00+00:00") to Unix timestamp

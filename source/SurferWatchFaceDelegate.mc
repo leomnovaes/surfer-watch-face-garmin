@@ -77,6 +77,9 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         var today = todayUTC();
         if (tideFetchedDay == null) { return true; }
         if (!tideFetchedDay.equals(today)) { return true; }
+        // Even if fetch day matches, refresh if we have no actual data
+        var tideData = Application.Storage.getValue("tideHeights");
+        if (tideData == null) { return true; }
         var tideFetchLat = Application.Storage.getValue("tideFetchLat") as Float or Null;
         var tideFetchLng = Application.Storage.getValue("tideFetchLng") as Float or Null;
         if (tideFetchLat != null && tideFetchLng != null) {
@@ -92,6 +95,8 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         var today = todayUTC();
         if (tideFetchedDay == null) { return true; }
         if (!tideFetchedDay.equals(today)) { return true; }
+        var surfTideData = Application.Storage.getValue("surf_tideHeights");
+        if (surfTideData == null) { return true; }
         var tideFetchLat = Application.Storage.getValue("surf_tideFetchLat") as Float or Null;
         var tideFetchLng = Application.Storage.getValue("surf_tideFetchLng") as Float or Null;
         if (tideFetchLat == null || tideFetchLng == null) { return true; }
@@ -167,6 +172,11 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             _swellNeeded = false;
             _windNeeded = false;
 
+            System.println("SHORE: tideNeeded=" + _tideNeeded.toString() + " lat=" + _lat.toString() + " lng=" + _lng.toString());
+            var dbgTideFetchedDay = Application.Storage.getValue("tideFetchedDay");
+            var dbgTideExtremes = Application.Storage.getValue("tideExtremes");
+            System.println("SHORE: tideFetchedDay=" + (dbgTideFetchedDay != null ? dbgTideFetchedDay.toString() : "null") + " tideExtremes=" + (dbgTideExtremes != null ? (dbgTideExtremes as Array).size().toString() + " events" : "null") + " todayUTC=" + todayUTC());
+
             var weatherNeeded = false;
             var weatherSource = Application.Properties.getValue("WeatherSource");
             if (weatherSource != null && weatherSource == 1) {
@@ -199,6 +209,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
 
     private function startTideFetch() as Void {
         var apiKey = getStormGlassApiKey();
+        System.println("TIDE: startTideFetch apiKey=" + (apiKey != null ? "set" : "null"));
         if (apiKey == null) { chainAfterTide(); return; }
         var ts = new TideService(method(:onTideComplete));
         ts.fetch(_lat, _lng, apiKey);
@@ -282,17 +293,19 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     }
 
     // Tide done → chain to wind (surf) or exit (shore)
-    function onTideComplete(tideData as Array or Null) as Void {
+    function onTideComplete(tideData as Dictionary or Null) as Void {
+        System.println("TIDE: onTideComplete data=" + (tideData != null ? "received" : "null"));
         if (tideData != null) {
-            // Write tide data directly to Storage — too large for Background.exit() with 72h window
+            // Store flat arrays to Storage — memory efficient
             var prefix = _isSurfMode ? "surf_" : "";
-            Application.Storage.setValue(prefix + "tideExtremes", tideData);
+            Application.Storage.setValue(prefix + "tideHeights", tideData["heights"]);
+            Application.Storage.setValue(prefix + "tideTimes", tideData["times"]);
+            Application.Storage.setValue(prefix + "tideTypes", tideData["types"]);
             Application.Storage.setValue(prefix + "tideFetchedDay", todayUTC());
             Application.Storage.setValue(prefix + "tideFetchLat", _lat);
             Application.Storage.setValue(prefix + "tideFetchLng", _lng);
             Application.Storage.setValue(prefix + "tideDataExpired", false);
-            // Signal foreground to reload tide from Storage
-            _tideResult = true; // flag only, not the data itself
+            _tideResult = true;
         }
         var lastCode = Application.Storage.getValue("sgLastResponseCode") as Number or Null;
         if (lastCode != null && lastCode == -403) {

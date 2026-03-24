@@ -23,8 +23,10 @@ class DataManager {
     var precipProbability as Number or Null;
     var isDay as Number or Null;
 
-    // --- Cached tide data (from StormGlass, received via onBackgroundData) ---
-    var tideExtremes as Array or Null;
+    // --- Cached tide data (flat arrays from StormGlass, via Application.Storage) ---
+    var tideHeights as Array or Null;
+    var tideTimes as Array or Null;
+    var tideTypes as Array or Null;
     var tideFetchedDay as String or Null;
 
     // --- Computed from tideExtremes on each onUpdate() ---
@@ -443,25 +445,17 @@ class DataManager {
     }
 
     // =========================================================
-    // onTideData(data) — receives parsed tide Array from
-    // onBackgroundData(). Each element is a Dictionary with
-    // String keys: "height", "time", "type"
+    // onTideData() — called when foreground detects tideUpdated
+    // flag from background. Reloads flat arrays from Storage.
     // =========================================================
-    function onTideData(data as Array) as Void {
-        tideExtremes = data;
+    function onTideData() as Void {
+        var surfMode = Application.Properties.getValue("SurfMode");
+        var prefix = (surfMode != null && surfMode == 1) ? "surf_" : "";
+        tideHeights = Application.Storage.getValue(prefix + "tideHeights") as Array or Null;
+        tideTimes = Application.Storage.getValue(prefix + "tideTimes") as Array or Null;
+        tideTypes = Application.Storage.getValue(prefix + "tideTypes") as Array or Null;
         nextTideTime = null; // Force recomputation with new data
         _tideExpiredWritten = false;
-        // Persist to the correct prefixed key based on current mode
-        var surfMode = Application.Properties.getValue("SurfMode");
-        if (surfMode != null && surfMode == 1) {
-            // Surf mode: delegate already wrote to surf_tideExtremes in onTideComplete,
-            // but we also clear the surf expired flag
-            Application.Storage.setValue("surf_tideDataExpired", false);
-        } else {
-            // Shore mode: persist to unprefixed keys
-            Application.Storage.setValue("tideDataExpired", false);
-            persistTideData();
-        }
         extractTideCurveData();
     }
 
@@ -486,31 +480,27 @@ class DataManager {
     // in Application.Storage to trigger background refresh.
     // =========================================================
     function computeNextTide() as Void {
-        if (tideExtremes == null || tideExtremes.size() == 0) {
+        if (tideTimes == null || tideTimes.size() == 0) {
             nextTideTime = null;
             nextTideType = null;
             currentTideHeight = null;
             return;
         }
 
-        // Early exit: if we already have a next tide and it's still in the future, skip recomputation
         var now = Time.now().value();
         if (nextTideTime != null && nextTideTime > now) {
             return;
         }
         var nextIdx = -1;
 
-        // Walk array to find first event where time > now
-        for (var i = 0; i < tideExtremes.size(); i++) {
-            var entry = tideExtremes[i] as Dictionary;
-            var entryTime = entry["time"] as Number;
-            if (entryTime != null && entryTime > now) {
+        for (var i = 0; i < tideTimes.size(); i++) {
+            var entryTime = tideTimes[i] as Number;
+            if (entryTime > now) {
                 nextIdx = i;
                 break;
             }
         }
 
-        // If no future events found — all in past, mark expired
         if (nextIdx == -1) {
             nextTideTime = null;
             nextTideType = null;
@@ -520,14 +510,10 @@ class DataManager {
         }
 
         _tideExpiredWritten = false;
-
-        // Set next tide info — time, type, and predicted height of that event
-        var nextEntry = tideExtremes[nextIdx] as Dictionary;
-        nextTideTime = nextEntry["time"] as Number;
-        nextTideType = nextEntry["type"] as String;
-        var nextHeight = nextEntry["height"];
-        if (nextHeight != null) {
-            currentTideHeight = (nextHeight as Float).toFloat();
+        nextTideTime = tideTimes[nextIdx] as Number;
+        nextTideType = (tideTypes[nextIdx] as Number) == 1 ? "high" : "low";
+        if (tideHeights != null && nextIdx < tideHeights.size()) {
+            currentTideHeight = (tideHeights[nextIdx] as Float).toFloat();
         } else {
             currentTideHeight = null;
         }
@@ -557,32 +543,27 @@ class DataManager {
     // on every render. drawTideCurve() reads these cached arrays.
     // =========================================================
     function extractTideCurveData() as Void {
-        if (tideExtremes == null || tideExtremes.size() < 2) {
+        if (tideTimes == null || tideHeights == null || tideTimes.size() < 2) {
             tideCurveTimes = null;
             tideCurveHeights = null;
             return;
         }
-        var n = tideExtremes.size();
+        var n = tideTimes.size();
         var times = new [n];
         var heights = new [n];
         var minH = 999.0;
         var maxH = -999.0;
         for (var i = 0; i < n; i++) {
-            var entry = tideExtremes[i] as Dictionary;
-            var et = entry["time"];
-            var eh = entry["height"];
-            times[i] = (et != null) ? (et as Number).toFloat() : 0.0;
-            heights[i] = (eh != null) ? (eh as Float).toFloat() : 0.0;
+            times[i] = (tideTimes[i] as Number).toFloat();
+            heights[i] = (tideHeights[i] as Float).toFloat();
             var hf = heights[i];
-            if (eh != null) {
-                if (hf < minH) { minH = hf; }
-                if (hf > maxH) { maxH = hf; }
-            }
+            if (hf < minH) { minH = hf; }
+            if (hf > maxH) { maxH = hf; }
         }
         if (maxH <= minH) { maxH = minH + 1.0; }
         var hRange = maxH - minH;
-        tideCurveMinH = minH - hRange * 0.25;  // TC_HEIGHT_PAD_BOTTOM
-        tideCurveMaxH = maxH + hRange * 0.1;   // TC_HEIGHT_PAD
+        tideCurveMinH = minH - hRange * 0.25;
+        tideCurveMaxH = maxH + hRange * 0.1;
         tideCurveHRange = tideCurveMaxH - tideCurveMinH;
         tideCurveTimes = times;
         tideCurveHeights = heights;
@@ -594,47 +575,43 @@ class DataManager {
     // Called from onUpdate() when SurfMode=1.
     // =========================================================
     function interpolateTideHeight() as Void {
-        if (tideExtremes == null || tideExtremes.size() < 2) {
+        if (tideTimes == null || tideHeights == null || tideTimes.size() < 2) {
             interpTideHeight = null;
             return;
         }
 
         var now = Time.now().value();
-        var prevEvent = null;
-        var nextEvent = null;
+        var prevIdx = -1;
+        var nextIdx2 = -1;
 
-        for (var i = 0; i < tideExtremes.size(); i++) {
-            var entry = tideExtremes[i] as Dictionary;
-            var entryTime = entry["time"] as Number;
-            if (entryTime != null) {
-                if (entryTime <= now) {
-                    prevEvent = entry;
-                } else if (nextEvent == null) {
-                    nextEvent = entry;
-                }
+        for (var i = 0; i < tideTimes.size(); i++) {
+            var entryTime = tideTimes[i] as Number;
+            if (entryTime <= now) {
+                prevIdx = i;
+            } else if (nextIdx2 == -1) {
+                nextIdx2 = i;
             }
         }
 
-        if (prevEvent == null && nextEvent != null) {
-            interpTideHeight = (nextEvent["height"] as Float).toFloat();
+        if (prevIdx == -1 && nextIdx2 >= 0) {
+            interpTideHeight = (tideHeights[nextIdx2] as Float).toFloat();
             return;
         }
-        if (prevEvent != null && nextEvent == null) {
-            interpTideHeight = (prevEvent["height"] as Float).toFloat();
+        if (prevIdx >= 0 && nextIdx2 == -1) {
+            interpTideHeight = (tideHeights[prevIdx] as Float).toFloat();
             return;
         }
-        if (prevEvent == null || nextEvent == null) {
+        if (prevIdx == -1 || nextIdx2 == -1) {
             interpTideHeight = null;
             return;
         }
 
-        var prevTime = (prevEvent["time"] as Number).toFloat();
-        var nextTime = (nextEvent["time"] as Number).toFloat();
-        var prevHeight = (prevEvent["height"] as Float).toFloat();
-        var nextHeight = (nextEvent["height"] as Float).toFloat();
+        var prevTime = (tideTimes[prevIdx] as Number).toFloat();
+        var nextTime = (tideTimes[nextIdx2] as Number).toFloat();
+        var prevHeight = (tideHeights[prevIdx] as Float).toFloat();
+        var nextHeight = (tideHeights[nextIdx2] as Float).toFloat();
 
         var t = (now.toFloat() - prevTime) / (nextTime - prevTime);
-        // Cosine interpolation for smooth tide curve
         interpTideHeight = prevHeight + (nextHeight - prevHeight) * (1.0 - Math.cos(t * Math.PI)) / 2.0;
     }
 
@@ -710,9 +687,11 @@ class DataManager {
     // Application.Storage keys.
     // =========================================================
     function loadSurfCache() as Void {
-        tideExtremes = Application.Storage.getValue("surf_tideExtremes") as Array or Null;
+        tideHeights = Application.Storage.getValue("surf_tideHeights") as Array or Null;
+        tideTimes = Application.Storage.getValue("surf_tideTimes") as Array or Null;
+        tideTypes = Application.Storage.getValue("surf_tideTypes") as Array or Null;
         tideFetchedDay = Application.Storage.getValue("surf_tideFetchedDay") as String or Null;
-        nextTideTime = null; // Force recomputation from new tide data
+        nextTideTime = null;
         extractTideCurveData();
         loadForecastCaches();
     }
@@ -796,8 +775,9 @@ class DataManager {
     // to Application.Storage
     // =========================================================
     function persistTideData() as Void {
-        Application.Storage.setValue("tideExtremes", tideExtremes);
-        // Store today's date as the fetch day
+        Application.Storage.setValue("tideHeights", tideHeights);
+        Application.Storage.setValue("tideTimes", tideTimes);
+        Application.Storage.setValue("tideTypes", tideTypes);
         var now = Time.now();
         var today = Gregorian.info(now, Time.FORMAT_SHORT);
         tideFetchedDay = today.year.format("%04d") + "-" +
@@ -811,7 +791,9 @@ class DataManager {
     // from Application.Storage on startup
     // =========================================================
     function loadTideData() as Void {
-        tideExtremes = Application.Storage.getValue("tideExtremes") as Array or Null;
+        tideHeights = Application.Storage.getValue("tideHeights") as Array or Null;
+        tideTimes = Application.Storage.getValue("tideTimes") as Array or Null;
+        tideTypes = Application.Storage.getValue("tideTypes") as Array or Null;
         tideFetchedDay = Application.Storage.getValue("tideFetchedDay") as String or Null;
     }
 
