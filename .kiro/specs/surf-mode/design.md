@@ -4,7 +4,7 @@
 
 Surf Mode adds an alternate watch face layout to the existing Surfer Watch Face, optimized for surfers actively in the water. The user toggles between Shore Mode (default) and Surf Mode via a Connect IQ setting. In Surf Mode, the 176x176 MIP display replaces fitness/weather data with ocean-specific data: interpolated tide height, swell conditions, water temperature, solar intensity, and surf-spot wind — all sourced from a user-configured surf spot location rather than current GPS.
 
-No new source files are created. All changes are additions and branches within the existing `SurferWatchFaceView.mc`, `DataManager.mc`, `SurferWatchFaceDelegate.mc`, and resource files (`properties.xml`, `settings.xml`, `strings.xml`).
+One new source file was created: `OpenMeteoService.mc` for all Open-Meteo API calls (swell, weather, surf wind). All other changes are additions and branches within existing files.
 
 ---
 
@@ -224,7 +224,9 @@ Surf mode uses `"surf_"` prefixed keys to keep caches separate:
 
 | Key | Type | Description |
 |-----|------|-------------|
-| `"surf_tideExtremes"` | Array | Tide extremes for surf spot |
+| `"surf_tideHeights"` | Array | Tide heights for surf spot (flat array, meters) |
+| `"surf_tideTimes"` | Array | Tide event times for surf spot (flat array, unix timestamps) |
+| `"surf_tideTypes"` | Array | Tide event types for surf spot (flat array, 1=high 0=low) |
 | `"surf_tideFetchedDay"` | String | "YYYY-MM-DD" of last surf tide fetch |
 | `"surf_tideFetchLat"` | Float | Lat used for last surf tide fetch |
 | `"surf_tideFetchLng"` | Float | Lng used for last surf tide fetch |
@@ -234,7 +236,7 @@ Surf mode uses `"surf_"` prefixed keys to keep caches separate:
 | `"surf_swellDirections"` | Array | 24h hourly swell directions (degrees) from Open-Meteo |
 | `"sgLastResponseCode"` | Number | Last StormGlass HTTP response code |
 
-Shore mode continues using unprefixed keys (`"tideExtremes"`, `"tideFetchedDay"`, etc.) — no changes to existing cache.
+Shore mode uses unprefixed keys (`"tideHeights"`, `"tideTimes"`, `"tideTypes"`, `"tideFetchedDay"`, etc.).
 
 Note: Surf wind (`surfWindSpeed`, `surfWindDeg`) is not persisted to Storage — it's fetched live from OWM every temporal event and held only in DataManager memory.
 
@@ -336,15 +338,16 @@ Called when mode changes (detected in `onSettingsChanged()` or on startup):
 
 ```
 loadSurfCache():
-  tideExtremes = Storage.getValue("surf_tideExtremes")
+  tideHeights = Storage.getValue("surf_tideHeights")
+  tideTimes = Storage.getValue("surf_tideTimes")
+  tideTypes = Storage.getValue("surf_tideTypes")
   tideFetchedDay = Storage.getValue("surf_tideFetchedDay")
-  // Swell loaded from flat arrays via updateSwellFromForecast() on each onUpdate()
-  // Wind not cached — fetched live from OWM every temporal event
 
 loadShoreCache():
-  tideExtremes = Storage.getValue("tideExtremes")
+  tideHeights = Storage.getValue("tideHeights")
+  tideTimes = Storage.getValue("tideTimes")
+  tideTypes = Storage.getValue("tideTypes")
   tideFetchedDay = Storage.getValue("tideFetchedDay")
-  // Weather fields loaded via existing loadWeatherData()
 ```
 
 ### DataManager.updateSurfSensors()

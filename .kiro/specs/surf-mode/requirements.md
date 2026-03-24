@@ -121,7 +121,7 @@ Surf Mode is an alternate watch face layout optimized for surfers actively in th
 #### Acceptance Criteria
 
 1. WHILE `SurfMode` is set to 1 and the Bottom_Toggle state is "tide curve", THE Watch_Face SHALL display a Tide_Curve graph in the bottom section
-2. THE Tide_Curve SHALL plot today's tide extremes from the tideExtremes array as a curve spanning the full width of the bottom section
+2. THE Tide_Curve SHALL plot today's tide data from the tideHeights/tideTimes flat arrays as a curve spanning the full width of the bottom section
 3. THE Tide_Curve SHALL display a vertical "now" marker at the position corresponding to the current time within the day
 4. THE Tide_Curve SHALL label the high and low tide heights on the Y axis
 5. IF tide extreme data is unavailable, THEN THE Watch_Face SHALL display "--" in the bottom section instead of the Tide_Curve
@@ -232,7 +232,7 @@ Note: This requirement describes the OWM (WeatherSource=2) behavior. Open-Meteo 
 
 #### Acceptance Criteria
 
-1. THE DataManager SHALL compute an interpolated current tide height from the tideExtremes array by finding the two surrounding events (previous and next) and linearly interpolating based on the current time
+1. THE DataManager SHALL compute an interpolated current tide height from the tideTimes/tideHeights flat arrays by finding the two surrounding events (previous and next) and cosine-interpolating based on the current time
 2. WHILE `SurfMode` is set to 1, THE Watch_Face SHALL display the interpolated current tide height in the Subscreen_Circle
 3. IF only one surrounding tide event is available (e.g., before the first event of the day), THEN THE DataManager SHALL use the nearest event's height as the current height
 4. THE DataManager SHALL update the interpolated tide height on each onUpdate() call

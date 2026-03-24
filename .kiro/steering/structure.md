@@ -24,7 +24,8 @@ surfer-watch-face-instinct-2x-solar/
 │   ├── SurferWatchFaceDelegate.mc  ← Background.ServiceDelegate, makes all HTTP requests
 │   ├── DataManager.mc              ← singleton, holds cached data read by view
 │   ├── WeatherService.mc           ← OWM HTTP request logic (called from ServiceDelegate)
-│   └── TideService.mc              ← StormGlass HTTP request logic (called from ServiceDelegate)
+│   ├── OpenMeteoService.mc         ← Open-Meteo API calls: swell, weather, surf wind
+│   └── TideService.mc              ← StormGlass tide HTTP request logic (called from ServiceDelegate)
 ├── resources/
 │   ├── drawables/         ← bitmap icons (.bmp, 1-bit monochrome)
 │   ├── layouts/           ← (unused — rendering is code-driven)
