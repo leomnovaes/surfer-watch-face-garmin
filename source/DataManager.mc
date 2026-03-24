@@ -747,23 +747,15 @@ class DataManager {
             waterTemp = null;
         }
 
-        // Solar intensity
-        if (SensorHistory has :getSolarIntensityHistory) {
-            var solarIter = SensorHistory.getSolarIntensityHistory({:period => 1});
-            if (solarIter != null) {
-                var sample = solarIter.next();
-                if (sample != null && sample.data != null) {
-                    var val = sample.data;
-                    if (val >= 0 && val <= 100) {
-                        solarIntensity = val.toNumber();
-                    } else {
-                        solarIntensity = null;
-                    }
-                } else {
-                    solarIntensity = null;
-                }
+        // Solar intensity — from System.getSystemStats().solarIntensity
+        // Returns 0-100 on solar devices, null on non-solar devices
+        var stats2 = System.getSystemStats();
+        if (stats2 has :solarIntensity && stats2.solarIntensity != null) {
+            var val = stats2.solarIntensity;
+            if (val >= 0) {
+                solarIntensity = val.toNumber();
             } else {
-                solarIntensity = null;
+                solarIntensity = null; // negative = not charging
             }
         } else {
             solarIntensity = null;
