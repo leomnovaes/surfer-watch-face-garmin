@@ -191,10 +191,9 @@ class DataManager {
     // =========================================================
     // refreshGarminWeatherData() — called when background event
     // completes or settings change. For Garmin mode, reads
-    // Weather.getCurrentConditions() and computes sunrise/sunset.
-    // For surf mode with Garmin, computes surf sunrise/sunset.
-    // This is the ONLY place Garmin weather + sunrise/sunset
-    // are populated — never in the view's onUpdate().
+    // Weather.getCurrentConditions() and computes sunrise/sunset,
+    // then flows through onWeatherData() / onSurfWindData() —
+    // same path as API sources. No special-casing.
     // =========================================================
     function refreshGarminWeatherData() as Void {
         var weatherSource = Application.Properties.getValue("WeatherSource");
@@ -202,12 +201,29 @@ class DataManager {
 
         var surfMode = Application.Properties.getValue("SurfMode");
         if (surfMode != null && surfMode == 1) {
-            // Surf mode + Garmin: compute surf sunrise/sunset locally
+            // Surf mode + Garmin: compute surf sunrise/sunset, pass through onSurfWindData
+            // (no wind available from Garmin for remote surf spot)
             computeSurfSunriseSunset();
         } else {
-            // Shore mode + Garmin: read built-in weather + compute sunrise/sunset
-            updateGarminWeather();
+            // Shore mode + Garmin: build weather dict from built-in, pass through onWeatherData
+            var weatherDict = {} as Dictionary<String, Application.PropertyValueType>;
+            if (Weather has :getCurrentConditions) {
+                var conditions = Weather.getCurrentConditions();
+                if (conditions != null) {
+                    weatherDict["temp"] = conditions.temperature != null ? conditions.temperature.toFloat() as Application.PropertyValueType : null;
+                    weatherDict["conditionId"] = conditions.condition as Application.PropertyValueType;
+                    weatherDict["windSpeed"] = conditions.windSpeed != null ? conditions.windSpeed.toFloat() as Application.PropertyValueType : null;
+                    weatherDict["windDeg"] = conditions.windBearing != null ? conditions.windBearing.toNumber() as Application.PropertyValueType : null;
+                }
+            }
+            // Compute sunrise/sunset from GPS and include in the same dict
             computeSunriseSunset();
+            weatherDict["sunrise"] = sunrise as Application.PropertyValueType;
+            weatherDict["sunset"] = sunset as Application.PropertyValueType;
+            // Store fetch timestamp
+            Application.Storage.setValue("owmFetchedAt", Time.now().value());
+            // Flow through the same path as API weather data
+            onWeatherData(weatherDict);
         }
     }
 
@@ -249,24 +265,6 @@ class DataManager {
         // Clear surf wind forecast arrays (source-dependent)
         Application.Storage.setValue("surf_windSpeeds", null);
         Application.Storage.setValue("surf_windDirections", null);
-    }
-
-    // =========================================================
-    // updateGarminWeather() — reads weather from Garmin built-in
-    // Weather.getCurrentConditions(). Called from onUpdate() when
-    // WeatherSource=0 (Garmin). No background HTTP needed.
-    // =========================================================
-    function updateGarminWeather() as Void {
-        if (Weather has :getCurrentConditions) {
-            var conditions = Weather.getCurrentConditions();
-            if (conditions != null) {
-                temperature = conditions.temperature != null ? conditions.temperature.toFloat() : null;
-                weatherConditionId = conditions.condition;
-                windSpeed = conditions.windSpeed != null ? conditions.windSpeed.toFloat() : null;
-                windDeg = conditions.windBearing != null ? conditions.windBearing.toNumber() : null;
-                owmFetchedAt = Time.now().value();
-            }
-        }
     }
 
     // =========================================================
