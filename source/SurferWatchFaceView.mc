@@ -881,9 +881,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             if (dm.seaSurfaceTemp != null) {
                 var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
                 if (isMetric) {
-                    tempText = dm.seaSurfaceTemp.toNumber().toString() + "°C";
+                    tempText = dm.seaSurfaceTemp.format("%.1f") + "°C";
                 } else {
-                    tempText = (dm.seaSurfaceTemp * 1.8 + 32).toNumber().toString() + "°F";
+                    tempText = (dm.seaSurfaceTemp * 1.8 + 32).format("%.1f") + "°F";
                 }
             }
         } else {
@@ -891,9 +891,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             if (dm.waterTemp != null) {
                 var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
                 if (isMetric) {
-                    tempText = dm.waterTemp.toNumber().toString() + "°C";
+                    tempText = dm.waterTemp.format("%.1f") + "°C";
                 } else {
-                    tempText = (dm.waterTemp * 1.8 + 32).toNumber().toString() + "°F";
+                    tempText = (dm.waterTemp * 1.8 + 32).format("%.1f") + "°F";
                 }
             }
         }
