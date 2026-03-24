@@ -79,11 +79,11 @@ left_items = [
 # --- Right side labels ---
 right_items = [
     ("Solar Intensity Arc", 158,  12),
-    ("Tide Height",         144,  38),
     ("Tide Direction",      144,  18),
+    ("Tide Height",         144,  38),
     ("Moon Phase",          138,  78),
-    ("AM/PM + Seconds",     155,  98),
     ("Time",                 88,  90),
+    ("AM/PM + Seconds",     155,  98),
     ("Event Times",          50, 120),
 ]
 
