@@ -99,6 +99,63 @@ class OpenMeteoService {
     }
 
     // =========================================================
+    // fetchSwell() — fetches swell forecast from Open-Meteo
+    // Marine API. Free, no API key, flat array response (~1.2KB
+    // for 24h). Returns dict with heights, periods, directions arrays.
+    // =========================================================
+    private var _swellCallback as Method or Null;
+
+    function fetchSwell(lat as Float, lng as Float, callback as Method) as Void {
+        _swellCallback = callback;
+
+        var url = "https://marine-api.open-meteo.com/v1/marine"
+            + "?latitude=" + lat.toString()
+            + "&longitude=" + lng.toString()
+            + "&hourly=swell_wave_height,swell_wave_period,swell_wave_direction"
+            + "&forecast_days=1";
+
+        var options = {
+            :method => Communications.HTTP_REQUEST_METHOD_GET,
+            :responseType => Communications.HTTP_RESPONSE_CONTENT_TYPE_JSON
+        };
+
+        Communications.makeWebRequest(url, null, options, method(:onSwellResponse));
+    }
+
+    function onSwellResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
+        if (responseCode != 200 || data == null || !(data instanceof Dictionary)) {
+            if (_swellCallback != null) { _swellCallback.invoke(null); }
+            return;
+        }
+
+        var hourly = data["hourly"];
+        if (hourly == null || !(hourly instanceof Dictionary)) {
+            if (_swellCallback != null) { _swellCallback.invoke(null); }
+            return;
+        }
+
+        var times = hourly["time"] as Array or Null;
+        var heights = hourly["swell_wave_height"] as Array or Null;
+        var periods = hourly["swell_wave_period"] as Array or Null;
+        var dirs = hourly["swell_wave_direction"] as Array or Null;
+
+        if (times == null || heights == null || periods == null || dirs == null || times.size() == 0) {
+            if (_swellCallback != null) { _swellCallback.invoke(null); }
+            return;
+        }
+
+        var result = {} as Dictionary<String, Application.PropertyValueType>;
+        result["times"] = times as Application.PropertyValueType;
+        result["heights"] = heights as Application.PropertyValueType;
+        result["periods"] = periods as Application.PropertyValueType;
+        result["directions"] = dirs as Application.PropertyValueType;
+
+        if (_swellCallback != null) {
+            _swellCallback.invoke(result);
+        }
+    }
+
+    // =========================================================
     // fetchSurfWind() — Surf mode: fetches 24h hourly wind
     // forecast from Open-Meteo. Response ~986 bytes.
     // Returns dict with "speeds" and "directions" flat arrays.

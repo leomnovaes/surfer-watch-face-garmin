@@ -191,8 +191,8 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // =========================================================
 
     private function startSwellFetch() as Void {
-        var ts = new TideService(method(:onTideComplete));
-        ts.fetchSwell(_lat, _lng, method(:onSwellDone));
+        var oms = new OpenMeteoService(method(:onShoreWeatherDone));
+        oms.fetchSwell(_lat, _lng, method(:onSwellDone));
     }
 
     private function startTideFetch() as Void {
