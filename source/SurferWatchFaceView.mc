@@ -1135,23 +1135,3 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
 }
 
-
-// BehaviorDelegate for button press handling (surf mode bottom toggle)
-class SurferWatchFaceBehaviorDelegate extends WatchUi.BehaviorDelegate {
-    function initialize() {
-        BehaviorDelegate.initialize();
-    }
-
-    function onSelect() as Boolean {
-        var surfMode = Application.Properties.getValue("SurfMode");
-        if (surfMode != null && surfMode == 1) {
-            var dm = (Application.getApp() as SurferWatchFaceApp).getDataManager();
-            if (dm != null) {
-                dm.bottomToggleState = (dm.bottomToggleState == 0) ? 1 : 0;
-                WatchUi.requestUpdate();
-            }
-            return true;
-        }
-        return false;
-    }
-}

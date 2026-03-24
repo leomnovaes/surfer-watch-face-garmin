@@ -53,7 +53,6 @@ class TideService {
 
     // Callback for StormGlass response
     function onTideResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
-        System.println("TIDE: response code=" + responseCode);
         Application.Storage.setValue("sgLastResponseCode", responseCode);
         if (responseCode != 200 || data == null || !(data instanceof Dictionary)) {
             _callback.invoke(null);
@@ -163,7 +162,6 @@ class TideService {
     private var _swellCallback as Method or Null;
 
     function onSwellResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
-        System.println("SWELL: response code=" + responseCode);
         if (responseCode != 200 || data == null || !(data instanceof Dictionary)) {
             if (_swellCallback != null) {
                 _swellCallback.invoke(null);

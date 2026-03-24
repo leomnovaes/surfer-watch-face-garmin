@@ -43,9 +43,6 @@ class DataManager {
     var swellHeight as Float or Null;
     var swellPeriod as Float or Null;
     var swellDirection as Number or Null;
-    var surfWindSpeed as Float or Null;
-    var surfWindDeg as Number or Null;
-    var swellFetchedDay as String or Null;
 
     // --- Surf mode: sensor data ---
     var waterTemp as Float or Null;
@@ -440,12 +437,8 @@ class DataManager {
     function loadSurfCache() as Void {
         tideExtremes = Application.Storage.getValue("surf_tideExtremes") as Array or Null;
         tideFetchedDay = Application.Storage.getValue("surf_tideFetchedDay") as String or Null;
-        swellHeight = Application.Storage.getValue("surf_swellHeight") as Float or Null;
-        swellPeriod = Application.Storage.getValue("surf_swellPeriod") as Float or Null;
-        swellDirection = Application.Storage.getValue("surf_swellDirection") as Number or Null;
-        surfWindSpeed = Application.Storage.getValue("surf_windSpeed") as Float or Null;
-        surfWindDeg = Application.Storage.getValue("surf_windDeg") as Number or Null;
-        swellFetchedDay = Application.Storage.getValue("surf_swellFetchedDay") as String or Null;
+        // Swell loaded from flat arrays via updateSwellFromForecast() on each onUpdate()
+        // Wind not cached — fetched live from OWM every temporal event
     }
 
     // =========================================================

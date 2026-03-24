@@ -1,6 +1,30 @@
 # Changelog
 
-## v1.1.0 (unreleased)
+## v2.0.0 (unreleased)
+
+### Added
+- Surf mode: alternate watch face layout for in-water use
+- Subscreen: interpolated tide height + solar intensity arc + tide direction icon
+- Water temperature from watch sensor
+- Swell data: height, period, direction from Open-Meteo Marine API (free, no key)
+- Tide curve graph with filled area, dithered "now" marker, time labels
+- Double wrist gesture toggles between swell view and tide curve
+- Surf spot location settings (manual entry + GPS copy)
+- StormGlass backup API key setting
+- Surfing, thermometer, timer-sand icons for surf mode
+- Open-Meteo Marine API integration (free, unlimited, flat response)
+
+### Changed
+- Swell data source: StormGlass → Open-Meteo Marine (free, no quota)
+- StormGlass now used only for tide extremes (1 call/day)
+- Background chain: Open-Meteo swell → SG tide → OWM wind (surf mode)
+- Swell display advances hourly through 24h forecast array
+
+### Fixed
+- Weather icon mapping: 5 community-validated overrides for misleading Erik Flowers mappings
+- Background memory: flat array storage instead of nested dictionaries
+
+## v1.1.0
 
 ### Added
 - Tiered weather source: Garmin built-in (default, zero config) or OpenWeatherMap (optional)

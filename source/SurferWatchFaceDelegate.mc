@@ -138,7 +138,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             _tideNeeded = isSurfTideRefreshNeeded(_lat, _lng);
             var owmKey = Application.Properties.getValue("OWMApiKey") as String or Null;
             _windNeeded = (owmKey != null && !owmKey.equals(""));
-            System.println("SURF: swellNeeded=" + _swellNeeded + " tideNeeded=" + _tideNeeded + " windNeeded=" + _windNeeded);
 
             // Surf chain: swell → tide → wind
             if (_swellNeeded) {
@@ -178,14 +177,12 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // =========================================================
 
     private function startSwellFetch() as Void {
-        System.println("SWELL: startSwellFetch (Open-Meteo, no key needed)");
         var ts = new TideService(method(:onTideComplete));
         ts.fetchSwell(_lat, _lng, method(:onSwellDone));
     }
 
     private function startTideFetch() as Void {
         var apiKey = getStormGlassApiKey();
-        System.println("TIDE: startTideFetch key=" + (apiKey != null ? "set" : "null"));
         if (apiKey == null) { chainAfterTide(); return; }
         var ts = new TideService(method(:onTideComplete));
         ts.fetch(_lat, _lng, apiKey);
@@ -193,7 +190,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
 
     private function startWindFetch() as Void {
         var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
-        System.println("WIND: startWindFetch key=" + (apiKey != null ? "set" : "null"));
         if (apiKey == null || apiKey.equals("")) { exitWithAllResults(); return; }
         var units = "metric";
         if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) { units = "imperial"; }
@@ -204,7 +200,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Shore mode: OWM weather fetch, chains to tide
     private function startShoreWeatherFetch() as Void {
         var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
-        System.println("SHORE WEATHER: startFetch key=" + (apiKey != null ? "set" : "null"));
         if (apiKey == null || apiKey.equals("")) {
             if (_tideNeeded) { startTideFetch(); } else { exitWithAllResults(); }
             return;
@@ -221,7 +216,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
 
     // Swell done — receives dict of flat arrays from Open-Meteo
     function onSwellDone(swellData as Dictionary or Null) as Void {
-        System.println("SWELL: done data=" + (swellData != null ? "received" : "null"));
         if (swellData != null) {
             // Store flat arrays directly — no conversion needed
             Application.Storage.setValue("surf_swellHeights", swellData["heights"]);
@@ -257,7 +251,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
 
     // Tide done → chain to wind (surf) or exit (shore)
     function onTideComplete(tideData as Array or Null) as Void {
-        System.println("TIDE: done data=" + (tideData != null ? "received" : "null"));
         if (tideData != null) {
             _tideResult = tideData;
             var prefix = _isSurfMode ? "surf_" : "";
@@ -271,7 +264,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         }
         var lastCode = Application.Storage.getValue("sgLastResponseCode") as Number or Null;
         if (lastCode != null && lastCode == -403) {
-            System.println("TIDE: -403 memory exhausted, exiting cycle");
             exitWithAllResults();
             return;
         }
@@ -288,14 +280,12 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
 
     // Wind/weather done → exit (surf mode, last in chain)
     function onWindDone(weatherData as Dictionary or Null) as Void {
-        System.println("WIND: done data=" + (weatherData != null ? "received" : "null"));
         _weatherResult = weatherData;
         exitWithAllResults();
     }
 
     // Shore weather done → chain to tide
     function onShoreWeatherDone(weatherData as Dictionary or Null) as Void {
-        System.println("SHORE WEATHER: done data=" + (weatherData != null ? "received" : "null"));
         _weatherResult = weatherData;
         if (_tideNeeded) {
             startTideFetch();
