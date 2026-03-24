@@ -105,30 +105,30 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 - [x] Update store-description.txt with surf mode features
 
 ### Task 21: Add Open-Meteo as third weather source
-- [ ] 21.1 Update `WeatherSource` setting from 2-value to 3-value list: 0=Garmin, 1=Open-Meteo, 2=OWM
-- [ ] 21.2 Update `properties.xml`, `settings.xml`, `strings.xml` with new option
-- [ ] 21.3 Update all code that reads `WeatherSource` to handle value 2 for OWM (was 1)
-- [ ] 21.4 Implement `OpenMeteoService` class (`:background` annotated) with `fetchCurrent()` for shore mode
-- [ ] 21.5 Parse Open-Meteo current response: temperature_2m, weather_code, wind_speed_10m, wind_direction_10m, precipitation_probability, is_day
-- [ ] 21.6 Parse sunrise/sunset from daily response (ISO local time → Unix timestamp using utc_offset_seconds)
-- [ ] 21.7 Add `precipProbability` field to DataManager, populated from Open-Meteo response
-- [ ] 21.8 Update view to use `dm.precipProbability` when WeatherSource=1, Garmin built-in otherwise
-- [ ] 21.9 Wire Open-Meteo shore weather into delegate chain (WeatherSource=1 → OpenMeteoService.fetchCurrent() → onShoreWeatherDone())
+- [x] 21.1 Update `WeatherSource` setting from 2-value to 3-value list: 0=Garmin, 1=Open-Meteo, 2=OWM
+- [x] 21.2 Update `properties.xml`, `settings.xml`, `strings.xml` with new option
+- [x] 21.3 Update all code that reads `WeatherSource` to handle value 2 for OWM (was 1)
+- [x] 21.4 Implement `OpenMeteoService` class (`:background` annotated) with `fetchCurrent()` for shore mode
+- [x] 21.5 Parse Open-Meteo current response: temperature_2m, weather_code, wind_speed_10m, wind_direction_10m, precipitation_probability, is_day
+- [x] 21.6 Parse sunrise/sunset from daily response (ISO local time → Unix timestamp using utc_offset_seconds)
+- [x] 21.7 Add `precipProbability` and `isDay` fields to DataManager, populated from Open-Meteo response
+- [x] 21.8 Update view to use `dm.precipProbability` when WeatherSource=1, Garmin built-in otherwise
+- [x] 21.9 Wire Open-Meteo shore weather into delegate chain (WeatherSource=1 → OpenMeteoService.fetchCurrent() → onShoreWeatherDone())
 
 ### Task 22: Implement WMO weather code mapper
-- [ ] 22.1 Implement `wmoToWeatherGlyph(code, isNight)` in SurferWatchFaceView
-- [ ] 22.2 Map all WMO codes (0, 1-3, 45/48, 51-57, 61-67, 71-77, 80-86, 95-99) to existing glyphs
-- [ ] 22.3 Use `is_day` from Open-Meteo response for day/night variant selection
-- [ ] 22.4 Update `drawIconWeather()` to select mapper based on WeatherSource (0=Garmin, 1=WMO, 2=OWM)
+- [x] 22.1 Implement `wmoToWeatherGlyph(code, isNight)` in SurferWatchFaceView
+- [x] 22.2 Map all WMO codes (0, 1-3, 45/48, 51-57, 61-67, 71-77, 80-86, 95-99) to existing glyphs
+- [x] 22.3 Use `is_day` from Open-Meteo response for day/night variant selection
+- [x] 22.4 Update `drawIconWeather()` to select mapper based on WeatherSource (0=Garmin, 1=WMO, 2=OWM)
 
 ### Task 23: Implement surf mode hourly wind forecast (Open-Meteo)
-- [ ] 23.1 Add `fetchSurfWind()` to OpenMeteoService — hourly wind_speed_10m + wind_direction_10m, forecast_days=1
-- [ ] 23.2 Store 24h wind arrays in Application.Storage (`surf_windSpeeds`, `surf_windDirections`)
-- [ ] 23.3 Implement `updateSurfWindFromForecast()` in DataManager — picks current hour's entry (same pattern as swell)
-- [ ] 23.4 Wire into onUpdate() surf mode: call `updateSurfWindFromForecast()` when WeatherSource=1
-- [ ] 23.5 Update delegate surf chain: when WeatherSource=1, chain to OpenMeteoService.fetchSurfWind() instead of WeatherService.fetch()
-- [ ] 23.6 When WeatherSource=0 (Garmin), skip wind fetch in surf mode (display "--")
-- [ ] 23.7 When WeatherSource=2 (OWM), keep existing OWM wind fetch (current only, no forecast array)
+- [x] 23.1 Add `fetchSurfWind()` to OpenMeteoService — hourly wind_speed_10m + wind_direction_10m, forecast_days=1
+- [x] 23.2 Store 24h wind arrays in Application.Storage (`surf_windSpeeds`, `surf_windDirections`)
+- [x] 23.3 Implement `updateSurfWindFromForecast()` in DataManager — picks current hour's entry (same pattern as swell)
+- [x] 23.4 Wire into onUpdate() surf mode: call `updateSurfWindFromForecast()` when WeatherSource=1
+- [x] 23.5 Update delegate surf chain: when WeatherSource=1, chain to OpenMeteoService.fetchSurfWind() instead of WeatherService.fetch()
+- [x] 23.6 When WeatherSource=0 (Garmin), skip wind fetch in surf mode (display "--")
+- [x] 23.7 When WeatherSource=2 (OWM), keep existing OWM wind fetch (current only, no forecast array)
 
 ### Task 24: Checkpoint — Open-Meteo weather works in both modes
 - [ ] 24.1 Verify shore mode with WeatherSource=1: temp, condition icon, wind, precip, sunrise/sunset all display correctly
