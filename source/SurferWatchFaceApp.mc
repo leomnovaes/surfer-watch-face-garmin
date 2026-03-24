@@ -50,7 +50,6 @@ class SurferWatchFaceApp extends Application.AppBase {
     // New app settings have been received so trigger a UI update
     function onSettingsChanged() as Void {
         if (dataManager != null) {
-            dataManager.clearWeatherData();
             var surfMode = Application.Properties.getValue("SurfMode");
             if (surfMode != null && surfMode == 1) {
                 dataManager.loadSurfCache();
@@ -75,7 +74,12 @@ class SurferWatchFaceApp extends Application.AppBase {
             if (dataManager != null) {
                 var weatherData = data["weather"];
                 if (weatherData != null && weatherData instanceof Dictionary) {
-                    dataManager.onWeatherData(weatherData as Dictionary);
+                    var surfMode = Application.Properties.getValue("SurfMode");
+                    if (surfMode != null && surfMode == 1) {
+                        dataManager.onSurfWindData(weatherData as Dictionary);
+                    } else {
+                        dataManager.onWeatherData(weatherData as Dictionary);
+                    }
                 }
                 var tideData = data["tides"];
                 if (tideData != null && tideData instanceof Array) {

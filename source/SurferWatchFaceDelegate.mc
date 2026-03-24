@@ -280,7 +280,13 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
 
     // Wind/weather done → exit (surf mode, last in chain)
     function onWindDone(weatherData as Dictionary or Null) as Void {
-        _weatherResult = weatherData;
+        if (weatherData != null) {
+            // In surf mode, only extract wind — don't pollute shore weather fields
+            var windResult = {} as Dictionary<String, Application.PropertyValueType>;
+            windResult["windSpeed"] = weatherData["windSpeed"] as Application.PropertyValueType;
+            windResult["windDeg"] = weatherData["windDeg"] as Application.PropertyValueType;
+            _weatherResult = windResult;
+        }
         exitWithAllResults();
     }
 

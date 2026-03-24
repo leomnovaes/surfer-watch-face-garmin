@@ -837,22 +837,19 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     // Surf mode middle section: wind, time, moon/ampm/seconds
     private function drawMiddleSection_Surf(dc as Dc, dm as DataManager) as Void {
-        // Left column — Wind from OWM for surf spot (or Garmin fallback)
-        if (dm.windDeg != null) {
-            drawWindArrow(dc, MID_LEFT_X, MID_ICON_Y + WIND_ARROW_Y_OFFSET, dm.windDeg, WIND_ARROW_SIZE);
+        // Left column — Wind from OWM for surf spot (separate fields from shore)
+        if (dm.surfWindDeg != null) {
+            drawWindArrow(dc, MID_LEFT_X, MID_ICON_Y + WIND_ARROW_Y_OFFSET, dm.surfWindDeg, WIND_ARROW_SIZE);
         }
         var windText = "--";
-        if (dm.windSpeed != null) {
+        if (dm.surfWindSpeed != null) {
             var windUnit = Application.Properties.getValue("WindSpeedUnit");
             var speed;
-            var speedMs = dm.windSpeed; // OWM metric=m/s, imperial=mph
+            var speedMs = dm.surfWindSpeed; // OWM metric=m/s, imperial=mph
             // Normalize to m/s for conversion
-            var weatherSource = Application.Properties.getValue("WeatherSource");
-            if (weatherSource != null && weatherSource == 1) {
-                var isImperial = System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE;
-                if (isImperial) {
-                    speedMs = dm.windSpeed / 2.237;
-                }
+            var isImperial = System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE;
+            if (isImperial) {
+                speedMs = dm.surfWindSpeed / 2.237;
             }
             if (windUnit == null || windUnit == 0) {
                 var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;

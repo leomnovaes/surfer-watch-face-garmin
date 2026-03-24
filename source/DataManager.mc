@@ -43,6 +43,8 @@ class DataManager {
     var swellHeight as Float or Null;
     var swellPeriod as Float or Null;
     var swellDirection as Number or Null;
+    var surfWindSpeed as Float or Null;
+    var surfWindDeg as Number or Null;
 
     // --- Surf mode: sensor data ---
     var waterTemp as Float or Null;
@@ -410,6 +412,13 @@ class DataManager {
         swellHeight = data["swellHeight"] as Float or Null;
         swellPeriod = data["swellPeriod"] as Float or Null;
         swellDirection = data["swellDirection"] as Number or Null;
+    }
+
+    // onSurfWindData(data) — receives OWM wind for surf spot.
+    // Stored separately from shore wind fields.
+    function onSurfWindData(data as Dictionary) as Void {
+        surfWindSpeed = data["windSpeed"] as Float or Null;
+        surfWindDeg = data["windDeg"] as Number or Null;
     }
 
     // updateSwellFromForecast() — picks the current hour's entry
