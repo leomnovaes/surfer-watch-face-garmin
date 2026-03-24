@@ -71,9 +71,9 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
   - [x] 16.3 Update `store-description.txt` with surf mode features
   - [x] 16.4 Add `CHANGELOG.md` entry for surf mode release
   - [x] 16.5 Regenerate screenshots and annotated diagram
-  - [ ] 16.6 Build `.iq` package and upload to Connect IQ
+  - [x] 16.6 Build `.iq` package and upload to Connect IQ
 
-- [ ] 17. Final checkpoint — Ensure all tests pass
+- [x] 17. Final checkpoint — Ensure all tests pass
 
 ## Remaining polish tasks (not blocking release)
 - [ ] Rasterize proper tide direction icon for subscreen circle (currently tide H/L icons)
@@ -159,9 +159,9 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 - [x] Remove all `System.println()` debug statements from delegate, TideService, view
 
 ### Task 27 (previously 23): Release v2.0.0 (surf mode)
-- [ ] Follow release checklist from structure.md
+- [x] Follow release checklist from structure.md
 - [x] Tune double wrist gesture window to 4s for real watch hardware
-- [ ] Update all specs, README, CHANGELOG, store description
-- [ ] Regenerate screenshots (shore + surf mode)
-- [ ] Regenerate annotated diagrams for both modes
+- [x] Update all specs, README, CHANGELOG, store description
+- [x] Regenerate screenshots (shore + surf mode)
+- [x] Regenerate annotated diagrams for both modes
 - [ ] Build and upload to Connect IQ

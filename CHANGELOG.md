@@ -1,6 +1,6 @@
 # Changelog
 
-## v2.0.0 (unreleased)
+## v2.0.0
 
 ### Added
 - Surf mode: alternate watch face layout for in-water use, toggled via settings
