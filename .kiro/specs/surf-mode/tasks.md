@@ -160,6 +160,7 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 
 ### Task 27 (previously 23): Release v2.0.0 (surf mode)
 - [ ] Follow release checklist from structure.md
+- [ ] Tune double wrist gesture window from 10s (simulator) to 4-5s for real watch hardware
 - [ ] Update all specs, README, CHANGELOG, store description
 - [ ] Regenerate screenshots (shore + surf mode)
 - [ ] Regenerate annotated diagrams for both modes

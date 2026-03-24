@@ -11,7 +11,7 @@ import Toybox.Weather;
 
 class DataManager {
 
-    // --- Cached weather data (from OWM, received via onBackgroundData) ---
+    // --- Cached weather data (from OWM or Open-Meteo, received via onBackgroundData) ---
     var temperature as Float or Null;
     var weatherConditionId as Number or Null;
     var windSpeed as Float or Null;
@@ -20,6 +20,8 @@ class DataManager {
     var sunset as Number or Null;
     var moonPhase as Float or Null;
     var owmFetchedAt as Number or Null;
+    var precipProbability as Number or Null;
+    var isDay as Number or Null;
 
     // --- Cached tide data (from StormGlass, received via onBackgroundData) ---
     var tideExtremes as Array or Null;
@@ -160,6 +162,8 @@ class DataManager {
         sunrise = null;
         sunset = null;
         owmFetchedAt = null;
+        precipProbability = null;
+        isDay = null;
     }
 
     // =========================================================
@@ -257,12 +261,12 @@ class DataManager {
     }
 
     // =========================================================
-    // onWeatherData(data) — receives parsed OWM Dictionary from
-    // onBackgroundData(). Keys: temp, conditionId, windSpeed,
-    // windDeg, sunrise, sunset.
+    // onWeatherData(data) — receives parsed weather Dictionary from
+    // onBackgroundData(). Works for both OWM and Open-Meteo.
+    // OWM keys: temp, conditionId, windSpeed, windDeg, sunrise, sunset
+    // Open-Meteo adds: precipProbability, isDay
     // owmFetchedAt is read from Application.Storage (written by
-    // WeatherService in the background process) — single source
-    // of truth for refresh timing.
+    // WeatherService/OpenMeteoService in the background process).
     // =========================================================
     function onWeatherData(data as Dictionary) as Void {
         temperature = data["temp"] as Float or Null;
@@ -271,7 +275,9 @@ class DataManager {
         windDeg = data["windDeg"] as Number or Null;
         sunrise = data["sunrise"] as Number or Null;
         sunset = data["sunset"] as Number or Null;
-        // Read owmFetchedAt from Storage (written by WeatherService in background)
+        precipProbability = data["precipProbability"] as Number or Null;
+        isDay = data["isDay"] as Number or Null;
+        // Read owmFetchedAt from Storage (written by WeatherService/OpenMeteoService in background)
         owmFetchedAt = Application.Storage.getValue("owmFetchedAt") as Number or Null;
         persistWeatherData();
     }
@@ -437,6 +443,23 @@ class DataManager {
         swellHeight = heights[idx] != null ? (heights[idx] as Float).toFloat() : null;
         swellPeriod = (periods != null && idx < periods.size() && periods[idx] != null) ? (periods[idx] as Float).toFloat() : null;
         swellDirection = (dirs != null && idx < dirs.size() && dirs[idx] != null) ? (dirs[idx] as Number).toNumber() : null;
+    }
+
+    // updateSurfWindFromForecast() — picks the current hour's wind
+    // from stored Open-Meteo hourly forecast arrays. Called from
+    // onUpdate() when SurfMode=1 and WeatherSource=1 (Open-Meteo).
+    // Same pattern as updateSwellFromForecast().
+    function updateSurfWindFromForecast() as Void {
+        var speeds = Application.Storage.getValue("surf_windSpeeds") as Array or Null;
+        if (speeds == null || speeds.size() == 0) { return; }
+
+        var dirs = Application.Storage.getValue("surf_windDirections") as Array or Null;
+
+        var nowHour = Gregorian.info(Time.now(), Time.FORMAT_SHORT).hour;
+        var idx = nowHour < speeds.size() ? nowHour : speeds.size() - 1;
+
+        surfWindSpeed = speeds[idx] != null ? (speeds[idx] as Float).toFloat() : null;
+        surfWindDeg = (dirs != null && idx < dirs.size() && dirs[idx] != null) ? (dirs[idx] as Number).toNumber() : null;
     }
 
     // =========================================================

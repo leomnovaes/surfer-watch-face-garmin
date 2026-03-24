@@ -20,7 +20,8 @@
     <setting propertyKey="@Properties.WeatherSource" title="@Strings.WeatherSourceTitle">
         <settingConfig type="list">
             <listEntry value="0">@Strings.WeatherSourceGarmin</listEntry>
-            <listEntry value="1">@Strings.WeatherSourceOWM</listEntry>
+            <listEntry value="1">@Strings.WeatherSourceOpenMeteo</listEntry>
+            <listEntry value="2">@Strings.WeatherSourceOWM</listEntry>
         </settingConfig>
     </setting>
 

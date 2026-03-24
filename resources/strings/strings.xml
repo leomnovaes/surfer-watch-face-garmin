@@ -12,6 +12,7 @@
     <string id="FontRajdhani">Rajdhani</string>
     <string id="WeatherSourceTitle">Weather Source</string>
     <string id="WeatherSourceGarmin">Garmin (default)</string>
+    <string id="WeatherSourceOpenMeteo">Open-Meteo (no key)</string>
     <string id="WeatherSourceOWM">OpenWeatherMap</string>
     <string id="WindSpeedUnitTitle">Wind Speed Unit</string>
     <string id="WindSpeedAuto">Auto (device)</string>

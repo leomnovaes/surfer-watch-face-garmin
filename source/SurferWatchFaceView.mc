@@ -116,6 +116,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             dm.interpolateTideHeight();
             dm.computeMoonPhase();
             dm.updateSwellFromForecast();
+            var surfWeatherSource = Application.Properties.getValue("WeatherSource");
+            if (surfWeatherSource != null && surfWeatherSource == 1) {
+                dm.updateSurfWindFromForecast();
+            }
 
             drawHrCircle_Surf(dc, dm);
             drawTopSection_Surf(dc, dm);
@@ -136,7 +140,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             if (weatherSource == null || weatherSource == 0) {
                 dm.updateGarminWeather();
                 dm.computeSunriseSunset();
+            } else if (weatherSource == 1) {
+                // Open-Meteo: sunrise/sunset come from API response (stored in dm.sunrise/sunset)
+                // Weather data updated via onBackgroundData → onWeatherData
             }
+            // WeatherSource == 2 (OWM): same as Open-Meteo — data from background
 
             drawHrCircle(dc, dm);
             drawTopSection(dc, dm);
@@ -240,14 +248,19 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private function drawIconWeather(dc as Dc, x as Number, y as Number, dm as DataManager) as Void {
         if (weatherIconsFont != null && dm.weatherConditionId != null) {
             var isNight = false;
-            if (dm.sunrise != null && dm.sunset != null) {
+            var weatherSource = Application.Properties.getValue("WeatherSource");
+            if (weatherSource != null && weatherSource == 1 && dm.isDay != null) {
+                // Open-Meteo: use is_day field directly
+                isNight = (dm.isDay == 0);
+            } else if (dm.sunrise != null && dm.sunset != null) {
                 var now = Time.now().value();
                 isNight = (now < dm.sunrise || now >= dm.sunset);
             }
-            var weatherSource = Application.Properties.getValue("WeatherSource");
             var glyph;
-            if (weatherSource != null && weatherSource == 1) {
+            if (weatherSource != null && weatherSource == 2) {
                 glyph = owmToWeatherGlyph(dm.weatherConditionId, isNight);
+            } else if (weatherSource != null && weatherSource == 1) {
+                glyph = wmoToWeatherGlyph(dm.weatherConditionId, isNight);
             } else {
                 glyph = garminToWeatherGlyph(dm.weatherConditionId, isNight);
             }
@@ -355,6 +368,42 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         // Sleet
         if (code == 50) { return "M"; }
         return isNight ? "a" : "A"; // fallback: clear
+    }
+
+    // Maps WMO weather interpretation codes to Erik Flowers Weather Icons glyphs
+    // WMO codes 0-99. Used when WeatherSource=1 (Open-Meteo).
+    // Fewer conditions than OWM — no smoke, haze, dust, tornado, tropical storm, hurricane, cold, hot, windy.
+    private function wmoToWeatherGlyph(code as Number, isNight as Boolean) as String {
+        // Clear sky
+        if (code == 0) { return isNight ? "a" : "A"; }
+        // Mainly clear
+        if (code == 1) { return isNight ? "b" : "B"; }
+        // Partly cloudy
+        if (code == 2) { return isNight ? "b" : "C"; }
+        // Overcast
+        if (code == 3) { return "D"; }
+        // Fog, rime fog
+        if (code == 45 || code == 48) { return "E"; }
+        // Drizzle (light, moderate, dense)
+        if (code == 51 || code == 53 || code == 55) { return isNight ? "d" : "G"; }
+        // Freezing drizzle
+        if (code == 56 || code == 57) { return "K"; }
+        // Rain (slight, moderate, heavy)
+        if (code == 61 || code == 63 || code == 65) { return isNight ? "c" : "H"; }
+        // Freezing rain
+        if (code == 66 || code == 67) { return "K"; }
+        // Snow (slight, moderate, heavy)
+        if (code == 71 || code == 73 || code == 75) { return isNight ? "f" : "J"; }
+        // Snow grains
+        if (code == 77) { return "M"; }
+        // Rain showers (slight, moderate, violent)
+        if (code == 80 || code == 81 || code == 82) { return isNight ? "d" : "I"; }
+        // Snow showers (slight, heavy)
+        if (code == 85 || code == 86) { return isNight ? "f" : "J"; }
+        // Thunderstorm (slight/moderate, with hail)
+        if (code == 95 || code == 96 || code == 99) { return isNight ? "e" : "F"; }
+        // Fallback: clear
+        return isNight ? "a" : "A";
     }
 
     private function drawIconWind(dc as Dc, x as Number, y as Number, dm as DataManager) as Void {
@@ -678,8 +727,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         // Check if weather data is available
         var hasWeather = false;
         var weatherSource = Application.Properties.getValue("WeatherSource");
-        if (weatherSource != null && weatherSource == 1) {
-            // OWM mode: check staleness (>2h)
+        if (weatherSource != null && (weatherSource == 1 || weatherSource == 2)) {
+            // Open-Meteo or OWM mode: check staleness (>2h)
             if (dm.owmFetchedAt != null) {
                 var age = Time.now().value() - dm.owmFetchedAt;
                 if (age < 7200) {
@@ -708,16 +757,19 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             var speed;
             var rawSpeed = dm.windSpeed;
 
-            // OWM metric returns m/s, OWM imperial returns mph, Garmin returns m/s
-            // Normalize to m/s first
+            // Open-Meteo returns m/s always (wind_speed_unit=ms).
+            // OWM metric returns m/s, OWM imperial returns mph.
+            // Garmin returns m/s.
+            // Normalize to m/s first.
             var speedMs = rawSpeed;
-            if (weatherSource != null && weatherSource == 1) {
-                // OWM mode
+            if (weatherSource != null && weatherSource == 2) {
+                // OWM mode — may be imperial (mph)
                 var isImperial = System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE;
                 if (isImperial) {
                     speedMs = rawSpeed / 2.237; // mph back to m/s
                 }
             }
+            // Open-Meteo (1) and Garmin (0) both return m/s — no conversion needed
 
             if (windUnit == null || windUnit == 0) {
                 // Auto: km/h for metric, mph for imperial
@@ -741,9 +793,13 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         drawIconWind(dc, WX_COL2_X, WX_Y, dm);
         drawTextAligned(dc, WX_COL2_X, WX_TEXT_Y, Graphics.FONT_XTINY, windText, Graphics.TEXT_JUSTIFY_CENTER);
 
-        // Col 3: umbrella icon + precipitation % (from Garmin built-in current weather)
+        // Col 3: umbrella icon + precipitation %
         var precipText = "--";
-        if (Weather has :getCurrentConditions) {
+        if (weatherSource != null && weatherSource == 1 && dm.precipProbability != null) {
+            // Open-Meteo: use API precipitation probability
+            precipText = dm.precipProbability.toString() + "%";
+        } else if (Weather has :getCurrentConditions) {
+            // Garmin or OWM: use Garmin built-in precipitationChance
             var conditions = Weather.getCurrentConditions();
             if (conditions != null && conditions.precipitationChance != null) {
                 precipText = conditions.precipitationChance.toString() + "%";
@@ -837,7 +893,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     // Surf mode middle section: wind, time, moon/ampm/seconds
     private function drawMiddleSection_Surf(dc as Dc, dm as DataManager) as Void {
-        // Left column — Wind from OWM for surf spot (separate fields from shore)
+        // Left column — Wind for surf spot (separate fields from shore)
         if (dm.surfWindDeg != null) {
             drawWindArrow(dc, MID_LEFT_X, MID_ICON_Y + WIND_ARROW_Y_OFFSET, dm.surfWindDeg, WIND_ARROW_SIZE);
         }
@@ -845,11 +901,16 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (dm.surfWindSpeed != null) {
             var windUnit = Application.Properties.getValue("WindSpeedUnit");
             var speed;
-            var speedMs = dm.surfWindSpeed; // OWM metric=m/s, imperial=mph
-            // Normalize to m/s for conversion
-            var isImperial = System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE;
-            if (isImperial) {
-                speedMs = dm.surfWindSpeed / 2.237;
+            var speedMs = dm.surfWindSpeed;
+            // Open-Meteo always returns m/s (wind_speed_unit=ms).
+            // OWM returns m/s (metric) or mph (imperial).
+            // Only normalize OWM imperial to m/s.
+            var weatherSource = Application.Properties.getValue("WeatherSource");
+            if (weatherSource != null && weatherSource == 2) {
+                var isImperial = System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE;
+                if (isImperial) {
+                    speedMs = dm.surfWindSpeed / 2.237;
+                }
             }
             if (windUnit == null || windUnit == 0) {
                 var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;

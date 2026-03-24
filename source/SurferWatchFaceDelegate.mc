@@ -136,8 +136,18 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         if (_isSurfMode) {
             _swellNeeded = true; // Open-Meteo is free, always fetch fresh swell
             _tideNeeded = isSurfTideRefreshNeeded(_lat, _lng);
-            var owmKey = Application.Properties.getValue("OWMApiKey") as String or Null;
-            _windNeeded = (owmKey != null && !owmKey.equals(""));
+            var weatherSource = Application.Properties.getValue("WeatherSource");
+            if (weatherSource != null && weatherSource == 1) {
+                // Open-Meteo: always fetch wind (free, no key)
+                _windNeeded = true;
+            } else if (weatherSource != null && weatherSource == 2) {
+                // OWM: needs API key
+                var owmKey = Application.Properties.getValue("OWMApiKey") as String or Null;
+                _windNeeded = (owmKey != null && !owmKey.equals(""));
+            } else {
+                // Garmin: no wind for surf spot
+                _windNeeded = false;
+            }
 
             // Surf chain: swell → tide → wind
             if (_swellNeeded) {
@@ -150,19 +160,23 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
                 Background.exit(null);
             }
         } else {
-            // Shore mode: OWM weather → tide
+            // Shore mode: weather → tide
             _tideNeeded = isTideRefreshNeeded(_lat, _lng);
             _swellNeeded = false;
             _windNeeded = false;
 
-            var owmNeeded = false;
+            var weatherNeeded = false;
             var weatherSource = Application.Properties.getValue("WeatherSource");
             if (weatherSource != null && weatherSource == 1) {
+                // Open-Meteo: always fetch (free, no key)
+                weatherNeeded = true;
+            } else if (weatherSource != null && weatherSource == 2) {
+                // OWM: needs API key
                 var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
-                if (apiKey != null && !apiKey.equals("")) { owmNeeded = true; }
+                if (apiKey != null && !apiKey.equals("")) { weatherNeeded = true; }
             }
 
-            if (owmNeeded) {
+            if (weatherNeeded) {
                 startShoreWeatherFetch();
             } else if (_tideNeeded) {
                 startTideFetch();
@@ -189,25 +203,41 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     }
 
     private function startWindFetch() as Void {
-        var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
-        if (apiKey == null || apiKey.equals("")) { exitWithAllResults(); return; }
-        var units = "metric";
-        if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) { units = "imperial"; }
-        var ws = new WeatherService(method(:onWindDone));
-        ws.fetch(_lat, _lng, apiKey, units);
+        var weatherSource = Application.Properties.getValue("WeatherSource");
+        if (weatherSource != null && weatherSource == 1) {
+            // Open-Meteo: fetch 24h hourly wind forecast for surf spot
+            var oms = new OpenMeteoService(method(:onWindDone));
+            oms.fetchSurfWind(_lat, _lng, method(:onSurfWindForecastDone));
+        } else {
+            // OWM: fetch current wind
+            var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
+            if (apiKey == null || apiKey.equals("")) { exitWithAllResults(); return; }
+            var units = "metric";
+            if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) { units = "imperial"; }
+            var ws = new WeatherService(method(:onWindDone));
+            ws.fetch(_lat, _lng, apiKey, units);
+        }
     }
 
-    // Shore mode: OWM weather fetch, chains to tide
+    // Shore mode: weather fetch (Open-Meteo or OWM), chains to tide
     private function startShoreWeatherFetch() as Void {
-        var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
-        if (apiKey == null || apiKey.equals("")) {
-            if (_tideNeeded) { startTideFetch(); } else { exitWithAllResults(); }
-            return;
+        var weatherSource = Application.Properties.getValue("WeatherSource");
+        if (weatherSource != null && weatherSource == 1) {
+            // Open-Meteo: no key needed
+            var oms = new OpenMeteoService(method(:onShoreWeatherDone));
+            oms.fetchCurrent(_lat, _lng);
+        } else {
+            // OWM
+            var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
+            if (apiKey == null || apiKey.equals("")) {
+                if (_tideNeeded) { startTideFetch(); } else { exitWithAllResults(); }
+                return;
+            }
+            var units = "metric";
+            if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) { units = "imperial"; }
+            var ws = new WeatherService(method(:onShoreWeatherDone));
+            ws.fetch(_lat, _lng, apiKey, units);
         }
-        var units = "metric";
-        if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) { units = "imperial"; }
-        var ws = new WeatherService(method(:onShoreWeatherDone));
-        ws.fetch(_lat, _lng, apiKey, units);
     }
 
     // =========================================================
@@ -278,7 +308,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         }
     }
 
-    // Wind/weather done → exit (surf mode, last in chain)
+    // Wind/weather done → exit (surf mode OWM, last in chain)
     function onWindDone(weatherData as Dictionary or Null) as Void {
         if (weatherData != null) {
             // In surf mode, only extract wind — don't pollute shore weather fields
@@ -286,6 +316,28 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             windResult["windSpeed"] = weatherData["windSpeed"] as Application.PropertyValueType;
             windResult["windDeg"] = weatherData["windDeg"] as Application.PropertyValueType;
             _weatherResult = windResult;
+        }
+        exitWithAllResults();
+    }
+
+    // Surf wind forecast done (Open-Meteo hourly) → stores arrays, extracts current hour, exits
+    function onSurfWindForecastDone(windData as Dictionary or Null) as Void {
+        if (windData != null) {
+            // Store 24h forecast arrays for offline advancement
+            Application.Storage.setValue("surf_windSpeeds", windData["speeds"]);
+            Application.Storage.setValue("surf_windDirections", windData["directions"]);
+
+            // Extract current hour for immediate display
+            var speeds = windData["speeds"] as Array;
+            var dirs = windData["directions"] as Array;
+            if (speeds != null && speeds.size() > 0) {
+                var nowHour = Gregorian.info(Time.now(), Time.FORMAT_SHORT).hour;
+                var idx = nowHour < speeds.size() ? nowHour : speeds.size() - 1;
+                var windResult = {} as Dictionary<String, Application.PropertyValueType>;
+                windResult["windSpeed"] = speeds[idx] as Application.PropertyValueType;
+                windResult["windDeg"] = (idx < dirs.size()) ? dirs[idx] as Application.PropertyValueType : null;
+                _weatherResult = windResult;
+            }
         }
         exitWithAllResults();
     }
