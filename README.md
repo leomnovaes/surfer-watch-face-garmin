@@ -1,6 +1,6 @@
-# Shore Watch
+# Surfer Watch
 
-A surfer-focused watch face for the Garmin Instinct 2X Solar. Two modes: Shore Mode for daily wear with weather, tide, and fitness metrics — and Surf Mode for in-water use with swell, tide curve, wind, and water temperature. All on one screen, no menus.
+A surfer-focused watch face for the Garmin Instinct series. Two modes: Shore Mode for daily wear with weather, tide, and fitness metrics — and Surf Mode for in-water use with swell, tide curve, wind, and water temperature. All on one screen, no menus.
 
 Built by a surfer for his own wrist, spec-driven with AI assistance. The entire project was designed and implemented using a spec-first methodology: requirements, technical design, and task list were written before any code. An AI agent (Kiro) then implemented the tasks against those specs. The specs and steering files are included in the repo so anyone can fork it, point an AI agent at the docs, and customize their own watch face.
 
@@ -8,7 +8,7 @@ Built by a surfer for his own wrist, spec-driven with AI assistance. The entire 
 
 ## Screenshot
 
-![Shore Watch on Instinct 2X Solar](screenshot.png)
+![Surfer Watch on Instinct 2X Solar](screenshot.png)
 
 ## Features
 
@@ -208,7 +208,7 @@ Note: OWM 3.0 (One Call) API keys also work — the watch face uses the 2.5 endp
 
 ### From Connect IQ Store (recommended)
 
-Search for **"Shore Watch"** in the [Connect IQ Store](https://apps.garmin.com/), or install directly from the app listing page.
+Search for **"Surfer Watch"** in the [Connect IQ Store](https://apps.garmin.com/), or install directly from the app listing page.
 
 ### Sideload (development)
 

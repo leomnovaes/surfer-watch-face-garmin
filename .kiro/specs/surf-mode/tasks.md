@@ -170,25 +170,25 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 ## Phase 4 — Production Release (Surfer Watch v1.0.0)
 
 ### Task 28: Rename app from "Shore Watch" to "Surfer Watch"
-- [ ] 28.1 Update `resources/strings/strings.xml`: change AppName from "Shore Watch" to "Surfer Watch"
-- [ ] 28.2 Update `README.md`: all references to "Shore Watch" → "Surfer Watch"
-- [ ] 28.3 Update `store-description.txt`: title and all references
-- [ ] 28.4 Update `CHANGELOG.md`: any references to "Shore Watch"
-- [ ] 28.5 Update `.kiro/steering/product.md`: product name
-- [ ] 28.6 Update `.kiro/specs/` docs: any references to "Shore Watch"
-- [ ] 28.7 Regenerate `store-cover.png` with new name (run `generate-cover.py`)
-- [ ] 28.8 Verify no remaining "Shore Watch" references in codebase (grep)
+- [x] 28.1 Update `resources/strings/strings.xml`: change AppName from "Shore Watch" to "Surfer Watch"
+- [x] 28.2 Update `README.md`: all references to "Shore Watch" → "Surfer Watch"
+- [x] 28.3 Update `store-description.txt`: title and all references
+- [x] 28.4 Update `CHANGELOG.md`: any references to "Shore Watch"
+- [x] 28.5 Update `.kiro/steering/product.md`: product name
+- [x] 28.6 Update `.kiro/specs/` docs: any references to "Shore Watch"
+- [x] 28.7 Regenerate `store-cover.png` with new name (run `generate-cover.py`)
+- [x] 28.8 Verify no remaining "Shore Watch" references in codebase (grep)
 
 ### Task 29: Generate new UUID for production release
-- [ ] 29.1 Generate a new UUID (e.g., via `uuidgen` command)
-- [ ] 29.2 Replace the `id` attribute in `manifest.xml` `<iq:application>` tag with the new UUID
-- [ ] 29.3 Note: beta and production apps need different UUIDs on Connect IQ — this creates a new store listing
+- [x] 29.1 Generate a new UUID (e.g., via `uuidgen` command)
+- [x] 29.2 Replace the `id` attribute in `manifest.xml` `<iq:application>` tag with the new UUID
+- [x] 29.3 Note: beta and production apps need different UUIDs on Connect IQ — this creates a new store listing
 
 ### Task 30: Clean CHANGELOG for v1.0.0 production release
-- [ ] 30.1 Collapse all beta version entries (v1.0.0, v1.1.0, v2.0.0) into a single v1.0.0 entry
-- [ ] 30.2 Write clean release notes summarizing all features as if shipping for the first time
-- [ ] 30.3 Remove historical development notes, intermediate fixes, and beta-specific entries
-- [ ] 30.4 The CHANGELOG should read as a fresh v1.0.0 with all current features listed
+- [x] 30.1 Collapse all beta version entries (v1.0.0, v1.1.0, v2.0.0) into a single v1.0.0 entry
+- [x] 30.2 Write clean release notes summarizing all features as if shipping for the first time
+- [x] 30.3 Remove historical development notes, intermediate fixes, and beta-specific entries
+- [x] 30.4 The CHANGELOG should read as a fresh v1.0.0 with all current features listed
 
 ### Task 31: Final production release
 - [ ] 31.1 Follow release checklist from structure.md

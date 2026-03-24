@@ -1,92 +1,48 @@
 # Changelog
 
-## v2.0.0
-
-### Added
-- Surf mode: alternate watch face layout for in-water use, toggled via settings
-- Subscreen circle: interpolated tide height + solar intensity arc + tide direction icon (replaces HR + stress)
-- Water temperature from watch body temp sensor
-- Swell data: height, period, direction from Open-Meteo Marine API (free, no key, 24h hourly forecast)
-- Tide curve graph with filled area, dithered "now" marker, triangle indicator, time labels
-- Double wrist gesture toggles between swell view and tide curve in surf mode
-- Surf spot location settings: manual lat/lng entry + one-tap GPS copy
-- StormGlass backup API key setting with automatic failover on 402
-- Surfing, thermometer, timer-sand icons rasterized from Material Design Icons
-- Open-Meteo Marine API integration (free, unlimited, ~1.2KB response)
-- Separate surf/shore wind fields (surfWindSpeed/surfWindDeg vs windSpeed/windDeg)
-- Background chain for surf mode: Open-Meteo swell → StormGlass tide → OWM wind
-- -403 detection stops background chain immediately (memory exhausted safety)
-- Open-Meteo Weather API as third weather source (no key, WMO codes, hourly wind forecast for surf offline)
-- 3-tier weather source setting: Garmin (default), Open-Meteo (no key), OpenWeatherMap (needs key)
-- WMO weather code mapper for Open-Meteo conditions
-- Precipitation probability from Open-Meteo when selected as source
-- Surf mode hourly wind forecast (Open-Meteo): 24h array, advances offline when phone disconnects
-- Surf mode sunrise/sunset for surf spot (computed locally, shown in swell view, hidden in tide curve view)
-- OpenMeteoService class: consolidates all Open-Meteo API calls (swell, weather, surf wind)
-
-### Changed
-- Swell data source: StormGlass weather → Open-Meteo Marine (free, no quota)
-- StormGlass now used only for tide extremes (1 call/day)
-- Swell stored as 3 flat arrays in Application.Storage, advances hourly via updateSwellFromForecast()
-- Surf mode OWM call extracts only wind — does not pollute shore weather fields
-- WeatherSource setting: 0=Garmin, 1=Open-Meteo, 2=OWM (OWM moved from value 1 to 2)
-- Swell fetch moved from TideService to OpenMeteoService
-
-### Fixed
-- Weather data cleared on weather source switch to prevent condition code mismatch between mappers
-- Surf wind cleared on weather source switch (was showing stale data from previous source)
-- Surf tide data no longer overwrites shore tide cache (onTideData persists to correct prefixed keys)
-- Tide curve rendering optimized from O(N×M) to O(N+M) — pre-extracted flat arrays cached in DataManager
-- App startup in surf mode now loads correct surf cache (was loading shore data)
-- Mode switch resets nextTideTime to force recomputation from new tide data
-- tideDataExpired Storage write only fires once (was writing every tick when expired)
-- All weather computation moved out of onUpdate into data arrival path (onBackgroundData/onSettingsChanged)
-- Garmin weather flows through onWeatherData() same as API sources — no special-casing
-- Storage I/O eliminated from per-tick render: writes only on change, forecast arrays cached in memory
-- Sunrise/sunset computed together with weather data, not separately per-tick
-- Tide window: 72h from local midnight (Time.today()) instead of 48h from UTC midnight
-- StormGlass backup key: immediate retry on 402 in same cycle (not flag-based next-cycle)
-- Tide curve triggers refresh when no data available for rendering
-- Tide data stored as flat arrays (heights, times, types) instead of array-of-Dictionaries — fixes OOM on Background.exit()
-- Tide refresh guard checks actual data exists, not just fetch day — fixes infinite retry with exhausted keys
-- Tide window starts 6h before local midnight to capture previous day's last event for curve interpolation
-- Sunrise/sunset computed on startup for all modes (not just Garmin) — fixes "--" until first background event
-- Dynamic subscreen layout via dc.getSubscreen() on API 4.1+ devices (Instinct 3)
-- Multi-device support: Instinct 2, Instinct 2X Solar, Instinct 3 Solar 45/50mm
-- Solar intensity read from System.getSystemStats().solarIntensity (was using wrong API)
-
-### Fixed
-- Weather icon mapping: 5 community-validated overrides for misleading Erik Flowers mappings
-- Background memory: flat array storage instead of nested dictionaries
-
-## v1.1.0
-
-### Added
-- Tiered weather source: Garmin built-in (default, zero config) or OpenWeatherMap (optional)
-- WeatherSource setting in Garmin Connect app
-- Local sunrise/sunset computation for Garmin weather mode (CIQ 3.4 compatible)
-- Garmin condition code mapper (54 weather conditions → icon glyphs)
-- Wind speed unit setting: Auto, km/h, knots, mph, m/s
-- Wind speed now shows 1 decimal digit (e.g., "11.4" instead of "11kph")
-- CHANGELOG.md for version tracking
-- Release checklist in steering files
-
-### Changed
-- OWM switched from 3.0 One Call to 2.5 Current Weather (no credit card needed, 1M calls/month free)
-- OWM weather fetches on every background event (removed time/distance guards, simplified logic)
-- Immediate background fetch attempted on face start (falls back to 5-min if system enforces minimum)
-- Background re-registers at 5-min interval after each data receipt
-- Wind arrow: size 9→7, y-offset 7→5 (slightly smaller and higher)
-- Weather data cleared on source switch to prevent condition code mismatch
-
-### Fixed
-- Re-rasterized weather-icons font: 3 glyphs (B/day-cloudy, f/night-snow, g/night-cloudy-gusts) had wrong codepoints from manual .fnt remapping
-- Override 5 misleading Erik Flowers OWM icon mappings (community-validated): 803 broken clouds→cloudy, 701 mist→fog, 602 heavy snow→snow, 531 ragged showers→showers, 611-612 sleet→sleet icon
-- Removed dead `precipPop` field from DataManager
-- Fixed `owmFetchedAt` dual-source: DataManager reads from Storage (single source of truth)
-- Fixed notification icon described as "bell" — it's a speech bubble
-- Fixed Bluetooth icon documented in date row — it's in the notification row
-
 ## v1.0.0
 
-Initial release. Surfer-focused watch face for Garmin Instinct 2X Solar with tide, weather, wind, moon phase, heart rate, stress arc, and more.
+Initial public release of Surfer Watch.
+
+### Features
+
+**Shore Mode (default)**
+- Time with custom font (Saira Condensed Bold or Rajdhani Bold)
+- Date, battery, notifications, Bluetooth connectivity
+- Heart rate with stress arc gauge
+- Next tide time, direction, and predicted height (StormGlass API, MLLW datum)
+- Sunrise/sunset with directional icon
+- Weather condition icon (day/night variants), temperature
+- Wind direction arrow and speed (configurable: km/h, knots, mph, m/s)
+- Precipitation chance
+- Moon phase (28 phases, computed locally)
+- Seconds on wrist raise
+
+**Surf Mode**
+- Swell height, period, direction (Open-Meteo Marine API, free, no key)
+- Tide curve graph with filled area, dithered "now" marker, time labels
+- Interpolated current tide height in subscreen circle
+- Wind direction and speed for surf spot
+- Water temperature from watch sensor
+- Solar intensity arc gauge
+- Sunrise/sunset for surf spot
+- Double wrist gesture toggles between swell view and tide curve
+- Surf spot location: manual entry or one-tap GPS copy
+- Hourly wind forecast advances offline when phone disconnects (Open-Meteo)
+
+**Weather Sources**
+- Garmin built-in (default, zero config)
+- Open-Meteo (no key needed, WMO codes, precipitation probability)
+- OpenWeatherMap 2.5 (needs key, most granular condition icons)
+
+**Data Sources**
+- StormGlass API for tide extremes (72h window, backup key with immediate 402 retry)
+- Open-Meteo Marine API for swell (free, 24h hourly forecast)
+- Open-Meteo Weather API for weather + surf wind forecast (free, no key)
+- OpenWeatherMap 2.5 for weather (optional, needs key)
+- Garmin built-in for weather, precipitation (default)
+
+**Supported Devices**
+- Garmin Instinct 2
+- Garmin Instinct 2X Solar
+- Garmin Instinct 3 Solar 45/50mm
