@@ -21,7 +21,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
 
     // Accumulated results for Background.exit()
     private var _weatherResult as Dictionary or Null;
-    private var _tideResult as Array or Null;
+    private var _tideResult as Boolean;
     private var _swellResult as Dictionary or Null;
 
     function initialize() {
@@ -33,7 +33,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         _swellNeeded = false;
         _windNeeded = false;
         _weatherResult = null;
-        _tideResult = null;
+        _tideResult = false;
         _swellResult = null;
     }
 
@@ -284,15 +284,15 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Tide done → chain to wind (surf) or exit (shore)
     function onTideComplete(tideData as Array or Null) as Void {
         if (tideData != null) {
-            _tideResult = tideData;
+            // Write tide data directly to Storage — too large for Background.exit() with 72h window
             var prefix = _isSurfMode ? "surf_" : "";
+            Application.Storage.setValue(prefix + "tideExtremes", tideData);
             Application.Storage.setValue(prefix + "tideFetchedDay", todayUTC());
             Application.Storage.setValue(prefix + "tideFetchLat", _lat);
             Application.Storage.setValue(prefix + "tideFetchLng", _lng);
             Application.Storage.setValue(prefix + "tideDataExpired", false);
-            if (_isSurfMode) {
-                Application.Storage.setValue("surf_tideExtremes", tideData);
-            }
+            // Signal foreground to reload tide from Storage
+            _tideResult = true; // flag only, not the data itself
         }
         var lastCode = Application.Storage.getValue("sgLastResponseCode") as Number or Null;
         if (lastCode != null && lastCode == -403) {
@@ -369,8 +369,9 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         if (_weatherResult != null) {
             result["weather"] = _weatherResult as Application.PropertyValueType;
         }
-        if (_tideResult != null) {
-            result["tides"] = _tideResult as Application.PropertyValueType;
+        if (_tideResult) {
+            // Tide data already written to Storage — just signal foreground to reload
+            result["tideUpdated"] = true as Application.PropertyValueType;
         }
         if (_swellResult != null) {
             result["swell"] = _swellResult as Application.PropertyValueType;

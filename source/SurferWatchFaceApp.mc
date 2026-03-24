@@ -103,9 +103,17 @@ class SurferWatchFaceApp extends Application.AppBase {
                         dataManager.onWeatherData(weatherData as Dictionary);
                     }
                 }
-                var tideData = data["tides"];
-                if (tideData != null && tideData instanceof Array) {
-                    dataManager.onTideData(tideData as Array);
+                var tideData = data["tideUpdated"];
+                if (tideData != null) {
+                    // Tide data written to Storage by delegate — reload it
+                    var surfMode = Application.Properties.getValue("SurfMode");
+                    if (surfMode != null && surfMode == 1) {
+                        var tides = Application.Storage.getValue("surf_tideExtremes") as Array or Null;
+                        if (tides != null) { dataManager.onTideData(tides); }
+                    } else {
+                        var tides = Application.Storage.getValue("tideExtremes") as Array or Null;
+                        if (tides != null) { dataManager.onTideData(tides); }
+                    }
                 }
                 var swellData = data["swell"];
                 if (swellData != null && swellData instanceof Dictionary) {
