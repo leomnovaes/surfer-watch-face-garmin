@@ -52,6 +52,13 @@ class DataManager {
     var surfSunrise as Number or Null;
     var surfSunset as Number or Null;
 
+    // --- Surf mode: cached forecast arrays (loaded from Storage on data change, not every tick) ---
+    private var _swellHeightsCache as Array or Null;
+    private var _swellPeriodsCache as Array or Null;
+    private var _swellDirectionsCache as Array or Null;
+    private var _windSpeedsCache as Array or Null;
+    private var _windDirectionsCache as Array or Null;
+
     // --- Surf mode: sensor data ---
     var waterTemp as Float or Null;
     var solarIntensity as Number or Null;
@@ -69,12 +76,22 @@ class DataManager {
     // --- Surf mode: UI state ---
     var bottomToggleState as Number;
 
+    // --- Sunrise/sunset recomputation tracking (once per minute, not every tick) ---
+    private var _lastSunComputeMinute as Number = -1;
+    private var _lastSurfSunComputeMinute as Number = -1;
+    private var _prevStoredLat as Float or Null;
+    private var _prevStoredLng as Float or Null;
+    private var _prevStoredBt as Boolean;
+
     function initialize() {
         // Initialize sensor defaults
         battery = 0;
         notificationCount = 0;
         bluetoothConnected = false;
         bottomToggleState = 0;
+        _prevStoredLat = null;
+        _prevStoredLng = null;
+        _prevStoredBt = false;
         tideCurveMinH = 0.0;
         tideCurveMaxH = 1.0;
         tideCurveHRange = 1.0;
@@ -158,9 +175,17 @@ class DataManager {
         }
 
         // Write shared state to Application.Storage for background process
-        Application.Storage.setValue("lastKnownLat", lastKnownLat);
-        Application.Storage.setValue("lastKnownLng", lastKnownLng);
-        Application.Storage.setValue("bluetoothConnected", bluetoothConnected);
+        // Only write when values actually change to avoid flash I/O every tick
+        if (lastKnownLat != _prevStoredLat || lastKnownLng != _prevStoredLng) {
+            Application.Storage.setValue("lastKnownLat", lastKnownLat);
+            Application.Storage.setValue("lastKnownLng", lastKnownLng);
+            _prevStoredLat = lastKnownLat;
+            _prevStoredLng = lastKnownLng;
+        }
+        if (bluetoothConnected != _prevStoredBt) {
+            Application.Storage.setValue("bluetoothConnected", bluetoothConnected);
+            _prevStoredBt = bluetoothConnected;
+        }
     }
 
     // =========================================================
@@ -228,6 +253,11 @@ class DataManager {
     // requires CIQ 4.1 and we target 3.4.
     // =========================================================
     function computeSunriseSunset() as Void {
+        // Only recompute once per minute — sunrise/sunset don't change within a minute
+        var currentMinute = System.getClockTime().min;
+        if (currentMinute == _lastSunComputeMinute && sunrise != null) { return; }
+        _lastSunComputeMinute = currentMinute;
+
         if (lastKnownLat == null || lastKnownLng == null) {
             return;
         }
@@ -305,6 +335,11 @@ class DataManager {
     // Stores in separate surfSunrise/surfSunset fields.
     // =========================================================
     function computeSurfSunriseSunset() as Void {
+        // Only recompute once per minute
+        var currentMinute = System.getClockTime().min;
+        if (currentMinute == _lastSurfSunComputeMinute && surfSunrise != null) { return; }
+        _lastSurfSunComputeMinute = currentMinute;
+
         var surfLatStr = Application.Properties.getValue("SurfSpotLat");
         var surfLngStr = Application.Properties.getValue("SurfSpotLng");
         if (surfLatStr == null || surfLngStr == null) {
@@ -405,7 +440,11 @@ class DataManager {
             return;
         }
 
+        // Early exit: if we already have a next tide and it's still in the future, skip recomputation
         var now = Time.now().value();
+        if (nextTideTime != null && nextTideTime > now) {
+            return;
+        }
         var nextIdx = -1;
 
         // Walk array to find first event where time > now
@@ -553,6 +592,10 @@ class DataManager {
         swellHeight = data["swellHeight"] as Float or Null;
         swellPeriod = data["swellPeriod"] as Float or Null;
         swellDirection = data["swellDirection"] as Number or Null;
+        // Refresh cached forecast arrays from Storage (delegate just wrote them)
+        _swellHeightsCache = Application.Storage.getValue("surf_swellHeights") as Array or Null;
+        _swellPeriodsCache = Application.Storage.getValue("surf_swellPeriods") as Array or Null;
+        _swellDirectionsCache = Application.Storage.getValue("surf_swellDirections") as Array or Null;
     }
 
     // onSurfWindData(data) — receives OWM wind for surf spot.
@@ -560,41 +603,48 @@ class DataManager {
     function onSurfWindData(data as Dictionary) as Void {
         surfWindSpeed = data["windSpeed"] as Float or Null;
         surfWindDeg = data["windDeg"] as Number or Null;
+        // Refresh cached wind forecast arrays from Storage (delegate may have written them)
+        _windSpeedsCache = Application.Storage.getValue("surf_windSpeeds") as Array or Null;
+        _windDirectionsCache = Application.Storage.getValue("surf_windDirections") as Array or Null;
     }
 
     // updateSwellFromForecast() — picks the current hour's entry
-    // from the stored swell forecast arrays. Called from onUpdate()
+    // from the cached swell forecast arrays. Called from onUpdate()
     // so the display advances through the forecast over time.
+    // Arrays are cached in memory — loaded from Storage only on data change.
     function updateSwellFromForecast() as Void {
-        var heights = Application.Storage.getValue("surf_swellHeights") as Array or Null;
-        if (heights == null || heights.size() == 0) { return; }
-
-        var periods = Application.Storage.getValue("surf_swellPeriods") as Array or Null;
-        var dirs = Application.Storage.getValue("surf_swellDirections") as Array or Null;
+        if (_swellHeightsCache == null || _swellHeightsCache.size() == 0) { return; }
 
         var nowHour = Gregorian.info(Time.now(), Time.FORMAT_SHORT).hour;
-        var idx = nowHour < heights.size() ? nowHour : heights.size() - 1;
+        var idx = nowHour < _swellHeightsCache.size() ? nowHour : _swellHeightsCache.size() - 1;
 
-        swellHeight = heights[idx] != null ? (heights[idx] as Float).toFloat() : null;
-        swellPeriod = (periods != null && idx < periods.size() && periods[idx] != null) ? (periods[idx] as Float).toFloat() : null;
-        swellDirection = (dirs != null && idx < dirs.size() && dirs[idx] != null) ? (dirs[idx] as Number).toNumber() : null;
+        swellHeight = _swellHeightsCache[idx] != null ? (_swellHeightsCache[idx] as Float).toFloat() : null;
+        swellPeriod = (_swellPeriodsCache != null && idx < _swellPeriodsCache.size() && _swellPeriodsCache[idx] != null) ? (_swellPeriodsCache[idx] as Float).toFloat() : null;
+        swellDirection = (_swellDirectionsCache != null && idx < _swellDirectionsCache.size() && _swellDirectionsCache[idx] != null) ? (_swellDirectionsCache[idx] as Number).toNumber() : null;
     }
 
     // updateSurfWindFromForecast() — picks the current hour's wind
-    // from stored Open-Meteo hourly forecast arrays. Called from
+    // from cached Open-Meteo hourly forecast arrays. Called from
     // onUpdate() when SurfMode=1 and WeatherSource=1 (Open-Meteo).
-    // Same pattern as updateSwellFromForecast().
     function updateSurfWindFromForecast() as Void {
-        var speeds = Application.Storage.getValue("surf_windSpeeds") as Array or Null;
-        if (speeds == null || speeds.size() == 0) { return; }
-
-        var dirs = Application.Storage.getValue("surf_windDirections") as Array or Null;
+        if (_windSpeedsCache == null || _windSpeedsCache.size() == 0) { return; }
 
         var nowHour = Gregorian.info(Time.now(), Time.FORMAT_SHORT).hour;
-        var idx = nowHour < speeds.size() ? nowHour : speeds.size() - 1;
+        var idx = nowHour < _windSpeedsCache.size() ? nowHour : _windSpeedsCache.size() - 1;
 
-        surfWindSpeed = speeds[idx] != null ? (speeds[idx] as Float).toFloat() : null;
-        surfWindDeg = (dirs != null && idx < dirs.size() && dirs[idx] != null) ? (dirs[idx] as Number).toNumber() : null;
+        surfWindSpeed = _windSpeedsCache[idx] != null ? (_windSpeedsCache[idx] as Float).toFloat() : null;
+        surfWindDeg = (_windDirectionsCache != null && idx < _windDirectionsCache.size() && _windDirectionsCache[idx] != null) ? (_windDirectionsCache[idx] as Number).toNumber() : null;
+    }
+
+    // loadForecastCaches() — loads swell and wind forecast arrays
+    // from Application.Storage into memory. Called on data change
+    // (onSwellData, onSurfWindData) and mode switch (loadSurfCache).
+    function loadForecastCaches() as Void {
+        _swellHeightsCache = Application.Storage.getValue("surf_swellHeights") as Array or Null;
+        _swellPeriodsCache = Application.Storage.getValue("surf_swellPeriods") as Array or Null;
+        _swellDirectionsCache = Application.Storage.getValue("surf_swellDirections") as Array or Null;
+        _windSpeedsCache = Application.Storage.getValue("surf_windSpeeds") as Array or Null;
+        _windDirectionsCache = Application.Storage.getValue("surf_windDirections") as Array or Null;
     }
 
     // =========================================================
@@ -605,6 +655,7 @@ class DataManager {
         tideExtremes = Application.Storage.getValue("surf_tideExtremes") as Array or Null;
         tideFetchedDay = Application.Storage.getValue("surf_tideFetchedDay") as String or Null;
         extractTideCurveData();
+        loadForecastCaches();
     }
 
     // =========================================================
