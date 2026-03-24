@@ -10,28 +10,25 @@ import Toybox.Time.Gregorian;
 class TideService {
 
     private var _callback as Method;
+    private var _lat as Float;
+    private var _lng as Float;
+    private var _triedBackup as Boolean;
 
     function initialize(callback as Method) {
         _callback = callback;
+        _lat = 0.0f;
+        _lng = 0.0f;
+        _triedBackup = false;
     }
 
-    // Builds StormGlass URL with 48h window, sets Authorization header, makes async request
+    // Builds StormGlass URL with 72h window from local midnight, sets Authorization header
     function fetch(lat as Float, lng as Float, apiKey as String) as Void {
-        // Calculate 48h window: start of current day UTC to end of next day UTC
-        var now = Time.now();
-        var todayInfo = Gregorian.info(now, Time.FORMAT_SHORT);
-        // Start of today UTC (midnight)
-        var startMoment = Gregorian.moment({
-            :year => todayInfo.year,
-            :month => todayInfo.month,
-            :day => todayInfo.day,
-            :hour => 0,
-            :minute => 0,
-            :second => 0
-        });
-        var startUnix = startMoment.value();
-        // End of tomorrow UTC (48h from start of today)
-        var endUnix = startUnix + (48 * 3600);
+        _lat = lat;
+        _lng = lng;
+        // 72h window from local midnight today — covers today + tomorrow + day after
+        // Time.today() returns start of today in local time as a Moment
+        var startUnix = Time.today().value();
+        var endUnix = startUnix + (72 * 3600);
 
         var url = "https://api.stormglass.io/v2/tide/extremes/point"
             + "?lat=" + lat.toString()
@@ -54,15 +51,20 @@ class TideService {
     // Callback for StormGlass response
     function onTideResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
         Application.Storage.setValue("sgLastResponseCode", responseCode);
+
+        // On 402 (quota exhausted), immediately retry with backup key if available
+        if (responseCode == 402 && !_triedBackup) {
+            var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
+            if (backupKey != null && !backupKey.equals("")) {
+                _triedBackup = true;
+                fetch(_lat, _lng, backupKey);
+                return;
+            }
+        }
+
         if (responseCode != 200 || data == null || !(data instanceof Dictionary)) {
             _callback.invoke(null);
             return;
-        }
-
-        // Check quota (informational only — backup key handles exhaustion)
-        var meta = data["meta"];
-        if (meta != null && meta instanceof Dictionary) {
-            // Quota info available but not used for gating
         }
 
         // Parse response data array — minimal parsing for background memory

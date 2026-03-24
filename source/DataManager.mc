@@ -466,6 +466,20 @@ class DataManager {
     }
 
     // =========================================================
+    // markTideForRefresh() — sets tideDataExpired flag in Storage
+    // to trigger a tide fetch on the next background event.
+    // Uses _tideExpiredWritten to avoid repeated Storage writes.
+    // =========================================================
+    function markTideForRefresh() as Void {
+        if (!_tideExpiredWritten) {
+            var surfMode = Application.Properties.getValue("SurfMode");
+            var prefix = (surfMode != null && surfMode == 1) ? "surf_" : "";
+            Application.Storage.setValue(prefix + "tideDataExpired", true);
+            _tideExpiredWritten = true;
+        }
+    }
+
+    // =========================================================
     // computeNextTide() — walks tideExtremes to find next event
     // after now, sets nextTideTime/nextTideType/nextTideHeight.
     // If all events are in the past, sets tideDataExpired=true
@@ -501,10 +515,7 @@ class DataManager {
             nextTideTime = null;
             nextTideType = null;
             currentTideHeight = null;
-            if (!_tideExpiredWritten) {
-                Application.Storage.setValue("tideDataExpired", true);
-                _tideExpiredWritten = true;
-            }
+            markTideForRefresh();
             return;
         }
 

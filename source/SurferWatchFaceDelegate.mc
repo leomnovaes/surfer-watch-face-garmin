@@ -59,8 +59,10 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     }
 
     private function getStormGlassApiKey() as String or Null {
+        // Always try primary key first — TideService handles 402 retry with backup
         var apiKey = Application.Properties.getValue("StormGlassApiKey") as String or Null;
         if (apiKey != null && !apiKey.equals("")) { return apiKey; }
+        // If no primary key, try backup as the only key
         var backupKey = Application.Properties.getValue("StormGlassBackupApiKey") as String or Null;
         if (backupKey != null && !backupKey.equals("")) { return backupKey; }
         return null;

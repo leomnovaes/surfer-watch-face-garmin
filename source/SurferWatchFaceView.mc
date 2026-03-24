@@ -1034,6 +1034,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
         if (dm.tideCurveTimes == null || dm.tideCurveHeights == null) {
             drawTextAligned(dc, 88, curveTopY + TC_CURVE_HEIGHT / 2, Graphics.FONT_XTINY, "--", Graphics.TEXT_JUSTIFY_CENTER);
+            dm.markTideForRefresh();
             return;
         }
 
