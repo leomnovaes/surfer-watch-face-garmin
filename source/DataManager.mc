@@ -189,6 +189,29 @@ class DataManager {
     }
 
     // =========================================================
+    // refreshGarminWeatherData() — called when background event
+    // completes or settings change. For Garmin mode, reads
+    // Weather.getCurrentConditions() and computes sunrise/sunset.
+    // For surf mode with Garmin, computes surf sunrise/sunset.
+    // This is the ONLY place Garmin weather + sunrise/sunset
+    // are populated — never in the view's onUpdate().
+    // =========================================================
+    function refreshGarminWeatherData() as Void {
+        var weatherSource = Application.Properties.getValue("WeatherSource");
+        if (weatherSource != null && weatherSource != 0) { return; } // Not Garmin mode
+
+        var surfMode = Application.Properties.getValue("SurfMode");
+        if (surfMode != null && surfMode == 1) {
+            // Surf mode + Garmin: compute surf sunrise/sunset locally
+            computeSurfSunriseSunset();
+        } else {
+            // Shore mode + Garmin: read built-in weather + compute sunrise/sunset
+            updateGarminWeather();
+            computeSunriseSunset();
+        }
+    }
+
+    // =========================================================
     // clearWeatherData() — resets all weather fields to null.
     // Called when weather source setting changes to prevent
     // stale data from one source being rendered by the other's
@@ -253,13 +276,6 @@ class DataManager {
     // requires CIQ 4.1 and we target 3.4.
     // =========================================================
     function computeSunriseSunset() as Void {
-        // Only compute when needed: first time, or after midnight (sunrise becomes stale)
-        if (sunrise != null) {
-            // Check if sunrise is still for today
-            var now = Time.now().value();
-            if (now < sunrise + 86400) { return; } // still valid for today
-        }
-
         if (lastKnownLat == null || lastKnownLng == null) {
             return;
         }
@@ -337,12 +353,6 @@ class DataManager {
     // Stores in separate surfSunrise/surfSunset fields.
     // =========================================================
     function computeSurfSunriseSunset() as Void {
-        // Only compute when needed: first time, or after midnight
-        if (surfSunrise != null) {
-            var now = Time.now().value();
-            if (now < surfSunrise + 86400) { return; }
-        }
-
         var surfLatStr = Application.Properties.getValue("SurfSpotLat");
         var surfLngStr = Application.Properties.getValue("SurfSpotLng");
         if (surfLatStr == null || surfLngStr == null) {

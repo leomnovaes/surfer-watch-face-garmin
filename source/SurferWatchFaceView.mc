@@ -108,19 +108,15 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var surfMode = Application.Properties.getValue("SurfMode");
 
         if (surfMode != null && surfMode == 1) {
-            // Surf mode
+            // Surf mode — all weather data populated via onBackgroundData/onSettingsChanged
             dm.updateSensorData();
             dm.checkCopyGPS();
             dm.updateSurfSensors();
             dm.computeNextTide();
             dm.interpolateTideHeight();
             dm.computeMoonPhase();
-            // Surf sunrise/sunset: from API when Open-Meteo/OWM, computed locally only for Garmin
-            var surfWs = Application.Properties.getValue("WeatherSource");
-            if (surfWs == null || surfWs == 0) {
-                dm.computeSurfSunriseSunset();
-            }
             dm.updateSwellFromForecast();
+            var surfWs = Application.Properties.getValue("WeatherSource");
             if (surfWs != null && surfWs == 1) {
                 dm.updateSurfWindFromForecast();
             }
@@ -136,20 +132,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 drawTideCurve(dc, dm);
             }
         } else {
-            // Shore mode
+            // Shore mode — all weather data populated via onBackgroundData/onSettingsChanged
             dm.updateSensorData();
             dm.computeMoonPhase();
             dm.computeNextTide();
-
-            var weatherSource = Application.Properties.getValue("WeatherSource");
-            if (weatherSource == null || weatherSource == 0) {
-                dm.updateGarminWeather();
-                dm.computeSunriseSunset();
-            } else if (weatherSource == 1) {
-                // Open-Meteo: sunrise/sunset come from API response (stored in dm.sunrise/sunset)
-                // Weather data updated via onBackgroundData → onWeatherData
-            }
-            // WeatherSource == 2 (OWM): same as Open-Meteo — data from background
 
             drawHrCircle(dc, dm);
             drawTopSection(dc, dm);
