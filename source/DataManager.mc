@@ -59,6 +59,13 @@ class DataManager {
     // --- Surf mode: interpolated tide ---
     var interpTideHeight as Float or Null;
 
+    // --- Surf mode: pre-extracted tide curve data (computed once on data change) ---
+    var tideCurveTimes as Array or Null;
+    var tideCurveHeights as Array or Null;
+    var tideCurveMinH as Float;
+    var tideCurveMaxH as Float;
+    var tideCurveHRange as Float;
+
     // --- Surf mode: UI state ---
     var bottomToggleState as Number;
 
@@ -68,10 +75,14 @@ class DataManager {
         notificationCount = 0;
         bluetoothConnected = false;
         bottomToggleState = 0;
+        tideCurveMinH = 0.0;
+        tideCurveMaxH = 1.0;
+        tideCurveHRange = 1.0;
 
         // Load persisted data from Application.Storage
         loadTideData();
         loadWeatherData();
+        extractTideCurveData();
     }
 
     // =========================================================
@@ -377,6 +388,7 @@ class DataManager {
             Application.Storage.setValue("tideDataExpired", false);
             persistTideData();
         }
+        extractTideCurveData();
     }
 
     // =========================================================
@@ -442,6 +454,44 @@ class DataManager {
         // Phase as 0.0–1.0
         moonPhase = (cycles - cycles.toNumber().toFloat());
         if (moonPhase < 0.0f) { moonPhase = moonPhase + 1.0f; }
+    }
+
+    // =========================================================
+    // extractTideCurveData() — pre-extracts event times and
+    // heights from tideExtremes into flat arrays + computes
+    // height range. Called once when tide data changes, not
+    // on every render. drawTideCurve() reads these cached arrays.
+    // =========================================================
+    function extractTideCurveData() as Void {
+        if (tideExtremes == null || tideExtremes.size() < 2) {
+            tideCurveTimes = null;
+            tideCurveHeights = null;
+            return;
+        }
+        var n = tideExtremes.size();
+        var times = new [n];
+        var heights = new [n];
+        var minH = 999.0;
+        var maxH = -999.0;
+        for (var i = 0; i < n; i++) {
+            var entry = tideExtremes[i] as Dictionary;
+            var et = entry["time"];
+            var eh = entry["height"];
+            times[i] = (et != null) ? (et as Number).toFloat() : 0.0;
+            heights[i] = (eh != null) ? (eh as Float).toFloat() : 0.0;
+            var hf = heights[i];
+            if (eh != null) {
+                if (hf < minH) { minH = hf; }
+                if (hf > maxH) { maxH = hf; }
+            }
+        }
+        if (maxH <= minH) { maxH = minH + 1.0; }
+        var hRange = maxH - minH;
+        tideCurveMinH = minH - hRange * 0.25;  // TC_HEIGHT_PAD_BOTTOM
+        tideCurveMaxH = maxH + hRange * 0.1;   // TC_HEIGHT_PAD
+        tideCurveHRange = tideCurveMaxH - tideCurveMinH;
+        tideCurveTimes = times;
+        tideCurveHeights = heights;
     }
 
     // =========================================================
@@ -554,8 +604,7 @@ class DataManager {
     function loadSurfCache() as Void {
         tideExtremes = Application.Storage.getValue("surf_tideExtremes") as Array or Null;
         tideFetchedDay = Application.Storage.getValue("surf_tideFetchedDay") as String or Null;
-        // Swell loaded from flat arrays via updateSwellFromForecast() on each onUpdate()
-        // Wind not cached — fetched live from OWM every temporal event
+        extractTideCurveData();
     }
 
     // =========================================================
@@ -565,6 +614,7 @@ class DataManager {
     function loadShoreCache() as Void {
         loadTideData();
         loadWeatherData();
+        extractTideCurveData();
     }
 
     // =========================================================

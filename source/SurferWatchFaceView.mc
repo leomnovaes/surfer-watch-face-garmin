@@ -544,8 +544,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private static const TC_TRI_WIDTH = 4;          // half-width of the "now" triangle
     private static const TC_TRI_HEIGHT = 5;         // height of the "now" triangle
     private static const TC_TRI_GAP = 3;            // gap between triangle tip and curve top
-    private static const TC_HEIGHT_PAD = 0.1;       // padding fraction added to top of height range
-    private static const TC_HEIGHT_PAD_BOTTOM = 0.25; // padding fraction added to bottom of height range (thicker base at low tide)
 
     // --- Layout constants — HR Circle content positions (tweak these) ---
     private static const HR_HEART_X = 144;
@@ -1039,10 +1037,16 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var nowGapHalf = TC_NOW_GAP_HALF;
         var width = rightX - leftX;
 
-        if (dm.tideExtremes == null || dm.tideExtremes.size() < 2) {
+        if (dm.tideCurveTimes == null || dm.tideCurveHeights == null) {
             drawTextAligned(dc, 88, curveTopY + TC_CURVE_HEIGHT / 2, Graphics.FONT_XTINY, "--", Graphics.TEXT_JUSTIFY_CENTER);
             return;
         }
+
+        var evTimes = dm.tideCurveTimes;
+        var evHeights = dm.tideCurveHeights;
+        var numEvents = evTimes.size();
+        var minH = dm.tideCurveMinH;
+        var hRange = dm.tideCurveHRange;
 
         var now = Time.now();
         var startTime = Time.today().value().toFloat();
@@ -1050,30 +1054,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var timeSpan = endTime - startTime;
         var nowVal = now.value().toFloat();
         var nowX = leftX + ((nowVal - startTime) / timeSpan * width).toNumber();
-
-        // --- Pre-extract event times and heights into flat arrays (one pass over tideExtremes) ---
-        var numEvents = dm.tideExtremes.size();
-        var evTimes = new [numEvents];
-        var evHeights = new [numEvents];
-        var minH = 999.0;
-        var maxH = -999.0;
-        for (var i = 0; i < numEvents; i++) {
-            var entry = dm.tideExtremes[i] as Dictionary;
-            var et = entry["time"];
-            var eh = entry["height"];
-            evTimes[i] = (et != null) ? (et as Number).toFloat() : 0.0;
-            evHeights[i] = (eh != null) ? (eh as Float).toFloat() : 0.0;
-            if (eh != null) {
-                var hf = evHeights[i];
-                if (hf < minH) { minH = hf; }
-                if (hf > maxH) { maxH = hf; }
-            }
-        }
-        if (maxH <= minH) { maxH = minH + 1.0; }
-        var hRange = maxH - minH;
-        minH -= hRange * TC_HEIGHT_PAD_BOTTOM;
-        maxH += hRange * TC_HEIGHT_PAD;
-        hRange = maxH - minH;
 
         // --- Find initial segment: the pair of events surrounding the first pixel's time ---
         var segIdx = 0; // index of the "next" event in the current segment
@@ -1141,12 +1121,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
         // --- Time labels at tide events ---
         for (var i = 0; i < numEvents; i++) {
-            var etf = evTimes[i];
+            var etf = evTimes[i] as Float;
             if (etf >= startTime && etf <= endTime) {
                 var ex = leftX + ((etf - startTime) / timeSpan * width).toNumber();
-                var entry = dm.tideExtremes[i] as Dictionary;
-                var et = entry["time"] as Number;
-                var moment = new Time.Moment(et);
+                var etInt = etf.toNumber();
+                var moment = new Time.Moment(etInt);
                 var info = Gregorian.info(moment, Time.FORMAT_SHORT);
                 var hr = info.hour;
                 if (info.min >= 30) { hr = (hr + 1) % 24; }
