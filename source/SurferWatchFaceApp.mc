@@ -47,6 +47,11 @@ class SurferWatchFaceApp extends Application.AppBase {
         dataManager = new DataManager();
         var ws = Application.Properties.getValue("WeatherSource");
         _lastWeatherSource = (ws != null) ? ws : 0;
+        // Load correct cache based on current mode
+        var surfMode = Application.Properties.getValue("SurfMode");
+        if (surfMode != null && surfMode == 1) {
+            dataManager.loadSurfCache();
+        }
         return [ new SurferWatchFaceView() ];
     }
 

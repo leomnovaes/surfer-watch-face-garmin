@@ -79,9 +79,11 @@ class DataManager {
     // --- Sunrise/sunset recomputation tracking (once per minute, not every tick) ---
     private var _lastSunComputeMinute as Number = -1;
     private var _lastSurfSunComputeMinute as Number = -1;
+    // --- Storage write tracking (avoid flash I/O every tick) ---
     private var _prevStoredLat as Float or Null;
     private var _prevStoredLng as Float or Null;
     private var _prevStoredBt as Boolean;
+    private var _tideExpiredWritten as Boolean;
 
     function initialize() {
         // Initialize sensor defaults
@@ -92,6 +94,7 @@ class DataManager {
         _prevStoredLat = null;
         _prevStoredLng = null;
         _prevStoredBt = false;
+        _tideExpiredWritten = false;
         tideCurveMinH = 0.0;
         tideCurveMaxH = 1.0;
         tideCurveHRange = 1.0;
@@ -412,6 +415,8 @@ class DataManager {
     // =========================================================
     function onTideData(data as Array) as Void {
         tideExtremes = data;
+        nextTideTime = null; // Force recomputation with new data
+        _tideExpiredWritten = false;
         // Persist to the correct prefixed key based on current mode
         var surfMode = Application.Properties.getValue("SurfMode");
         if (surfMode != null && surfMode == 1) {
@@ -462,9 +467,14 @@ class DataManager {
             nextTideTime = null;
             nextTideType = null;
             currentTideHeight = null;
-            Application.Storage.setValue("tideDataExpired", true);
+            if (!_tideExpiredWritten) {
+                Application.Storage.setValue("tideDataExpired", true);
+                _tideExpiredWritten = true;
+            }
             return;
         }
+
+        _tideExpiredWritten = false;
 
         // Set next tide info — time, type, and predicted height of that event
         var nextEntry = tideExtremes[nextIdx] as Dictionary;
@@ -654,6 +664,7 @@ class DataManager {
     function loadSurfCache() as Void {
         tideExtremes = Application.Storage.getValue("surf_tideExtremes") as Array or Null;
         tideFetchedDay = Application.Storage.getValue("surf_tideFetchedDay") as String or Null;
+        nextTideTime = null; // Force recomputation from new tide data
         extractTideCurveData();
         loadForecastCaches();
     }
@@ -665,6 +676,7 @@ class DataManager {
     function loadShoreCache() as Void {
         loadTideData();
         loadWeatherData();
+        nextTideTime = null; // Force recomputation from new tide data
         extractTideCurveData();
     }
 
