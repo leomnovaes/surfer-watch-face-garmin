@@ -132,10 +132,17 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 drawTideCurve(dc, dm);
             }
         } else {
-            // Shore mode — all weather data populated via onBackgroundData/onSettingsChanged
+            // Shore mode — API weather via onBackgroundData, Garmin weather read per tick (OS-cached, no I/O)
             dm.updateSensorData();
             dm.computeMoonPhase();
             dm.computeNextTide();
+
+            var weatherSource = Application.Properties.getValue("WeatherSource");
+            if (weatherSource == null || weatherSource == 0) {
+                // Garmin: read OS-cached weather each tick (temp, condition, wind update asynchronously)
+                // Sunrise/sunset computed in refreshGarminWeatherData() on background events, not here
+                dm.updateGarminWeather();
+            }
 
             drawHrCircle(dc, dm);
             drawTopSection(dc, dm);

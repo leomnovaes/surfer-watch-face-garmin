@@ -228,6 +228,26 @@ class DataManager {
     }
 
     // =========================================================
+    // updateGarminWeather() — reads weather from Garmin built-in
+    // Weather.getCurrentConditions(). Called from onUpdate() when
+    // WeatherSource=0 (Garmin). This is an OS-cached memory read,
+    // not flash I/O — safe to call every tick. Does NOT compute
+    // sunrise/sunset (that's done in refreshGarminWeatherData).
+    // =========================================================
+    function updateGarminWeather() as Void {
+        if (Weather has :getCurrentConditions) {
+            var conditions = Weather.getCurrentConditions();
+            if (conditions != null) {
+                temperature = conditions.temperature != null ? conditions.temperature.toFloat() : null;
+                weatherConditionId = conditions.condition;
+                windSpeed = conditions.windSpeed != null ? conditions.windSpeed.toFloat() : null;
+                windDeg = conditions.windBearing != null ? conditions.windBearing.toNumber() : null;
+                owmFetchedAt = Time.now().value();
+            }
+        }
+    }
+
+    // =========================================================
     // clearWeatherData() — resets all weather fields to null.
     // Called when weather source setting changes to prevent
     // stale data from one source being rendered by the other's
