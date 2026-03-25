@@ -154,19 +154,19 @@ If you want weather data refreshed every 5 minutes without signing up for anythi
 1. In Garmin Connect app settings: set Weather Source to "Open-Meteo (no key)"
 2. That's it — no API key needed
 
-Open-Meteo uses WMO weather codes which cover all common conditions (clear, cloudy, fog, rain, snow, thunderstorm). Some rare conditions available in OWM (smoke, haze, dust, tornado) are not distinguished — they show as the nearest common icon.
+Open-Meteo uses WMO weather codes based on model output. Common conditions (clear, cloudy, fog, rain, snow, thunderstorm) are well covered. Some rare conditions available in OWM (smoke, haze, dust, tornado) are not distinguished. Note: model-based conditions may occasionally differ from actual conditions (e.g., showing "overcast" during light rain). Precipitation probability is a forecast metric (chance of rain in the current hour), not a real-time rain indicator — 50% pop means the model predicted a coin-flip chance, and rain may or may not occur.
 
 In surf mode, Open-Meteo provides hourly wind forecast that continues updating even when your phone disconnects.
 
-### Optional: OpenWeatherMap (most granular weather icons)
+### Optional: OpenWeatherMap (most accurate current conditions)
 
-If you want the most detailed weather condition icons (50+ conditions including smoke, haze, dust, tropical storms):
+If you want the most accurate real-time weather conditions with 50+ condition types:
 
 1. Sign up at [openweathermap.org](https://openweathermap.org/api) (free, no credit card)
 2. Copy your API key
 3. In Garmin Connect app settings: set Weather Source to "OpenWeatherMap" and paste your key
 
-Note: OWM 3.0 (One Call) API keys also work — the watch face uses the 2.5 endpoint which is included in all OWM accounts. In surf mode, OWM provides current wind only (freezes when phone disconnects).
+OWM uses station observations which tend to be more accurate for current conditions than model-based forecasts. It has the most granular weather icons (smoke, haze, dust, tropical storms). In surf mode, OWM provides current wind only (freezes when phone disconnects). Precipitation probability comes from Garmin built-in weather.
 
 ### Optional: StormGlass (tide data)
 

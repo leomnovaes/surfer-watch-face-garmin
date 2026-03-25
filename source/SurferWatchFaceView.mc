@@ -813,9 +813,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
         // Col 3: umbrella icon + precipitation %
         var precipText = "--";
-        if (weatherSource != null && weatherSource == 1 && dm.precipProbability != null) {
-            // Open-Meteo: use API precipitation probability
-            precipText = dm.precipProbability.toString() + "%";
+        if (weatherSource != null && weatherSource == 1) {
+            // Open-Meteo: use API precipitation probability only
+            if (dm.precipProbability != null) {
+                precipText = dm.precipProbability.toString() + "%";
+            }
         } else if (Weather has :getCurrentConditions) {
             // Garmin or OWM: use Garmin built-in precipitationChance
             var conditions = Weather.getCurrentConditions();

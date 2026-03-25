@@ -4,7 +4,7 @@ Supported: Instinct 2, Instinct 2X Solar, Instinct 3 Solar 45/50mm.
 
 Two modes: Shore Mode for daily wear, Surf Mode for in-water use. All on one screen, no menus.
 
-WORKS OUT OF THE BOX — no API keys required for weather or swell data.
+No API keys required for weather (via Open-Meteo or Garmin) or swell data. StormGlass free key required for tide data. OpenWeatherMap 2.5 api key required for OWM weather source.
 
 SHORE MODE (default)
 • Next tide time, direction (high/low), and predicted height via StormGlass API
@@ -30,8 +30,8 @@ SURF MODE
 
 WEATHER SOURCES
 • Default: Garmin built-in weather (zero config, updates via phone)
-• Optional: Open-Meteo (no key needed, updates every 5 min, hourly wind forecast for surf mode offline use)
-• Optional: OpenWeatherMap 2.5 (free, no credit card, most granular weather icons)
+• Optional: Open-Meteo (no key needed, updates every 5 min, hourly wind forecast for surf mode offline use). Uses WMO weather codes which are model-based — may occasionally show "overcast" when it's actually raining. Precipitation probability is a forecast (chance of rain), not a real-time indicator.
+• Optional: OpenWeatherMap 2.5 (free, no credit card). Uses station observations for more accurate current conditions and the most granular weather icons (50+ conditions including smoke, haze, dust). Precipitation probability comes from Garmin built-in.
 
 SWELL + OCEAN TEMPERATURE
 • Open-Meteo Marine API — free, no key, no quota
