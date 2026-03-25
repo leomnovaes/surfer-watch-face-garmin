@@ -53,3 +53,19 @@ Initial public release of Surfer Watch.
 - Surf Spot Lat/Lng, Copy GPS to Surf Spot
 - OWM API Key, StormGlass API Key + Backup
 - Home Lat/Lng
+
+
+## v1.0.1
+
+### Fixed
+- Precipitation probability now consistent across all weather sources — always reads from DataManager, no direct Garmin API access in the view
+- OWM mode populates precipitation from Garmin built-in (OWM 2.5 doesn't include pop)
+- Switching weather source shows "--" for all fields until new source responds (was showing stale pop from previous source)
+
+### Changed
+- Weather source tradeoffs documented in README and store description (Open-Meteo model-based vs OWM station observations)
+- Surf mode temperature now shows 1 decimal place (8.8°C instead of 8°C)
+- Ocean surface temperature option added (Open-Meteo Marine, hourly, works offline)
+- Settings reordered for better UX
+- Launcher icon 62x62 PNG (was 24x24 SVG causing scaling warnings)
+- Store cover image updated to 500x500 with Surfer Watch branding
