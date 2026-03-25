@@ -252,6 +252,7 @@ class DataManager {
                 weatherConditionId = conditions.condition;
                 windSpeed = conditions.windSpeed != null ? conditions.windSpeed.toFloat() : null;
                 windDeg = conditions.windBearing != null ? conditions.windBearing.toNumber() : null;
+                precipProbability = conditions.precipitationChance != null ? conditions.precipitationChance.toNumber() : null;
                 owmFetchedAt = Time.now().value();
             }
         }
@@ -440,6 +441,13 @@ class DataManager {
         sunrise = data["sunrise"] as Number or Null;
         sunset = data["sunset"] as Number or Null;
         precipProbability = data["precipProbability"] as Number or Null;
+        // OWM doesn't return pop — fall back to Garmin built-in
+        if (precipProbability == null && Weather has :getCurrentConditions) {
+            var conditions = Weather.getCurrentConditions();
+            if (conditions != null && conditions.precipitationChance != null) {
+                precipProbability = conditions.precipitationChance.toNumber();
+            }
+        }
         isDay = data["isDay"] as Number or Null;
         // Read owmFetchedAt from Storage (written by WeatherService/OpenMeteoService in background)
         owmFetchedAt = Application.Storage.getValue("owmFetchedAt") as Number or Null;
