@@ -272,7 +272,7 @@ Note: This requirement describes the OWM (WeatherSource=2) behavior. Open-Meteo 
 5. THE DataManager SHALL store the weather code as `weatherConditionId` (WMO code, not OWM code)
 6. THE Watch_Face SHALL use a new `wmoToWeatherGlyph()` mapper to convert WMO codes to icon glyphs when `WeatherSource` = 1
 7. THE Watch_Face SHALL use the `is_day` field from Open-Meteo to determine day/night icon variants (instead of comparing current time to sunrise/sunset)
-8. THE Watch_Face SHALL display precipitation probability from the Open-Meteo response when `WeatherSource` = 1, replacing the Garmin built-in `precipitationChance`
+8. THE Watch_Face SHALL display precipitation probability from `dm.precipProbability` for all weather sources. Garmin mode populates it from `Weather.getCurrentConditions()`. Open-Meteo populates from API. OWM falls back to Garmin built-in (OWM 2.5 doesn't include pop).
 9. THE Open-Meteo response is ~670 bytes for current-only — fits comfortably in background memory
 10. THE ServiceDelegate SHALL fetch Open-Meteo weather on every background temporal event (no time/distance gating — same as current OWM behavior)
 

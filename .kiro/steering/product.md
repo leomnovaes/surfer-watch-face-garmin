@@ -17,7 +17,7 @@ Surfers and outdoor athletes who wear the Garmin Instinct 2X Solar and want a si
 - Next sunrise/sunset time and direction icon — via OWM API or local computation
 - Weather condition icon and temperature — via Garmin built-in (default), Open-Meteo (no key), or OWM API
 - Wind direction and speed — via Garmin built-in, Open-Meteo, or OWM API
-- Precipitation chance — via Garmin built-in weather or Open-Meteo
+- Precipitation chance — via DataManager (Garmin built-in, Open-Meteo API, or Garmin fallback for OWM)
 - Moon phase icon — computed locally from synodic period (28 phases)
 - Seconds display (hidden by default, revealed on wrist gesture to save battery)
 - AM/PM indicator

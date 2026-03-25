@@ -820,13 +820,13 @@ When WeatherSource=2 (OWM), surf wind continues to use the current-only `surfWin
 
 ### Precipitation Probability by Source
 
-| WeatherSource | Precip Source | Field |
-|---------------|--------------|-------|
-| 0 (Garmin) | `Weather.getCurrentConditions().precipitationChance` | Read in onUpdate() |
-| 1 (Open-Meteo) | `current.precipitation_probability` from API response | Stored in DataManager |
-| 2 (OWM) | `Weather.getCurrentConditions().precipitationChance` | Read in onUpdate() (OWM 2.5 doesn't have pop) |
+All sources populate `dm.precipProbability`. The view reads only from `dm.precipProbability`.
 
-New DataManager field: `precipProbability as Number or Null` — populated from Open-Meteo response. The view checks WeatherSource: if 1, use `dm.precipProbability`; otherwise use Garmin built-in.
+| WeatherSource | Precip Source | How populated |
+|---------------|--------------|---------------|
+| 0 (Garmin) | `Weather.getCurrentConditions().precipitationChance` | `updateGarminWeather()` every tick |
+| 1 (Open-Meteo) | `current.precipitation_probability` from API response | `onWeatherData()` from background |
+| 2 (OWM) | `Weather.getCurrentConditions().precipitationChance` (fallback) | `onWeatherData()` reads Garmin when API has no pop |
 
 ### Memory Budget for Surf Mode Chain (Open-Meteo)
 
