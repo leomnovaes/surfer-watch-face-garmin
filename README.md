@@ -102,7 +102,7 @@ The watch face is divided into four zones:
 | ↑ sun | Next event is sunrise |
 | ↓ sun | Next event is sunset |
 | 🌑→🌕→🌑 | Moon phase (28 phases, updates daily) |
-| Arrow | Wind direction (points where wind blows FROM) |
+| Arrow | Wind/swell direction (tip points where it's heading, tail shows origin) |
 | ☂ | Precipitation chance |
 | ♥ | Heart rate |
 | Arc around HR | Stress level (more black = more stress) |

@@ -437,16 +437,17 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         }
     }
 
-    // Draws a wind direction arrow (swallow-tail triangle) at center cx,cy
-    // rotated to `degrees` (meteorological: 0=N, 90=E, 180=S, 270=W).
-    // Arrow points in the direction wind blows FROM.
+    // Draws a wind/swell direction arrow (swallow-tail triangle) at center cx,cy
+    // rotated to `degrees` (meteorological FROM convention: 0=N, 90=E, 180=S, 270=W).
+    // Arrow tip points in the TRAVEL direction (where wind/swell is going).
+    // Swallow tail indicates the ORIGIN direction (where it comes from).
     // size = half-height of the arrow.
     private function drawWindArrow(dc as Dc, cx as Number, cy as Number, degrees as Number, size as Number) as Void {
-        // Meteorological convention: degrees is where wind comes FROM
-        // 0=N, 90=E, 180=S, 270=W (clockwise)
-        // Screen: Y increases downward. Standard rotation is counter-clockwise.
-        // Negate angle to convert clockwise meteorological to counter-clockwise math.
-        var rad = -degrees * Math.PI / 180.0;
+        // API convention: degrees is where wind/swell comes FROM (0=N, 90=E, 180=S, 270=W)
+        // Arrow convention: tip points where it's GOING (towards), tail shows origin (from)
+        // Convert: rad = (degrees + 180) in radians. The +180 flips FROM→TOWARDS.
+        // No negation needed — meteorological clockwise matches screen Y-down clockwise.
+        var rad = (degrees + 180) * Math.PI / 180.0;
         var sinA = Math.sin(rad);
         var cosA = Math.cos(rad);
 
