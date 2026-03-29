@@ -55,7 +55,11 @@ Initial public release of Surfer Watch.
 - Home Lat/Lng
 
 
-## v1.0.1
+## v1.0.2
+
+### Fixed
+- Wind and swell arrows now correctly point in the TRAVEL direction (tip = where it's heading, tail = where it comes from). Was pointing in the FROM direction for N/S angles.
+
 
 ### Fixed
 - Precipitation probability now consistent across all weather sources — always reads from DataManager, no direct Garmin API access in the view

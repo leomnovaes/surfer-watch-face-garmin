@@ -441,9 +441,9 @@ else:
 
 In surf mode, wind data comes from OWM 2.5 Current Weather for the surf spot coordinates. The delegate's `onWindDone()` callback extracts only `windSpeed` and `windDeg` from the OWM response and stores them in `surfWindSpeed`/`surfWindDeg` — separate from shore mode's `windSpeed`/`windDeg`.
 
-The wind arrow is drawn using the existing `drawWindArrow()` method with `dm.surfWindDeg`. Wind speed is normalized to m/s and converted per the `WindSpeedUnit` setting, using the same logic as shore mode.
+The wind arrow is drawn using the existing `drawWindArrow()` method with `dm.surfWindDeg`. The arrow tip points in the TRAVEL direction (where wind/swell is heading), and the swallow tail indicates the origin. Wind speed is normalized to m/s and converted per the `WindSpeedUnit` setting, using the same logic as shore mode.
 
-For the swell direction arrow in the bottom section, the same `drawWindArrow()` is reused with `swellDirection` degrees from the Open-Meteo forecast.
+For the swell direction arrow in the bottom section, the same `drawWindArrow()` is reused with `swellDirection` degrees from the Open-Meteo forecast. Same convention: tip = travel direction, tail = origin.
 
 ### SurferWatchFaceView.onUpdate() — Mode Branch
 
