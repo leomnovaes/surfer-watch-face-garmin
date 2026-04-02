@@ -513,8 +513,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         drawIconMoon(dc, 132 /* MID_RIGHT_LEFT_X */+2, 75 /* MID_RIGHT_TOP_Y */, dm);
         // Bottom-left: AM/PM
         drawTextAligned(dc, 132 /* MID_RIGHT_LEFT_X */, 94 /* MID_RIGHT_BOTTOM_Y */, Graphics.FONT_XTINY, ampm, Graphics.TEXT_JUSTIFY_LEFT);
-        // Bottom-right: seconds (only when awake — wrist gesture active)
-        if (!isSleeping) {
+        // Bottom-right: seconds (on wrist raise, or always if AlwaysShowSeconds enabled)
+        var alwaysSec = Application.Properties.getValue("AlwaysShowSeconds");
+        if (!isSleeping || (alwaysSec != null && alwaysSec == true)) {
             drawTextAligned(dc, 174 /* MID_RIGHT_RIGHT_X */, 94 /* MID_RIGHT_BOTTOM_Y */, Graphics.FONT_XTINY, seconds, Graphics.TEXT_JUSTIFY_RIGHT);
         }
     }
@@ -1162,6 +1163,19 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     function onEnterSleep() as Void {
         isSleeping = true;
         WatchUi.requestUpdate();
+    }
+
+    function onPartialUpdate(dc as Dc) as Void {
+        var alwaysSec = Application.Properties.getValue("AlwaysShowSeconds");
+        if (alwaysSec == null || alwaysSec != true) { return; }
+        var clipX = 156;
+        var clipY = 90;
+        dc.setClip(clipX, clipY, 20, 18);
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.fillRectangle(clipX, clipY, 20, 18);
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        var clockTime = System.getClockTime();
+        drawTextAligned(dc, 174 /* MID_RIGHT_RIGHT_X */, 94 /* MID_RIGHT_BOTTOM_Y */, Graphics.FONT_XTINY, clockTime.sec.format("%02d"), Graphics.TEXT_JUSTIFY_RIGHT);
     }
 
 }

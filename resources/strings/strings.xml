@@ -10,6 +10,7 @@
     <string id="ClockFontTitle">Clock Font</string>
     <string id="FontSaira">Saira Condensed</string>
     <string id="FontRajdhani">Rajdhani</string>
+    <string id="AlwaysShowSecondsTitle">Always Show Seconds (more battery)</string>
     <string id="WeatherSourceTitle">Weather Source</string>
     <string id="WeatherSourceGarmin">Garmin (default)</string>
     <string id="WeatherSourceOpenMeteo">Open-Meteo (no key)</string>
