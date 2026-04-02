@@ -197,33 +197,42 @@ class DataManager {
             _prevStoredBt = bluetoothConnected;
         }
 
-        // Body Battery (for configurable arc)
-        if (SensorHistory has :getBodyBatteryHistory) {
-            var bbIter = SensorHistory.getBodyBatteryHistory({:period => 1});
-            if (bbIter != null) {
-                var sample = bbIter.next();
-                if (sample != null && sample.data != null) {
-                    bodyBattery = sample.data.toNumber();
+        // Body Battery — only read if arc is configured to show it
+        var shoreArc = Application.Properties.getValue("ShoreArc");
+        var surfArc = Application.Properties.getValue("SurfArc");
+        if ((shoreArc != null && shoreArc == 2) || (surfArc != null && surfArc == 2)) {
+            if (SensorHistory has :getBodyBatteryHistory) {
+                var bbIter = SensorHistory.getBodyBatteryHistory({:period => 1});
+                if (bbIter != null) {
+                    var sample = bbIter.next();
+                    if (sample != null && sample.data != null) {
+                        bodyBattery = sample.data.toNumber();
+                    } else { bodyBattery = null; }
                 } else { bodyBattery = null; }
             } else { bodyBattery = null; }
-        } else { bodyBattery = null; }
+        }
 
-        // Altitude (for configurable subscreen)
-        if (SensorHistory has :getElevationHistory) {
-            var elevIter = SensorHistory.getElevationHistory({:period => 1});
-            if (elevIter != null) {
-                var sample = elevIter.next();
-                if (sample != null && sample.data != null) {
-                    altitude = sample.data.toFloat();
+        // Altitude — only read if shore subscreen is set to Altitude
+        var shoreSub = Application.Properties.getValue("ShoreSubscreen");
+        if (shoreSub != null && shoreSub == 2) {
+            if (SensorHistory has :getElevationHistory) {
+                var elevIter = SensorHistory.getElevationHistory({:period => 1});
+                if (elevIter != null) {
+                    var sample = elevIter.next();
+                    if (sample != null && sample.data != null) {
+                        altitude = sample.data.toFloat();
+                    } else { altitude = null; }
                 } else { altitude = null; }
             } else { altitude = null; }
-        } else { altitude = null; }
+        }
 
-        // Steps (for configurable subscreen)
-        var actMon = ActivityMonitor.getInfo();
-        if (actMon != null) {
-            steps = actMon.steps;
-        } else { steps = null; }
+        // Steps — only read if shore subscreen is set to Steps
+        if (shoreSub != null && shoreSub == 3) {
+            var actMon = ActivityMonitor.getInfo();
+            if (actMon != null) {
+                steps = actMon.steps;
+            } else { steps = null; }
+        }
     }
 
     // =========================================================
