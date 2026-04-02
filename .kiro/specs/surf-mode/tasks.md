@@ -201,33 +201,47 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 ## Phase 5 — v1.1.0 Customization Features
 
 ### Task 32: Always Show Seconds setting
-- [ ] 32.1 Add `AlwaysShowSeconds` boolean property (default false) to properties.xml
-- [ ] 32.2 Add setting UI entry to settings.xml with label "(uses more battery)"
-- [ ] 32.3 Add string resources
-- [ ] 32.4 Update view: when enabled, show seconds regardless of isSleeping state (both modes)
+- [x] 32.1 Add `AlwaysShowSeconds` boolean property (default false) to properties.xml
+- [x] 32.2 Add setting UI entry to settings.xml with label "(more battery)"
+- [x] 32.3 Add string resources
+- [x] 32.4 Update `drawRightColumn()`: show seconds when `!isSleeping || AlwaysShowSeconds`
+- [x] 32.5 Implement `onPartialUpdate(dc)` for per-second updates in low-power mode
+  - Clips to seconds region (20x18px), clears, redraws seconds text
+  - Early return when AlwaysShowSeconds is off (near-zero battery cost)
+  - Note: `onPartialUpdate` is called by the system every second on MIP devices regardless — cannot be unregistered. The early return is the gating mechanism.
 
 ### Task 33: Configurable arc bar per mode
-- [ ] 33.1 Add `ShoreArc` list property: 0=Stress (default), 1=Solar, 2=Body Battery, 3=Disabled
-- [ ] 33.2 Add `SurfArc` list property: 0=Solar (default), 1=Stress, 2=Body Battery, 3=Disabled
-- [ ] 33.3 Add setting UI entries and string resources
-- [ ] 33.4 Read Body Battery from SensorHistory.getBodyBatteryHistory() in DataManager (guarded with has)
-- [ ] 33.5 Update drawHrCircle() to read ShoreArc setting and draw selected metric
-- [ ] 33.6 Update drawHrCircle_Surf() to read SurfArc setting and draw selected metric
-- [ ] 33.7 When Disabled, draw circle + content but skip arc
+- [x] 33.1 Add `ShoreArc` list property: 0=Stress (default), 1=Solar, 2=Body Battery, 3=Disabled
+- [x] 33.2 Add `SurfArc` list property: 0=Solar (default), 1=Stress, 2=Body Battery, 3=Disabled
+- [x] 33.3 Add setting UI entries and string resources
+- [x] 33.4 Add `bodyBattery` field to DataManager
+- [x] 33.5 Implement `readBodyBatteryHistory()` — isolated SensorHistory read
+- [x] 33.6 Implement `readSolarIntensity()` — isolated System.getSystemStats read
+- [x] 33.7 Gate all arc sensors: only read the sensor matching the active mode's arc setting (see steering/tech.md Sensor Gating Rules)
+- [x] 33.8 Gate stress: only read when ShoreArc=0 or SurfArc=1
+- [x] 33.9 Gate heart rate: only read in shore mode (surf mode shows tide height)
+- [x] 33.10 Gate water temp: only read when SurfTempSource=0 (watch sensor)
+- [x] 33.11 Gate solar intensity: only read when ShoreArc=1 or SurfArc=0
+- [x] 33.12 Update `drawHrCircle()` to read ShoreArc and draw selected metric
+- [x] 33.13 Update `drawHrCircle_Surf()` to read SurfArc and draw selected metric
+- [x] 33.14 When Disabled (3), draw circle + content but skip arc
+- Note: SensorHistory OOM constraint — only one SensorHistory iterator per tick. Stress and Body Battery are mutually exclusive arc options, so only one runs.
 
 ### Task 34: Configurable shore subscreen content
 - [ ] 34.1 Add `ShoreSubscreen` list property: 0=Heart Rate (default), 1=Temperature, 2=Altitude, 3=Steps
 - [ ] 34.2 Add setting UI entry and string resources
-- [ ] 34.3 Read altitude from SensorHistory.getElevationHistory() in DataManager (guarded with has)
-- [ ] 34.4 Read steps from ActivityMonitor.getInfo().steps in DataManager
-- [ ] 34.5 Rasterize mountain icon from MDI webfont into surfer-icons font
-- [ ] 34.6 Rasterize walking/steps icon from MDI webfont into surfer-icons font
-- [ ] 34.7 Implement drawHrCircle() variants: Temperature (thermometer + °C/°F), Altitude (mountain + m/ft), Steps (walking + count)
-- [ ] 34.8 Wire ShoreSubscreen setting into onUpdate shore branch
+- [ ] 34.3 Add `altitude` and `steps` fields to DataManager
+- [ ] 34.4 Read altitude from SensorHistory.getElevationHistory() — gated by ShoreSubscreen=2, shore mode only
+- [ ] 34.5 Read steps from ActivityMonitor.getInfo().steps — gated by ShoreSubscreen=3, shore mode only
+- [ ] 34.6 Rasterize mountain icon into surfer-icons font (char M=77)
+- [ ] 34.7 Rasterize steps/shoe-prints icon into surfer-icons font (char W=87)
+- [ ] 34.8 Implement `drawHrCircle()` variants: Temperature (thermometer + °C/°F), Altitude (mountain + m/ft), Steps (shoe-prints + count)
+- [ ] 34.9 Wire ShoreSubscreen setting into drawHrCircle shore branch
+- Note: Follow Sensor Gating Rules in steering/tech.md. Altitude and Steps use SensorHistory — put reads in isolated functions. Only one SensorHistory read per tick.
 
 ### Task 35: Update docs and release v1.1.0
 - [ ] 35.1 Update README with new settings
 - [ ] 35.2 Update store-description.txt
 - [ ] 35.3 Update CHANGELOG
-- [ ] 35.4 Update specs
+- [ ] 35.4 Update specs (requirements, design)
 - [ ] 35.5 Build and upload to Connect IQ

@@ -200,3 +200,34 @@ Icons use a custom bitmap font (`.fnt` + `.png`) generated from the **Weather Ic
 - Watch face `onUpdate()` called at most once per second — keep it fast
 - External API calls must be async (background service or timer-based)
 - API data cached locally — don't call on every update tick
+
+## Sensor Gating Rules (CRITICAL — memory safety)
+
+On the ~65KB heap, reading unused sensors causes OOM. Every sensor read MUST be gated by the settings that control whether it's displayed. Never read a sensor unconditionally — always check the mode and relevant setting first.
+
+**Rule: only read a sensor if the current mode + settings will display its value.**
+
+### Sensor → Setting → Mode mapping
+
+| Sensor | API | Shore Mode | Surf Mode | Gate condition |
+|--------|-----|-----------|-----------|----------------|
+| Heart Rate | `Activity.getActivityInfo()` | Subscreen (default) | Not displayed | Shore only, when ShoreSubscreen needs it |
+| Stress | `SensorHistory.getStressHistory()` | Arc (default) | Arc (optional) | ShoreArc=0 OR SurfArc=1 |
+| Body Battery | `SensorHistory.getBodyBatteryHistory()` | Arc (optional) | Arc (optional) | ShoreArc=2 OR SurfArc=2 |
+| Solar Intensity | `System.getSystemStats().solarIntensity` | Arc (optional) | Arc (default) | ShoreArc=1 OR SurfArc=0 |
+| Water Temp | `SensorHistory.getTemperatureHistory()` | Not displayed | Top section (default) | Surf only, when SurfTempSource=0 |
+| Altitude | `SensorHistory.getElevationHistory()` | Subscreen (optional) | Not displayed | Shore only, when ShoreSubscreen=2 |
+| Steps | `ActivityMonitor.getInfo().steps` | Subscreen (optional) | Not displayed | Shore only, when ShoreSubscreen=3 |
+| Battery | `System.getSystemStats().battery` | Always | Always | No gate — always needed |
+| GPS | `Position.getInfo()` | Always | Always | No gate — always needed |
+| Notifications | `System.getDeviceSettings()` | Always | Not displayed | Read with battery (same call) |
+
+### SensorHistory OOM constraint
+`SensorHistory` iterators allocate heap memory. Only ONE SensorHistory iterator should be active per tick. The arc settings (Stress vs Body Battery) are mutually exclusive, so only one runs. Altitude and Steps are also mutually exclusive (different ShoreSubscreen values). Never read two SensorHistory sensors in the same tick.
+
+### When adding a new sensor or setting
+1. Add the sensor to this table
+2. Add the gate condition
+3. Implement the gate in `updateSensorData()` or `updateSurfSensors()`
+4. If it uses SensorHistory, put the read in its own private function (isolates iterator from main stack)
+5. Test with all setting combinations to verify no OOM

@@ -6,7 +6,6 @@
     <property id="HomeLat" type="string">0.0</property>
     <property id="HomeLng" type="string">0.0</property>
     <property id="ClockFont" type="number">0</property>
-    <property id="AlwaysShowSeconds" type="boolean">false</property>
     <property id="WeatherSource" type="number">0</property>
     <property id="WindSpeedUnit" type="number">0</property>
     <property id="SurfMode" type="number">0</property>
@@ -14,8 +13,5 @@
     <property id="SurfSpotLng" type="string">0.0</property>
     <property id="CopyGPSToSurfSpot" type="boolean">false</property>
     <property id="SurfTempSource" type="number">0</property>
-    <property id="ShoreArc" type="number">0</property>
-    <property id="SurfArc" type="number">0</property>
-    <property id="ShoreSubscreen" type="number">0</property>
 
 </properties>
