@@ -7,6 +7,10 @@
         </settingConfig>
     </setting>
 
+    <setting propertyKey="@Properties.AlwaysShowSeconds" title="@Strings.AlwaysShowSecondsTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+
     <setting propertyKey="@Properties.WindSpeedUnit" title="@Strings.WindSpeedUnitTitle">
         <settingConfig type="list">
             <listEntry value="0">@Strings.WindSpeedAuto</listEntry>
@@ -29,6 +33,33 @@
         <settingConfig type="list">
             <listEntry value="0">@Strings.SurfModeShore</listEntry>
             <listEntry value="1">@Strings.SurfModeSurf</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.ShoreSubscreen" title="@Strings.ShoreSubscreenTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.SubscreenHR</listEntry>
+            <listEntry value="1">@Strings.SubscreenTemp</listEntry>
+            <listEntry value="2">@Strings.SubscreenAltitude</listEntry>
+            <listEntry value="3">@Strings.SubscreenSteps</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.ShoreArc" title="@Strings.ShoreArcTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.ArcStress</listEntry>
+            <listEntry value="1">@Strings.ArcSolar</listEntry>
+            <listEntry value="2">@Strings.ArcBodyBattery</listEntry>
+            <listEntry value="3">@Strings.ArcDisabled</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.SurfArc" title="@Strings.SurfArcTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.ArcSolar</listEntry>
+            <listEntry value="1">@Strings.ArcStress</listEntry>
+            <listEntry value="2">@Strings.ArcBodyBattery</listEntry>
+            <listEntry value="3">@Strings.ArcDisabled</listEntry>
         </settingConfig>
     </setting>
 

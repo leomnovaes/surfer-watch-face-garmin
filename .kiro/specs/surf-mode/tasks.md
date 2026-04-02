@@ -196,3 +196,38 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 - [ ] 31.3 Create NEW app listing on Connect IQ developer dashboard (not the beta one)
 - [ ] 31.4 Upload `.iq` package, screenshots, store-cover, store-description
 - [ ] 31.5 Submit for approval
+
+
+## Phase 5 — v1.1.0 Customization Features
+
+### Task 32: Always Show Seconds setting
+- [ ] 32.1 Add `AlwaysShowSeconds` boolean property (default false) to properties.xml
+- [ ] 32.2 Add setting UI entry to settings.xml with label "(uses more battery)"
+- [ ] 32.3 Add string resources
+- [ ] 32.4 Update view: when enabled, show seconds regardless of isSleeping state (both modes)
+
+### Task 33: Configurable arc bar per mode
+- [ ] 33.1 Add `ShoreArc` list property: 0=Stress (default), 1=Solar, 2=Body Battery, 3=Disabled
+- [ ] 33.2 Add `SurfArc` list property: 0=Solar (default), 1=Stress, 2=Body Battery, 3=Disabled
+- [ ] 33.3 Add setting UI entries and string resources
+- [ ] 33.4 Read Body Battery from SensorHistory.getBodyBatteryHistory() in DataManager (guarded with has)
+- [ ] 33.5 Update drawHrCircle() to read ShoreArc setting and draw selected metric
+- [ ] 33.6 Update drawHrCircle_Surf() to read SurfArc setting and draw selected metric
+- [ ] 33.7 When Disabled, draw circle + content but skip arc
+
+### Task 34: Configurable shore subscreen content
+- [ ] 34.1 Add `ShoreSubscreen` list property: 0=Heart Rate (default), 1=Temperature, 2=Altitude, 3=Steps
+- [ ] 34.2 Add setting UI entry and string resources
+- [ ] 34.3 Read altitude from SensorHistory.getElevationHistory() in DataManager (guarded with has)
+- [ ] 34.4 Read steps from ActivityMonitor.getInfo().steps in DataManager
+- [ ] 34.5 Rasterize mountain icon from MDI webfont into surfer-icons font
+- [ ] 34.6 Rasterize walking/steps icon from MDI webfont into surfer-icons font
+- [ ] 34.7 Implement drawHrCircle() variants: Temperature (thermometer + °C/°F), Altitude (mountain + m/ft), Steps (walking + count)
+- [ ] 34.8 Wire ShoreSubscreen setting into onUpdate shore branch
+
+### Task 35: Update docs and release v1.1.0
+- [ ] 35.1 Update README with new settings
+- [ ] 35.2 Update store-description.txt
+- [ ] 35.3 Update CHANGELOG
+- [ ] 35.4 Update specs
+- [ ] 35.5 Build and upload to Connect IQ

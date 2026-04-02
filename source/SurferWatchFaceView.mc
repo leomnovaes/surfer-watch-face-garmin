@@ -539,8 +539,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         drawIconMoon(dc, MID_RIGHT_LEFT_X+2, MID_RIGHT_TOP_Y, dm);
         // Bottom-left: AM/PM
         drawTextAligned(dc, MID_RIGHT_LEFT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, ampm, Graphics.TEXT_JUSTIFY_LEFT);
-        // Bottom-right: seconds (only when awake — wrist gesture active)
-        if (!isSleeping) {
+        // Bottom-right: seconds (on wrist raise, or always if AlwaysShowSeconds enabled)
+        var alwaysSec = Application.Properties.getValue("AlwaysShowSeconds");
+        if (!isSleeping || (alwaysSec != null && alwaysSec == true)) {
             drawTextAligned(dc, MID_RIGHT_RIGHT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, seconds, Graphics.TEXT_JUSTIFY_RIGHT);
         }
     }
@@ -575,30 +576,66 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     // Section renderers — called from onUpdate()
     // =========================================================
     private function drawHrCircle(dc as Dc, dm as DataManager) as Void {
-
         // Filled white circle
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.fillCircle(hrCenterX, hrCenterY, hrRadius);
 
-        // Stress arc
-        var stressVal = 0;
-        if (dm.stress != null) {
-            stressVal = dm.stress;
+        // Configurable arc: 0=Stress, 1=Solar, 2=Body Battery, 3=Disabled
+        var arcSetting = Application.Properties.getValue("ShoreArc");
+        if (arcSetting == null) { arcSetting = 0; }
+        if (arcSetting != 3) {
+            var arcVal = 0;
+            if (arcSetting == 0 && dm.stress != null) { arcVal = dm.stress; }
+            else if (arcSetting == 1 && dm.solarIntensity != null) { arcVal = dm.solarIntensity; }
+            else if (arcSetting == 2 && dm.bodyBattery != null) { arcVal = dm.bodyBattery; }
+            drawStressArc(dc, hrCenterX, hrCenterY, hrRadius, STRESS_ARC_WIDTH, arcVal);
         }
-        drawStressArc(dc, hrCenterX, hrCenterY, hrRadius, STRESS_ARC_WIDTH, stressVal);
 
-        // Heart icon
+        // Configurable subscreen content: 0=HR, 1=Temp, 2=Altitude, 3=Steps
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        drawHrHeart(dc, hrIconX, hrIconY);
+        var subSetting = Application.Properties.getValue("ShoreSubscreen");
+        if (subSetting == null) { subSetting = 0; }
 
-        // Heart rate text
-        var hrText = "--";
-        if (dm.heartRate != null) {
-            hrText = dm.heartRate.toString();
+        if (subSetting == 1) {
+            // Temperature
+            if (surferIconsFont != null) {
+                dc.drawText(hrIconX, hrIconY, surferIconsFont, "T", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            }
+            var tempText = "--";
+            if (dm.waterTemp != null) {
+                var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
+                if (isMetric) { tempText = dm.waterTemp.format("%.1f") + "°"; }
+                else { tempText = (dm.waterTemp * 1.8 + 32).format("%.1f") + "°"; }
+            }
+            drawHrText(dc, hrTextX, hrTextY, tempText);
+        } else if (subSetting == 2) {
+            // Altitude
+            if (surferIconsFont != null) {
+                dc.drawText(hrIconX, hrIconY, surferIconsFont, "M", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            }
+            var altText = "--";
+            if (dm.altitude != null) {
+                var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
+                if (isMetric) { altText = dm.altitude.toNumber().toString() + "m"; }
+                else { altText = (dm.altitude * 3.281).toNumber().toString() + "ft"; }
+            }
+            drawHrText(dc, hrTextX, hrTextY, altText);
+        } else if (subSetting == 3) {
+            // Steps
+            if (surferIconsFont != null) {
+                dc.drawText(hrIconX, hrIconY, surferIconsFont, "W", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+            }
+            var stepsText = "--";
+            if (dm.steps != null) { stepsText = dm.steps.toString(); }
+            drawHrText(dc, hrTextX, hrTextY, stepsText);
+        } else {
+            // Heart Rate (default)
+            drawHrHeart(dc, hrIconX, hrIconY);
+            var hrText = "--";
+            if (dm.heartRate != null) { hrText = dm.heartRate.toString(); }
+            drawHrText(dc, hrTextX, hrTextY, hrText);
         }
-        drawHrText(dc, hrTextX, hrTextY, hrText);
 
-        // Restore white for subsequent drawing
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
     }
 
@@ -831,12 +868,16 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.fillCircle(hrCenterX, hrCenterY, hrRadius);
 
-        // Solar intensity arc (reuses stress arc geometry)
-        var solarVal = 0;
-        if (dm.solarIntensity != null) {
-            solarVal = dm.solarIntensity;
+        // Configurable arc: 0=Solar, 1=Stress, 2=Body Battery, 3=Disabled
+        var arcSetting = Application.Properties.getValue("SurfArc");
+        if (arcSetting == null) { arcSetting = 0; }
+        if (arcSetting != 3) {
+            var arcVal = 0;
+            if (arcSetting == 0 && dm.solarIntensity != null) { arcVal = dm.solarIntensity; }
+            else if (arcSetting == 1 && dm.stress != null) { arcVal = dm.stress; }
+            else if (arcSetting == 2 && dm.bodyBattery != null) { arcVal = dm.bodyBattery; }
+            drawStressArc(dc, hrCenterX, hrCenterY, hrRadius, STRESS_ARC_WIDTH, arcVal);
         }
-        drawStressArc(dc, hrCenterX, hrCenterY, hrRadius, STRESS_ARC_WIDTH, solarVal);
 
         // Tide direction arrow (up=rising, down=falling) — uses tide icons from surfer-icons
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);

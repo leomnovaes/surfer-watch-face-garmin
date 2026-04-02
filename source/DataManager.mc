@@ -1,4 +1,5 @@
 import Toybox.Activity;
+import Toybox.ActivityMonitor;
 import Toybox.Application;
 import Toybox.Lang;
 import Toybox.Math;
@@ -42,6 +43,11 @@ class DataManager {
     var bluetoothConnected as Boolean;
     var lastKnownLat as Float or Null;
     var lastKnownLng as Float or Null;
+
+    // --- Additional sensor data for configurable subscreen/arc ---
+    var bodyBattery as Number or Null;
+    var altitude as Float or Null;
+    var steps as Number or Null;
 
     // --- Surf mode: swell data (from Open-Meteo Marine API) ---
     var swellHeight as Float or Null;
@@ -190,6 +196,34 @@ class DataManager {
             Application.Storage.setValue("bluetoothConnected", bluetoothConnected);
             _prevStoredBt = bluetoothConnected;
         }
+
+        // Body Battery (for configurable arc)
+        if (SensorHistory has :getBodyBatteryHistory) {
+            var bbIter = SensorHistory.getBodyBatteryHistory({:period => 1});
+            if (bbIter != null) {
+                var sample = bbIter.next();
+                if (sample != null && sample.data != null) {
+                    bodyBattery = sample.data.toNumber();
+                } else { bodyBattery = null; }
+            } else { bodyBattery = null; }
+        } else { bodyBattery = null; }
+
+        // Altitude (for configurable subscreen)
+        if (SensorHistory has :getElevationHistory) {
+            var elevIter = SensorHistory.getElevationHistory({:period => 1});
+            if (elevIter != null) {
+                var sample = elevIter.next();
+                if (sample != null && sample.data != null) {
+                    altitude = sample.data.toFloat();
+                } else { altitude = null; }
+            } else { altitude = null; }
+        } else { altitude = null; }
+
+        // Steps (for configurable subscreen)
+        var actMon = ActivityMonitor.getInfo();
+        if (actMon != null) {
+            steps = actMon.steps;
+        } else { steps = null; }
     }
 
     // =========================================================
