@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Write bug condition exploration test
+- [x] 1. Write bug condition exploration test
   - **Property 1: Bug Condition** - Peak Memory Exceeds Heap Limit on CIQ 3.x
   - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
   - **DO NOT attempt to fix the test or the code when it fails**
@@ -16,7 +16,7 @@
   - Mark task complete when baseline memory is measured and documented
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 2. Write preservation property tests (BEFORE implementing fix)
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
   - **Property 2: Preservation** - Rendering Output Unchanged
   - **IMPORTANT**: Follow observation-first methodology
   - Since Monkey C has no unit test framework, preservation is verified via simulator screenshots
@@ -32,8 +32,8 @@
   - Mark task complete when reference screenshots are saved
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
 
-- [ ] 3. Remove dead code (`drawIconHeart`)
-  - [ ] 3.1 Delete the `drawIconHeart()` function from `source/SurferWatchFaceView.mc`
+- [x] 3. Remove dead code (`drawIconHeart`)
+  - [x] 3.1 Delete the `drawIconHeart()` function from `source/SurferWatchFaceView.mc`
     - Remove the function at ~line 486 that uses `seg34IconsFont` with glyph "h"
     - This function is never called — `drawHrHeart()` using `heartIconFont` is the actual heart renderer
     - `seg34IconsFont` itself is NOT removed — it is still used by `drawIconBluetooth()` with glyph "L"
@@ -41,49 +41,49 @@
     - _Expected_Behavior: function removed, no change to any rendering output_
     - _Preservation: `drawIconBluetooth()` continues to use `seg34IconsFont` with glyph "L" unchanged_
     - _Requirements: 1.4, 2.4, 3.4_
-  - [ ] 3.2 Build for Instinct 2X and verify in simulator
+  - [x] 3.2 Build for Instinct 2X and verify in simulator
     - Build succeeds with no errors
     - Shore mode: Bluetooth icon still renders correctly
     - Surf mode: all sections render correctly
     - View > Memory: record new Used/Peak values (expect ~0.3KB reduction)
 
-- [ ] 4. Load only active clock font
-  - [ ] 4.1 Replace dual clock font vars with single var in `SurferWatchFaceView.mc`
+- [x] 4. Load only active clock font
+  - [x] 4.1 Replace dual clock font vars with single var in `SurferWatchFaceView.mc`
     - Remove `private var clockSaira40 = null;` and `private var clockRajdhani40 = null;`
     - Add `private var clockFont = null;`
     - _Requirements: 2.2_
-  - [ ] 4.2 Conditional load in `onLayout()`
+  - [x] 4.2 Conditional load in `onLayout()`
     - Read `ClockFont` setting via `Application.Properties.getValue("ClockFont")`
     - Load only `Rez.Fonts.ClockSaira40` (if setting=0 or null) or `Rez.Fonts.ClockRajdhani40` (if setting=1)
     - Store in `clockFont` var
     - _Requirements: 2.2_
-  - [ ] 4.3 Add public `reloadClockFont()` method to `SurferWatchFaceView`
+  - [x] 4.3 Add public `reloadClockFont()` method to `SurferWatchFaceView`
     - Reads `ClockFont` setting and loads the correct font resource
     - Called from `onSettingsChanged()` when user changes the clock font
     - _Requirements: 2.2, 3.2_
-  - [ ] 4.4 Update `SurferWatchFaceApp.mc` to call `reloadClockFont()` from `onSettingsChanged()`
+  - [x] 4.4 Update `SurferWatchFaceApp.mc` to call `reloadClockFont()` from `onSettingsChanged()`
     - Store a reference to the view in `getInitialView()`
     - Call `view.reloadClockFont()` in `onSettingsChanged()`
     - _Requirements: 2.2, 3.2_
-  - [ ] 4.5 Update rendering code in `drawMiddleSection()` and `drawMiddleSection_Surf()`
+  - [x] 4.5 Update rendering code in `drawMiddleSection()` and `drawMiddleSection_Surf()`
     - Replace `var clockFont = clockSaira40; ... if (fontSetting == 1) { clockFont = clockRajdhani40; }` with direct use of `clockFont` instance var
     - Remove the per-frame font selection logic — font is now pre-selected
     - _Bug_Condition: loading both fonts wastes ~4KB on CIQ 3.x where fonts load into app heap_
     - _Expected_Behavior: only one ~4KB font loaded at a time, saving ~4KB_
     - _Preservation: correct font displays for each ClockFont setting value; switching works via reloadClockFont()_
     - _Requirements: 1.2, 2.2, 3.2_
-  - [ ] 4.6 Build for Instinct 2X and verify in simulator
+  - [x] 4.6 Build for Instinct 2X and verify in simulator
     - Build succeeds with no errors
     - Clock displays correctly with ClockFont=0 (Saira) and ClockFont=1 (Rajdhani)
     - Change ClockFont setting — font switches correctly without restart
     - View > Memory: record new Used/Peak values (expect ~4KB reduction from task 3 baseline)
 
-- [ ] 5. Inline all 46 layout constants
-  - [ ] 5.1 Remove all `private static const` layout declarations from `SurferWatchFaceView.mc`
+- [x] 5. Inline all 46 layout constants
+  - [x] 5.1 Remove all `private static const` layout declarations from `SurferWatchFaceView.mc`
     - Remove all 46 constant declarations at the top of the class
     - Also remove the 3 string constants `IC_NOTIFICATIONS`, `IC_SUNRISE`, `IC_SUNSET`
     - _Requirements: 2.3_
-  - [ ] 5.2 Replace every constant reference with its computed literal value (with comment)
+  - [x] 5.2 Replace every constant reference with its computed literal value (with comment)
     - Pre-calculated values for computed constants:
       - `TOP_ROW2_Y` = 2 + 23 = **25**
       - `TOP_ROW3_Y` = 25 + 23 = **48**
@@ -113,25 +113,25 @@
     - _Expected_Behavior: inline literals eliminate declaration + reference bytecode overhead_
     - _Preservation: every inlined value matches the original computed value exactly — pixel-identical rendering_
     - _Requirements: 1.3, 2.3, 3.3, 3.6_
-  - [ ] 5.3 Build for Instinct 2X and verify in simulator
+  - [x] 5.3 Build for Instinct 2X and verify in simulator
     - Build succeeds with no errors
     - Shore mode: all UI elements at same pixel positions as reference screenshots
     - Surf mode: all UI elements at same pixel positions as reference screenshots
     - View > Memory: record new Used/Peak values (expect ~1-2KB reduction from task 4 baseline)
 
-- [ ] 6. Trim crystal-icons font to 3 glyphs
-  - [ ] 6.1 Create Python script to trim the `.fnt` and `.png` files
+- [x] 6. Trim crystal-icons font to 3 glyphs
+  - [x] 6.1 Create Python script to trim the `.fnt` and `.png` files
     - Script reads `resources/fonts/crystal-icons.fnt`, keeps only char id=53, id=62, id=63
     - Script reads `resources/fonts/crystal-icons.png` (or `crystal-icons-small.png` per the `page` reference), crops to include only the pixel regions for the 3 retained glyphs
     - Updates x/y offsets in `.fnt` to match new `.png` layout
     - Updates `chars count=3`
     - Writes trimmed `.fnt` and `.png` back to `resources/fonts/`
     - _Requirements: 2.5_
-  - [ ] 6.2 Run the Python script and verify output
+  - [x] 6.2 Run the Python script and verify output
     - Trimmed `.fnt` has exactly 3 char entries (id=53, id=62, id=63)
     - Trimmed `.png` is smaller than original (only 3 glyph regions)
     - _Requirements: 2.5_
-  - [ ] 6.3 Build for Instinct 2X and verify in simulator
+  - [x] 6.3 Build for Instinct 2X and verify in simulator
     - Build succeeds with no errors
     - Notification bell icon (char 53 = "5") renders correctly in shore mode
     - Sunrise icon (char 62 = ">") renders correctly in shore and surf mode

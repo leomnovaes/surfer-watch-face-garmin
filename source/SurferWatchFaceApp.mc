@@ -10,6 +10,7 @@ class SurferWatchFaceApp extends Application.AppBase {
 
     var dataManager as DataManager or Null;
     private var _lastWeatherSource as Number = -1;
+    private var _view as SurferWatchFaceView or Null;
 
     function initialize() {
         AppBase.initialize();
@@ -56,7 +57,8 @@ class SurferWatchFaceApp extends Application.AppBase {
         dataManager.updateSensorData();
         // Compute sunrise/sunset + Garmin weather if applicable
         dataManager.refreshWeatherOnBackgroundEvent();
-        return [ new SurferWatchFaceView() ];
+        _view = new SurferWatchFaceView();
+        return [ _view ];
     }
 
     // New app settings have been received so trigger a UI update
@@ -91,6 +93,8 @@ class SurferWatchFaceApp extends Application.AppBase {
                 // 5-min minimum enforced
             }
         }
+        // Reload clock font if setting changed
+        if (_view != null) { _view.reloadClockFont(); }
         WatchUi.requestUpdate();
     }
 
