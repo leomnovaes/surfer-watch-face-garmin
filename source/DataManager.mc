@@ -112,29 +112,34 @@ class DataManager {
     // Writes lat/lng/BT to Application.Storage for background
     // =========================================================
     function updateSensorData() as Void {
-        // Heart rate + Stress — only needed in shore mode
-        // Surf mode shows tide height (not HR) and solar intensity (not stress)
-        var surfMode = Application.Properties.getValue("SurfMode");
-        if (surfMode == null || surfMode == 0) {
-            var activityInfo = Activity.getActivityInfo();
-            if (activityInfo != null) {
-                heartRate = activityInfo.currentHeartRate;
-            } else {
-                heartRate = null;
-            }
+        // Heart rate
+        var activityInfo = Activity.getActivityInfo();
+        if (activityInfo != null) {
+            heartRate = activityInfo.currentHeartRate;
+        } else {
+            heartRate = null;
+        }
 
-            if (SensorHistory has :getStressHistory) {
-                var stressIter = SensorHistory.getStressHistory({:period => 1});
-                if (stressIter != null) {
-                    var sample = stressIter.next();
-                    if (sample != null && sample.data != null) {
-                        var val = sample.data;
-                        if (val >= 0 && val <= 100) {
-                            stress = val.toNumber();
-                        } else { stress = null; }
-                    } else { stress = null; }
-                } else { stress = null; }
-            } else { stress = null; }
+        // Stress (from SensorHistory, updates every ~3 min)
+        if (SensorHistory has :getStressHistory) {
+            var stressIter = SensorHistory.getStressHistory({:period => 1});
+            if (stressIter != null) {
+                var sample = stressIter.next();
+                if (sample != null && sample.data != null) {
+                    var val = sample.data;
+                    if (val >= 0 && val <= 100) {
+                        stress = val.toNumber();
+                    } else {
+                        stress = null;
+                    }
+                } else {
+                    stress = null;
+                }
+            } else {
+                stress = null;
+            }
+        } else {
+            stress = null;
         }
 
         // Battery

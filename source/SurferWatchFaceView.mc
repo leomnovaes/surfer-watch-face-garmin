@@ -11,6 +11,13 @@ import Toybox.WatchUi;
 class SurferWatchFaceView extends WatchUi.WatchFace {
 
     // --- Layout constants — Top Section ---
+    private static const ROW_SPACING_TOP = 23;
+    private static const TOP_COL1_X = 1;
+    private static const TOP_COL2_X = 85;
+    private static const TOP_ROW1_Y = 2;
+    private static const TOP_ROW2_Y = TOP_ROW1_Y + ROW_SPACING_TOP;
+    private static const TOP_ROW3_Y = TOP_ROW2_Y + ROW_SPACING_TOP;
+    private static const SPACER = 4;
 
     // --- Layout constants — Heart Rate Circle ---
     // Subscreen geometry — hardcoded for Instinct 2/2X (API 3.4).
@@ -23,15 +30,37 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private var hrIconY as Number = 14;
     private var hrTextX as Number = 144;
     private var hrTextY as Number = 34;
+    private static const STRESS_ARC_WIDTH = 6;
 
     // --- Layout constants — Middle Section ---
+    private static const MID_Y = 76;
+    private static const MID_LEFT_X = 22;
+    private static const MID_CENTER_X = 88;
     // Right column 2x2 grid
+    private static const MID_RIGHT_LEFT_X = 132;
+    private static const MID_RIGHT_RIGHT_X = 174;
+    private static const MID_RIGHT_TOP_Y = MID_Y-1;
+    private static const MID_RIGHT_BOTTOM_Y = MID_Y + 18;
+    private static const MID_ICON_Y = MID_Y;
+    private static const MID_TEXT_Y = MID_Y + 18;
 
     // --- Layout constants — Dividers ---
+    private static const DIV_TOP_Y = 68;
+    private static const DIV_LEFT_X = 8;
+    private static const DIV_RIGHT_X = 160;
 
     // --- Layout constants — Date Row ---
+    private static const DATE_Y = 114;
+    private static const DATE_TEXT_X = 88;
 
     // --- Layout constants — Weather Widget ---
+    private static const WX_Y = 139;
+    private static const WX_Y_EDGE = 130;
+    private static const WX_TEXT_Y = WX_Y + 18;
+    private static const WX_TEXT_Y_EDGE = WX_Y_EDGE + 18;
+    private static const WX_COL1_X = 42;
+    private static const WX_COL2_X = 88;
+    private static const WX_COL3_X = 134;
 
     // --- Icon font resources (loaded in onLayout) ---
     private var crystalIconsFont = null;
@@ -41,8 +70,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private var surferIconsFont = null;
     private var heartIconFont = null;
 
-    // --- Clock font resource (only the active one is loaded) ---
-    private var clockFont = null;
+    // --- Clock font resources ---
+    private var clockSaira40 = null;
+    private var clockRajdhani40 = null;
 
     // --- Sleep state: true when watch is in low power mode (no wrist gesture) ---
     private var isSleeping = false;
@@ -50,6 +80,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private var lastWristRaiseTime as Number = 0;
 
     // --- Crystal Icons glyph characters (from Crystal Face) ---
+    private static const IC_NOTIFICATIONS = "5";
+    private static const IC_SUNRISE = ">";
+    private static const IC_SUNSET = "?";
 
     function initialize() {
         WatchFace.initialize();
@@ -62,12 +95,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         seg34IconsFont = WatchUi.loadResource(Rez.Fonts.Seg34Icons);
         surferIconsFont = WatchUi.loadResource(Rez.Fonts.SurferIcons);
         heartIconFont = WatchUi.loadResource(Rez.Fonts.HeartIcon);
-        var fontSetting = Application.Properties.getValue("ClockFont");
-        if (fontSetting != null && fontSetting == 1) {
-            clockFont = WatchUi.loadResource(Rez.Fonts.ClockRajdhani40);
-        } else {
-            clockFont = WatchUi.loadResource(Rez.Fonts.ClockSaira40);
-        }
+        clockSaira40 = WatchUi.loadResource(Rez.Fonts.ClockSaira40);
+        clockRajdhani40 = WatchUi.loadResource(Rez.Fonts.ClockRajdhani40);
 
         // Derive subscreen circle geometry
         // Try dynamic subscreen API (available on API 4.1+ devices like Instinct 3)
@@ -94,15 +123,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     function onShow() as Void {
-    }
-
-    function reloadClockFont() as Void {
-        var fontSetting = Application.Properties.getValue("ClockFont");
-        if (fontSetting != null && fontSetting == 1) {
-            clockFont = WatchUi.loadResource(Rez.Fonts.ClockRajdhani40);
-        } else {
-            clockFont = WatchUi.loadResource(Rez.Fonts.ClockSaira40);
-        }
     }
 
     // --- onUpdate: draws everything in order per design §2.5 ---
@@ -215,7 +235,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     private function drawIconNotification(dc as Dc, x as Number, y as Number) as Void {
         if (crystalIconsFont != null) {
-            drawTextAligned(dc, x, y, crystalIconsFont, "5" /* IC_NOTIFICATIONS */, Graphics.TEXT_JUSTIFY_LEFT);
+            drawTextAligned(dc, x, y, crystalIconsFont, IC_NOTIFICATIONS, Graphics.TEXT_JUSTIFY_LEFT);
         }
     }
 
@@ -227,7 +247,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     private function drawIconSun(dc as Dc, x as Number, y as Number, isSunrise as Boolean) as Void {
-        var glyph = isSunrise ? ">" /* IC_SUNRISE */ : "?" /* IC_SUNSET */;
+        var glyph = isSunrise ? IC_SUNRISE : IC_SUNSET;
         drawTextAligned(dc, x, y, Graphics.FONT_XTINY, glyph, Graphics.TEXT_JUSTIFY_LEFT);
     }
 
@@ -413,7 +433,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
     private function drawIconWind(dc as Dc, x as Number, y as Number, dm as DataManager) as Void {
         if (dm.windDeg != null) {
-            drawWindArrow(dc, x, y + 5 /* WIND_ARROW_Y_OFFSET */, dm.windDeg, 7 /* WIND_ARROW_SIZE */);
+            drawWindArrow(dc, x, y + WIND_ARROW_Y_OFFSET, dm.windDeg, WIND_ARROW_SIZE);
         }
     }
 
@@ -439,9 +459,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var s = size.toFloat();
         var pts = [
             [0.0, -s],                          // tip
-            [-s * 0.8 /* WIND_ARROW_WIDTH */, s],          // left base
-            [0.0, s * 0.5 /* WIND_ARROW_NOTCH */],         // tail notch (swallow tail)
-            [s * 0.8 /* WIND_ARROW_WIDTH */, s]            // right base
+            [-s * WIND_ARROW_WIDTH, s],          // left base
+            [0.0, s * WIND_ARROW_NOTCH],         // tail notch (swallow tail)
+            [s * WIND_ARROW_WIDTH, s]            // right base
         ];
 
         // Rotate each point and translate to cx,cy
@@ -463,6 +483,12 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         }
     }
 
+    private function drawIconHeart(dc as Dc, x as Number, y as Number) as Void {
+        if (seg34IconsFont != null) {
+            drawTextAligned(dc, x, y, seg34IconsFont, "h", Graphics.TEXT_JUSTIFY_LEFT);
+        }
+    }
+
     // =========================================================
     // Composite component methods — each renders a reusable UI
     // unit (text + icon) that can be placed anywhere via x, y.
@@ -470,21 +496,21 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     // Anchoring rule:
     //   text-first (text left, icon right): x = anchor point
     //     between text and icon. Text is RIGHT-justified to x,
-    //     icon is LEFT-justified from x + 4 /* SPACER */.
+    //     icon is LEFT-justified from x + SPACER.
     //   icon-first (icon left, text right): x = left edge.
     //     Icon is LEFT-justified from x, text is LEFT-justified
-    //     from x + iconWidth + 4 /* SPACER */.
+    //     from x + iconWidth + SPACER.
     // =========================================================
 
     // Text left, icon right — x is the anchor between them
     private function drawBatteryWithPercent(dc as Dc, x as Number, y as Number, percent as Number, dm as DataManager) as Void {
-        drawTextAligned(dc, x - 4 /* SPACER */, y, Graphics.FONT_XTINY, percent.toString() + "%", Graphics.TEXT_JUSTIFY_RIGHT);
+        drawTextAligned(dc, x - SPACER, y, Graphics.FONT_XTINY, percent.toString() + "%", Graphics.TEXT_JUSTIFY_RIGHT);
         drawIconBattery(dc, x, y, dm);
     }
 
     // Text left, icon right — x is the anchor between them
     private function drawNotificationWithCount(dc as Dc, x as Number, y as Number, count as Number) as Void {
-        drawTextAligned(dc, x - 4 /* SPACER */, y, Graphics.FONT_XTINY, count.toString(), Graphics.TEXT_JUSTIFY_RIGHT);
+        drawTextAligned(dc, x - SPACER, y, Graphics.FONT_XTINY, count.toString(), Graphics.TEXT_JUSTIFY_RIGHT);
         drawIconNotification(dc, x, y-4);
     }
 
@@ -492,14 +518,14 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private function drawTideInfo(dc as Dc, x as Number, y as Number, isHigh as Boolean, time as String, height as String) as Void {
         drawIconTide(dc, x, y, isHigh);
         var iconWidth = surferIconsFont != null ? dc.getTextWidthInPixels("H", surferIconsFont) : 15;
-        drawTextAligned(dc, x + iconWidth + 4 /* SPACER */-5, y, Graphics.FONT_XTINY, time, Graphics.TEXT_JUSTIFY_LEFT);
+        drawTextAligned(dc, x + iconWidth + SPACER-5, y, Graphics.FONT_XTINY, time, Graphics.TEXT_JUSTIFY_LEFT);
         drawTextAligned(dc, x + 105, y, Graphics.FONT_XTINY, height, Graphics.TEXT_JUSTIFY_RIGHT);
     }
 
     // Icon centered above text — x is the center of the column
     private function drawSunInfo(dc as Dc, centerX as Number, iconY as Number, textY as Number, isSunrise as Boolean, time as String) as Void {
         // Icon centered on column — use Crystal Icons font
-        var glyph = isSunrise ? ">" /* IC_SUNRISE */ : "?" /* IC_SUNSET */;
+        var glyph = isSunrise ? IC_SUNRISE : IC_SUNSET;
         var font = crystalIconsFont != null ? crystalIconsFont : Graphics.FONT_XTINY;
         drawTextAligned(dc, centerX, iconY, font, glyph, Graphics.TEXT_JUSTIFY_CENTER);
         // Time centered below
@@ -510,13 +536,12 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     //   top-left: moon icon    top-right: illumination %
     //   bottom-left: AM/PM     bottom-right: seconds (hidden by default)
     private function drawRightColumn(dc as Dc, ampm as String, seconds as String, dm as DataManager) as Void {
-        drawIconMoon(dc, 132 /* MID_RIGHT_LEFT_X */+2, 75 /* MID_RIGHT_TOP_Y */, dm);
+        drawIconMoon(dc, MID_RIGHT_LEFT_X+2, MID_RIGHT_TOP_Y, dm);
         // Bottom-left: AM/PM
-        drawTextAligned(dc, 132 /* MID_RIGHT_LEFT_X */, 94 /* MID_RIGHT_BOTTOM_Y */, Graphics.FONT_XTINY, ampm, Graphics.TEXT_JUSTIFY_LEFT);
-        // Bottom-right: seconds (on wrist raise, or always if AlwaysShowSeconds enabled)
-        var alwaysSec = Application.Properties.getValue("AlwaysShowSeconds");
-        if (!isSleeping || (alwaysSec != null && alwaysSec == true)) {
-            drawTextAligned(dc, 174 /* MID_RIGHT_RIGHT_X */, 94 /* MID_RIGHT_BOTTOM_Y */, Graphics.FONT_XTINY, seconds, Graphics.TEXT_JUSTIFY_RIGHT);
+        drawTextAligned(dc, MID_RIGHT_LEFT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, ampm, Graphics.TEXT_JUSTIFY_LEFT);
+        // Bottom-right: seconds (only when awake — wrist gesture active)
+        if (!isSleeping) {
+            drawTextAligned(dc, MID_RIGHT_RIGHT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, seconds, Graphics.TEXT_JUSTIFY_RIGHT);
         }
     }
 
@@ -527,8 +552,22 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     }
 
     // --- Layout constants — Wind Arrow (tweak these) ---
+    private static const WIND_ARROW_SIZE =7;       // half-height in pixels (total height = size * 2)
+    private static const WIND_ARROW_WIDTH = 0.8;    // half-width of base as fraction of size (1.0 = as wide as tall)
+    private static const WIND_ARROW_NOTCH = 0.5;    // tail notch Y (1.0 = no tail/triangle, 0.0 = center, negative = deep tail)
+    private static const WIND_ARROW_Y_OFFSET = 5;   // vertical offset from icon position
 
     // --- Layout constants — Tide Curve (tweak these) ---
+    private static const TC_Y = 114;               // top Y of entire tide curve section (including labels)
+    private static const TC_LABEL_HEIGHT = 16;      // vertical space reserved for labels above curve
+    private static const TC_CURVE_HEIGHT = 36;      // height of the filled curve area in pixels
+    private static const TC_LABEL_GAP = 2;          // gap between label text and curve edge
+    private static const TC_LEFT_X = 14;            // left edge of curve
+    private static const TC_RIGHT_X = 162;          // right edge of curve
+    private static const TC_NOW_GAP_HALF = 2;       // half-width of the "now" gap in pixels
+    private static const TC_TRI_WIDTH = 4;          // half-width of the "now" triangle
+    private static const TC_TRI_HEIGHT = 5;         // height of the "now" triangle
+    private static const TC_TRI_GAP = 3;            // gap between triangle tip and curve top
 
     // (HR circle content positions now derived from hrCenterX/Y and hrRadius above)
 
@@ -546,7 +585,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (dm.stress != null) {
             stressVal = dm.stress;
         }
-        drawStressArc(dc, hrCenterX, hrCenterY, hrRadius, 6 /* STRESS_ARC_WIDTH */, stressVal);
+        drawStressArc(dc, hrCenterX, hrCenterY, hrRadius, STRESS_ARC_WIDTH, stressVal);
 
         // Heart icon
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
@@ -618,14 +657,14 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private function drawTopSection(dc as Dc, dm as DataManager) as Void {
         // Row 1 — Battery (live)
         var batteryPercent = dm.battery;
-        drawBatteryWithPercent(dc, 85 /* TOP_COL2_X */, 2 /* TOP_ROW1_Y */, batteryPercent, dm);
+        drawBatteryWithPercent(dc, TOP_COL2_X, TOP_ROW1_Y, batteryPercent, dm);
 
         // Row 2 — Bluetooth + Notifications (live)
         if (dm.bluetoothConnected) {
-            drawIconBluetooth(dc, 1 /* TOP_COL1_X */+20, 25 /* TOP_ROW2_Y */-2);
+            drawIconBluetooth(dc, TOP_COL1_X+20, TOP_ROW2_Y-2);
         }
         var notifCount = dm.notificationCount;
-        drawNotificationWithCount(dc, 85 /* TOP_COL2_X */-6, 25 /* TOP_ROW2_Y */, notifCount);
+        drawNotificationWithCount(dc, TOP_COL2_X-6, TOP_ROW2_Y, notifCount);
 
         // Row 3 — Tide (live)
         var tideIsHigh = true;
@@ -643,11 +682,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 tideHeightStr = (dm.currentTideHeight * 3.281).format("%.1f") + "ft";
             }
         }
-        drawTideInfo(dc, 1 /* TOP_COL1_X */, 48 /* TOP_ROW3_Y */, tideIsHigh, tideTimeStr, tideHeightStr);
+        drawTideInfo(dc, TOP_COL1_X, TOP_ROW3_Y, tideIsHigh, tideTimeStr, tideHeightStr);
     }
 
     private function drawDividers(dc as Dc) as Void {
-        dc.drawLine(8 /* DIV_LEFT_X */, 68 /* DIV_TOP_Y */, 160 /* DIV_RIGHT_X */, 68 /* DIV_TOP_Y */);
+        dc.drawLine(DIV_LEFT_X, DIV_TOP_Y, DIV_RIGHT_X, DIV_TOP_Y);
     }
 
     private function drawMiddleSection(dc as Dc, dm as DataManager) as Void {
@@ -670,7 +709,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 sunTime = formatUnixTime(dm.sunrise);
             }
         }
-        drawSunInfo(dc, 22 /* MID_LEFT_X */, 76 /* MID_ICON_Y */-4, 94 /* MID_TEXT_Y */, isSunrise, sunTime);
+        drawSunInfo(dc, MID_LEFT_X, MID_ICON_Y-4, MID_TEXT_Y, isSunrise, sunTime);
 
         // Center — current time
         var clockTime = System.getClockTime();
@@ -683,7 +722,12 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             if (hours == 0) { hours = 12; }
         }
         var timeString = hours.toString() + ":" + clockTime.min.format("%02d");
-        dc.drawText(88 /* MID_CENTER_X */, 76 /* MID_Y */ + 14, clockFont, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        var clockFont = clockSaira40;
+        var fontSetting = Application.Properties.getValue("ClockFont");
+        if (fontSetting != null && fontSetting == 1) {
+            clockFont = clockRajdhani40;
+        }
+        dc.drawText(MID_CENTER_X, MID_Y + 14, clockFont, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
         // Right column — 2x2 grid: moon, AM/PM, seconds
         var seconds = clockTime.sec.format("%02d");
@@ -695,7 +739,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var now = Time.now();
         var info = Gregorian.info(now, Time.FORMAT_MEDIUM);
         var dateString = Lang.format("$1$ $2$ $3$", [info.day_of_week, info.month.toUpper(), info.day]);
-        drawTextAligned(dc, 88 /* DATE_TEXT_X */, 114 /* DATE_Y */, Graphics.FONT_XTINY, dateString, Graphics.TEXT_JUSTIFY_CENTER);
+        drawTextAligned(dc, DATE_TEXT_X, DATE_Y, Graphics.FONT_XTINY, dateString, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     private function drawWeatherWidget(dc as Dc, dm as DataManager) as Void {
@@ -722,8 +766,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             var suffix = isMetric ? "C" : "F";
             tempText = dm.temperature.toNumber().toString() + "°" + suffix;
         }
-        drawIconWeather(dc, 42 /* WX_COL1_X */, 130 /* WX_Y_EDGE */, dm);
-        drawTextAligned(dc, 42 /* WX_COL1_X */, 148 /* WX_TEXT_Y_EDGE */, Graphics.FONT_XTINY, tempText, Graphics.TEXT_JUSTIFY_CENTER);
+        drawIconWeather(dc, WX_COL1_X, WX_Y_EDGE, dm);
+        drawTextAligned(dc, WX_COL1_X, WX_TEXT_Y_EDGE, Graphics.FONT_XTINY, tempText, Graphics.TEXT_JUSTIFY_CENTER);
 
         // Col 2: wind icon + speed
         var windText = "--";
@@ -765,16 +809,16 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             }
             windText = speed.format("%.1f");
         }
-        drawIconWind(dc, 88 /* WX_COL2_X */, 139 /* WX_Y */, dm);
-        drawTextAligned(dc, 88 /* WX_COL2_X */, 157 /* WX_TEXT_Y */, Graphics.FONT_XTINY, windText, Graphics.TEXT_JUSTIFY_CENTER);
+        drawIconWind(dc, WX_COL2_X, WX_Y, dm);
+        drawTextAligned(dc, WX_COL2_X, WX_TEXT_Y, Graphics.FONT_XTINY, windText, Graphics.TEXT_JUSTIFY_CENTER);
 
         // Col 3: umbrella icon + precipitation %
         var precipText = "--";
         if (dm.precipProbability != null) {
             precipText = dm.precipProbability.toString() + "%";
         }
-        drawIconUmbrella(dc, 134 /* WX_COL3_X */, 130 /* WX_Y_EDGE */);
-        drawTextAligned(dc, 134 /* WX_COL3_X */, 148 /* WX_TEXT_Y_EDGE */, Graphics.FONT_XTINY, precipText, Graphics.TEXT_JUSTIFY_CENTER);
+        drawIconUmbrella(dc, WX_COL3_X, WX_Y_EDGE);
+        drawTextAligned(dc, WX_COL3_X, WX_TEXT_Y_EDGE, Graphics.FONT_XTINY, precipText, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // =========================================================
@@ -792,7 +836,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (dm.solarIntensity != null) {
             solarVal = dm.solarIntensity;
         }
-        drawStressArc(dc, hrCenterX, hrCenterY, hrRadius, 6 /* STRESS_ARC_WIDTH */, solarVal);
+        drawStressArc(dc, hrCenterX, hrCenterY, hrRadius, STRESS_ARC_WIDTH, solarVal);
 
         // Tide direction arrow (up=rising, down=falling) — uses tide icons from surfer-icons
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
@@ -821,7 +865,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     // Surf mode top section: battery, water temp, next tide
     private function drawTopSection_Surf(dc as Dc, dm as DataManager) as Void {
         // Row 1 — Battery (same as shore)
-        drawBatteryWithPercent(dc, 85 /* TOP_COL2_X */, 2 /* TOP_ROW1_Y */, dm.battery, dm);
+        drawBatteryWithPercent(dc, TOP_COL2_X, TOP_ROW1_Y, dm.battery, dm);
 
         // Row 2 — Water temperature: watch sensor (default) or ocean surface (Open-Meteo)
         var tempText = "--";
@@ -848,10 +892,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             }
         }
         // Text right-justified to same anchor as notification count
-        drawTextAligned(dc, 85 /* TOP_COL2_X */ - 6 - 4 /* SPACER */, 25 /* TOP_ROW2_Y */, Graphics.FONT_XTINY, tempText, Graphics.TEXT_JUSTIFY_RIGHT);
+        drawTextAligned(dc, TOP_COL2_X - 6 - SPACER, TOP_ROW2_Y, Graphics.FONT_XTINY, tempText, Graphics.TEXT_JUSTIFY_RIGHT);
         // Thermometer icon where notification icon was
         if (surferIconsFont != null) {
-            drawTextAligned(dc, 85 /* TOP_COL2_X */ - 6, 25 /* TOP_ROW2_Y */, surferIconsFont, "T", Graphics.TEXT_JUSTIFY_LEFT);
+            drawTextAligned(dc, TOP_COL2_X - 6, TOP_ROW2_Y, surferIconsFont, "T", Graphics.TEXT_JUSTIFY_LEFT);
         }
 
         // Row 3 — Tide (same as shore)
@@ -870,14 +914,14 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 tideHeightStr = (dm.currentTideHeight * 3.281).format("%.1f") + "ft";
             }
         }
-        drawTideInfo(dc, 1 /* TOP_COL1_X */, 48 /* TOP_ROW3_Y */, tideIsHigh, tideTimeStr, tideHeightStr);
+        drawTideInfo(dc, TOP_COL1_X, TOP_ROW3_Y, tideIsHigh, tideTimeStr, tideHeightStr);
     }
 
     // Surf mode middle section: wind, time, moon/ampm/seconds
     private function drawMiddleSection_Surf(dc as Dc, dm as DataManager) as Void {
         // Left column — Wind for surf spot (separate fields from shore)
         if (dm.surfWindDeg != null) {
-            drawWindArrow(dc, 22 /* MID_LEFT_X */, 76 /* MID_ICON_Y */ + 5 /* WIND_ARROW_Y_OFFSET */, dm.surfWindDeg, 7 /* WIND_ARROW_SIZE */);
+            drawWindArrow(dc, MID_LEFT_X, MID_ICON_Y + WIND_ARROW_Y_OFFSET, dm.surfWindDeg, WIND_ARROW_SIZE);
         }
         var windText = "--";
         if (dm.surfWindSpeed != null) {
@@ -908,7 +952,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             }
             windText = speed.format("%.1f");
         }
-        drawTextAligned(dc, 22 /* MID_LEFT_X */, 94 /* MID_TEXT_Y */, Graphics.FONT_XTINY, windText, Graphics.TEXT_JUSTIFY_CENTER);
+        drawTextAligned(dc, MID_LEFT_X, MID_TEXT_Y, Graphics.FONT_XTINY, windText, Graphics.TEXT_JUSTIFY_CENTER);
 
         // Center — current time (same as shore)
         var clockTime = System.getClockTime();
@@ -921,7 +965,12 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             if (hours == 0) { hours = 12; }
         }
         var timeString = hours.toString() + ":" + clockTime.min.format("%02d");
-        dc.drawText(88 /* MID_CENTER_X */, 76 /* MID_Y */ + 14, clockFont, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        var clockFont = clockSaira40;
+        var fontSetting = Application.Properties.getValue("ClockFont");
+        if (fontSetting != null && fontSetting == 1) {
+            clockFont = clockRajdhani40;
+        }
+        dc.drawText(MID_CENTER_X, MID_Y + 14, clockFont, timeString, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
         // Right column — moon, AM/PM, seconds (same as shore)
         var seconds = clockTime.sec.format("%02d");
@@ -951,11 +1000,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var sunsetSurfDateYOffset = 4;
         var sunsetSurfDateXOffset = 6;
 
-        // Draw icon + time centered at 114 /* DATE_Y */, same position as date row in shore mode
+        // Draw icon + time centered at DATE_Y, same position as date row in shore mode
         var font = crystalIconsFont != null ? crystalIconsFont : Graphics.FONT_XTINY;
-        var glyph = isSunrise ? ">" /* IC_SUNRISE */ : "?" /* IC_SUNSET */;
-        drawTextAligned(dc, sunsetSurfDateXOffset + 88 /* DATE_TEXT_X */ - 20, 114 /* DATE_Y */ - sunsetSurfDateYOffset-2, font, glyph, Graphics.TEXT_JUSTIFY_RIGHT);
-        drawTextAligned(dc, sunsetSurfDateXOffset + 88 /* DATE_TEXT_X */ - 12, 114 /* DATE_Y */ - sunsetSurfDateYOffset, Graphics.FONT_XTINY, sunTime, Graphics.TEXT_JUSTIFY_LEFT);
+        var glyph = isSunrise ? IC_SUNRISE : IC_SUNSET;
+        drawTextAligned(dc, sunsetSurfDateXOffset + DATE_TEXT_X - 20, DATE_Y - sunsetSurfDateYOffset-2, font, glyph, Graphics.TEXT_JUSTIFY_RIGHT);
+        drawTextAligned(dc, sunsetSurfDateXOffset + DATE_TEXT_X - 12, DATE_Y - sunsetSurfDateYOffset, Graphics.FONT_XTINY, sunTime, Graphics.TEXT_JUSTIFY_LEFT);
     }
 
     // Surf mode bottom section — swell view
@@ -975,9 +1024,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         }
         // Col 1: Swell height — surfing icon
         if (surferIconsFont != null) {
-            drawTextAligned(dc, 42 /* WX_COL1_X */, swellY, surferIconsFont, "S", Graphics.TEXT_JUSTIFY_CENTER);
+            drawTextAligned(dc, WX_COL1_X, swellY, surferIconsFont, "S", Graphics.TEXT_JUSTIFY_CENTER);
         }
-        drawTextAligned(dc, 42 /* WX_COL1_X */, swellTextY, Graphics.FONT_XTINY, htText, Graphics.TEXT_JUSTIFY_CENTER);
+        drawTextAligned(dc, WX_COL1_X, swellTextY, Graphics.FONT_XTINY, htText, Graphics.TEXT_JUSTIFY_CENTER);
 
         // Col 2: Swell period
         var perText = "--";
@@ -988,34 +1037,34 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var swellPeriodYSpacing = 10;
         // Col 2: Swell period — timer-sand icon
         if (surferIconsFont != null) {
-            drawTextAligned(dc, 88 /* WX_COL2_X */, swellY + swellPeriodYSpacing, surferIconsFont, "P", Graphics.TEXT_JUSTIFY_CENTER);
+            drawTextAligned(dc, WX_COL2_X, swellY + swellPeriodYSpacing, surferIconsFont, "P", Graphics.TEXT_JUSTIFY_CENTER);
         }
-        drawTextAligned(dc, 88 /* WX_COL2_X */, swellTextY + swellPeriodYSpacing, Graphics.FONT_XTINY, perText, Graphics.TEXT_JUSTIFY_CENTER);
+        drawTextAligned(dc, WX_COL2_X, swellTextY + swellPeriodYSpacing, Graphics.FONT_XTINY, perText, Graphics.TEXT_JUSTIFY_CENTER);
 
         // Col 3: Swell direction arrow
         if (dm.swellDirection != null) {
-            drawWindArrow(dc, 134 /* WX_COL3_X */, swellY + 5 /* WIND_ARROW_Y_OFFSET */, dm.swellDirection, 7 /* WIND_ARROW_SIZE */);
+            drawWindArrow(dc, WX_COL3_X, swellY + WIND_ARROW_Y_OFFSET, dm.swellDirection, WIND_ARROW_SIZE);
         }
         var dirText = "--";
         if (dm.swellDirection != null) {
             dirText = degreesToCompass(dm.swellDirection);
         }
-        drawTextAligned(dc, 134 /* WX_COL3_X */, swellTextY, Graphics.FONT_XTINY, dirText, Graphics.TEXT_JUSTIFY_CENTER);
+        drawTextAligned(dc, WX_COL3_X, swellTextY, Graphics.FONT_XTINY, dirText, Graphics.TEXT_JUSTIFY_CENTER);
     }
 
     // Surf mode bottom section — tide curve view
     // Filled area under curve, gap at "now", triangle marker, tick marks + time labels at events
     // Optimized: O(N) single pass — pre-builds segment list, no inner array walks per pixel.
     private function drawTideCurve(dc as Dc, dm as DataManager) as Void {
-        var curveTopY = 114 /* TC_Y */ + 16 /* TC_LABEL_HEIGHT */;
-        var curveBottomY = curveTopY + 36 /* TC_CURVE_HEIGHT */;
-        var leftX = 14 /* TC_LEFT_X */;
-        var rightX = 162 /* TC_RIGHT_X */;
-        var nowGapHalf = 2 /* TC_NOW_GAP_HALF */;
+        var curveTopY = TC_Y + TC_LABEL_HEIGHT;
+        var curveBottomY = curveTopY + TC_CURVE_HEIGHT;
+        var leftX = TC_LEFT_X;
+        var rightX = TC_RIGHT_X;
+        var nowGapHalf = TC_NOW_GAP_HALF;
         var width = rightX - leftX;
 
         if (dm.tideCurveTimes == null || dm.tideCurveHeights == null) {
-            drawTextAligned(dc, 88, curveTopY + 36 /* TC_CURVE_HEIGHT */ / 2, Graphics.FONT_XTINY, "--", Graphics.TEXT_JUSTIFY_CENTER);
+            drawTextAligned(dc, 88, curveTopY + TC_CURVE_HEIGHT / 2, Graphics.FONT_XTINY, "--", Graphics.TEXT_JUSTIFY_CENTER);
             dm.markTideForRefresh();
             return;
         }
@@ -1070,7 +1119,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 height = evHeights[0];
             }
 
-            var py = curveBottomY - ((height - minH) / hRange * 36 /* TC_CURVE_HEIGHT */).toNumber();
+            var py = curveBottomY - ((height - minH) / hRange * TC_CURVE_HEIGHT).toNumber();
             if (py < curveTopY) { py = curveTopY; }
             if (py > curveBottomY) { py = curveBottomY; }
 
@@ -1092,9 +1141,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
         // --- Triangle marker at "now" position (above the curve) ---
         if (nowVal >= startTime && nowVal <= endTime) {
-            var triBottom = nowPy - 3 /* TC_TRI_GAP */;
-            var triTopPt = triBottom - 5 /* TC_TRI_HEIGHT */;
-            dc.fillPolygon([[nowX, triBottom], [nowX - 4 /* TC_TRI_WIDTH */, triTopPt], [nowX + 4 /* TC_TRI_WIDTH */, triTopPt]]);
+            var triBottom = nowPy - TC_TRI_GAP;
+            var triTopPt = triBottom - TC_TRI_HEIGHT;
+            dc.fillPolygon([[nowX, triBottom], [nowX - TC_TRI_WIDTH, triTopPt], [nowX + TC_TRI_WIDTH, triTopPt]]);
         }
 
         // --- Time labels at tide events ---
@@ -1117,7 +1166,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                     if (hr == 0) { hr = 12; }
                     timeLabel = hr.toString() + suffix;
                 }
-                drawTextAligned(dc, ex, curveTopY - 2 /* TC_LABEL_GAP */ - 13, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
+                drawTextAligned(dc, ex, curveTopY - TC_LABEL_GAP - 13, Graphics.FONT_XTINY, timeLabel, Graphics.TEXT_JUSTIFY_CENTER);
             }
         }
     }
@@ -1163,19 +1212,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     function onEnterSleep() as Void {
         isSleeping = true;
         WatchUi.requestUpdate();
-    }
-
-    function onPartialUpdate(dc as Dc) as Void {
-        var alwaysSec = Application.Properties.getValue("AlwaysShowSeconds");
-        if (alwaysSec == null || alwaysSec != true) { return; }
-        var clipX = 156;
-        var clipY = 90;
-        dc.setClip(clipX, clipY, 20, 18);
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
-        dc.fillRectangle(clipX, clipY, 20, 18);
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        var clockTime = System.getClockTime();
-        drawTextAligned(dc, 174 /* MID_RIGHT_RIGHT_X */, 94 /* MID_RIGHT_BOTTOM_Y */, Graphics.FONT_XTINY, clockTime.sec.format("%02d"), Graphics.TEXT_JUSTIFY_RIGHT);
     }
 
 }

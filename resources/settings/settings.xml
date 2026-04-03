@@ -7,10 +7,6 @@
         </settingConfig>
     </setting>
 
-    <setting propertyKey="@Properties.AlwaysShowSeconds" title="@Strings.AlwaysShowSecondsTitle">
-        <settingConfig type="boolean"/>
-    </setting>
-
     <setting propertyKey="@Properties.WindSpeedUnit" title="@Strings.WindSpeedUnitTitle">
         <settingConfig type="list">
             <listEntry value="0">@Strings.WindSpeedAuto</listEntry>

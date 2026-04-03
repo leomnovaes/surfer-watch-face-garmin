@@ -200,31 +200,38 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 
 ## Phase 5 — v1.1.0 Customization Features
 
+> **BLOCKED**: v1.1.0 features cannot be implemented until the background memory issue is resolved.
+> Adding any new properties, strings, or settings increases compiled app size, which reduces
+> background process free memory below the threshold needed for StormGlass tide JSON parsing.
+> See `.kiro/specs/memory-optimization/tasks.md` for details and possible solutions.
+> The tasks below are spec'd and ready — the code patterns were tested and work in the foreground.
+> All task checkboxes have been reset to not-started since the code was reverted to v1.0.2.
+
 ### Task 32: Always Show Seconds setting
-- [x] 32.1 Add `AlwaysShowSeconds` boolean property (default false) to properties.xml
-- [x] 32.2 Add setting UI entry to settings.xml with label "(more battery)"
-- [x] 32.3 Add string resources
-- [x] 32.4 Update `drawRightColumn()`: show seconds when `!isSleeping || AlwaysShowSeconds`
-- [x] 32.5 Implement `onPartialUpdate(dc)` for per-second updates in low-power mode
+- [ ] 32.1 Add `AlwaysShowSeconds` boolean property (default false) to properties.xml
+- [ ] 32.2 Add setting UI entry to settings.xml with label "(more battery)"
+- [ ] 32.3 Add string resources
+- [ ] 32.4 Update `drawRightColumn()`: show seconds when `!isSleeping || AlwaysShowSeconds`
+- [ ] 32.5 Implement `onPartialUpdate(dc)` for per-second updates in low-power mode
   - Clips to seconds region (20x18px), clears, redraws seconds text
   - Early return when AlwaysShowSeconds is off (near-zero battery cost)
   - Note: `onPartialUpdate` is called by the system every second on MIP devices regardless — cannot be unregistered. The early return is the gating mechanism.
 
 ### Task 33: Configurable arc bar per mode
-- [x] 33.1 Add `ShoreArc` list property: 0=Stress (default), 1=Solar, 2=Body Battery, 3=Disabled
-- [x] 33.2 Add `SurfArc` list property: 0=Solar (default), 1=Stress, 2=Body Battery, 3=Disabled
-- [x] 33.3 Add setting UI entries and string resources
-- [x] 33.4 Add `bodyBattery` field to DataManager
-- [x] 33.5 Implement `readBodyBatteryHistory()` — isolated SensorHistory read
-- [x] 33.6 Implement `readSolarIntensity()` — isolated System.getSystemStats read
-- [x] 33.7 Gate all arc sensors: only read the sensor matching the active mode's arc setting (see steering/tech.md Sensor Gating Rules)
-- [x] 33.8 Gate stress: only read when ShoreArc=0 or SurfArc=1
-- [x] 33.9 Gate heart rate: only read in shore mode (surf mode shows tide height)
-- [x] 33.10 Gate water temp: only read when SurfTempSource=0 (watch sensor)
-- [x] 33.11 Gate solar intensity: only read when ShoreArc=1 or SurfArc=0
-- [x] 33.12 Update `drawHrCircle()` to read ShoreArc and draw selected metric
-- [x] 33.13 Update `drawHrCircle_Surf()` to read SurfArc and draw selected metric
-- [x] 33.14 When Disabled (3), draw circle + content but skip arc
+- [ ] 33.1 Add `ShoreArc` list property: 0=Stress (default), 1=Solar, 2=Body Battery, 3=Disabled
+- [ ] 33.2 Add `SurfArc` list property: 0=Solar (default), 1=Stress, 2=Body Battery, 3=Disabled
+- [ ] 33.3 Add setting UI entries and string resources
+- [ ] 33.4 Add `bodyBattery` field to DataManager
+- [ ] 33.5 Implement `readBodyBatteryHistory()` — isolated SensorHistory read
+- [ ] 33.6 Implement `readSolarIntensity()` — isolated System.getSystemStats read
+- [ ] 33.7 Gate all arc sensors: only read the sensor matching the active mode's arc setting (see steering/tech.md Sensor Gating Rules)
+- [ ] 33.8 Gate stress: only read when ShoreArc=0 or SurfArc=1
+- [ ] 33.9 Gate heart rate: only read in shore mode (surf mode shows tide height)
+- [ ] 33.10 Gate water temp: only read when SurfTempSource=0 (watch sensor)
+- [ ] 33.11 Gate solar intensity: only read when ShoreArc=1 or SurfArc=0
+- [ ] 33.12 Update `drawHrCircle()` to read ShoreArc and draw selected metric
+- [ ] 33.13 Update `drawHrCircle_Surf()` to read SurfArc and draw selected metric
+- [ ] 33.14 When Disabled (3), draw circle + content but skip arc
 - Note: SensorHistory OOM constraint — only one SensorHistory iterator per tick. Stress and Body Battery are mutually exclusive arc options, so only one runs.
 
 ### Task 34: Configurable shore subscreen content

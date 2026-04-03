@@ -1,175 +1,41 @@
-# Implementation Plan
+# Memory Optimization — Implementation Plan
 
-- [x] 1. Write bug condition exploration test
-  - **Property 1: Bug Condition** - Peak Memory Exceeds Heap Limit on CIQ 3.x
-  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
-  - **DO NOT attempt to fix the test or the code when it fails**
-  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
-  - **GOAL**: Surface counterexamples that demonstrate the memory budget is exceeded
-  - **Scoped PBT Approach**: Since Monkey C has no PBT framework, this is a manual simulator-based test
-  - Build v1.0.2 baseline for Instinct 2X (`instinct2x`), run in simulator
-  - Open View > Memory panel, record Used and Peak values
-  - Verify baseline: ~55.3KB used, ~58.2KB peak (only ~1.6KB headroom)
-  - Confirm that adding v1.1.0 feature code pushes peak toward or past ~59.8KB limit
-  - **EXPECTED OUTCOME**: Peak memory is dangerously close to or exceeds 59.8KB heap limit (confirms the bug exists)
-  - Document the measured values as counterexamples (e.g., "Peak=58.2KB on v1.0.2, headroom=1.6KB, insufficient for v1.1.0 features")
-  - Mark task complete when baseline memory is measured and documented
-  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
+## Status: ON HOLD — v1.1.0 features blocked until background memory issue resolved
 
-- [x] 2. Write preservation property tests (BEFORE implementing fix)
-  - **Property 2: Preservation** - Rendering Output Unchanged
-  - **IMPORTANT**: Follow observation-first methodology
-  - Since Monkey C has no unit test framework, preservation is verified via simulator screenshots
-  - Observe on UNFIXED v1.0.2 code:
-    - Shore mode: all UI elements (battery, tide, clock, date, weather, moon, HR circle, dividers) at their current pixel positions
-    - Surf mode: all UI elements (battery, water temp, tide, wind, clock, swell section, tide curve) at their current pixel positions
-    - Clock font: Saira displays when ClockFont=0, Rajdhani displays when ClockFont=1
-    - Crystal icons: notification bell (char 53), sunrise (char 62), sunset (char 63) render correctly
-    - Bluetooth icon: seg34Icons "L" glyph renders correctly
-  - Take reference screenshots in simulator for both shore mode and surf mode
-  - Verify screenshots capture all UI sections for later comparison
-  - **EXPECTED OUTCOME**: Reference screenshots captured on UNFIXED code (baseline for comparison)
-  - Mark task complete when reference screenshots are saved
-  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
+## Key Findings
 
-- [x] 3. Remove dead code (`drawIconHeart`)
-  - [x] 3.1 Delete the `drawIconHeart()` function from `source/SurferWatchFaceView.mc`
-    - Remove the function at ~line 486 that uses `seg34IconsFont` with glyph "h"
-    - This function is never called — `drawHrHeart()` using `heartIconFont` is the actual heart renderer
-    - `seg34IconsFont` itself is NOT removed — it is still used by `drawIconBluetooth()` with glyph "L"
-    - _Bug_Condition: dead code wastes ~0.3KB of bytecode in the app heap_
-    - _Expected_Behavior: function removed, no change to any rendering output_
-    - _Preservation: `drawIconBluetooth()` continues to use `seg34IconsFont` with glyph "L" unchanged_
-    - _Requirements: 1.4, 2.4, 3.4_
-  - [x] 3.2 Build for Instinct 2X and verify in simulator
-    - Build succeeds with no errors
-    - Shore mode: Bluetooth icon still renders correctly
-    - Surf mode: all sections render correctly
-    - View > Memory: record new Used/Peak values (expect ~0.3KB reduction)
+### Foreground Memory (Instinct 2X, 59.8KB max)
+- v1.0.2 baseline: 55.3KB used, 58.2KB peak (1.6KB headroom)
+- After optimizations (dead code, single clock font, inline constants, font cleanup): 53.8KB used, 56.6KB peak (3.2KB headroom)
+- v1.1.0 features add ~2.2KB code — fits in foreground with optimizations
 
-- [x] 4. Load only active clock font
-  - [x] 4.1 Replace dual clock font vars with single var in `SurferWatchFaceView.mc`
-    - Remove `private var clockSaira40 = null;` and `private var clockRajdhani40 = null;`
-    - Add `private var clockFont = null;`
-    - _Requirements: 2.2_
-  - [x] 4.2 Conditional load in `onLayout()`
-    - Read `ClockFont` setting via `Application.Properties.getValue("ClockFont")`
-    - Load only `Rez.Fonts.ClockSaira40` (if setting=0 or null) or `Rez.Fonts.ClockRajdhani40` (if setting=1)
-    - Store in `clockFont` var
-    - _Requirements: 2.2_
-  - [x] 4.3 Add public `reloadClockFont()` method to `SurferWatchFaceView`
-    - Reads `ClockFont` setting and loads the correct font resource
-    - Called from `onSettingsChanged()` when user changes the clock font
-    - _Requirements: 2.2, 3.2_
-  - [x] 4.4 Update `SurferWatchFaceApp.mc` to call `reloadClockFont()` from `onSettingsChanged()`
-    - Store a reference to the view in `getInitialView()`
-    - Call `view.reloadClockFont()` in `onSettingsChanged()`
-    - _Requirements: 2.2, 3.2_
-  - [x] 4.5 Update rendering code in `drawMiddleSection()` and `drawMiddleSection_Surf()`
-    - Replace `var clockFont = clockSaira40; ... if (fontSetting == 1) { clockFont = clockRajdhani40; }` with direct use of `clockFont` instance var
-    - Remove the per-frame font selection logic — font is now pre-selected
-    - _Bug_Condition: loading both fonts wastes ~4KB on CIQ 3.x where fonts load into app heap_
-    - _Expected_Behavior: only one ~4KB font loaded at a time, saving ~4KB_
-    - _Preservation: correct font displays for each ClockFont setting value; switching works via reloadClockFont()_
-    - _Requirements: 1.2, 2.2, 3.2_
-  - [x] 4.6 Build for Instinct 2X and verify in simulator
-    - Build succeeds with no errors
-    - Clock displays correctly with ClockFont=0 (Saira) and ClockFont=1 (Rajdhani)
-    - Change ClockFont setting — font switches correctly without restart
-    - View > Memory: record new Used/Peak values (expect ~4KB reduction from task 3 baseline)
+### Background Memory (28,488 bytes total)
+- v1.0.2: 21,056 used, 7,416 free at start, 3,424 free before tide fetch
+- v1.1.0 (any changes): 21,536+ used, 6,936 free at start, 2,936 free before tide fetch
+- Tide JSON parsing needs >3KB — fails with -403 (NETWORK_RESPONSE_OUT_OF_MEMORY) at 2.9KB free
+- **Root cause**: Any new properties/strings/settings increase the compiled app size, which reduces background free memory. The App class is `:background` and pulls in all referenced types.
+- **The swell fetch consumes ~4.5KB** in the background before tide fetch starts. This was already marginal in v1.0.2 (3.4KB free) and any code additions push it over.
 
-- [x] 5. Inline all 46 layout constants
-  - [x] 5.1 Remove all `private static const` layout declarations from `SurferWatchFaceView.mc`
-    - Remove all 46 constant declarations at the top of the class
-    - Also remove the 3 string constants `IC_NOTIFICATIONS`, `IC_SUNRISE`, `IC_SUNSET`
-    - _Requirements: 2.3_
-  - [x] 5.2 Replace every constant reference with its computed literal value (with comment)
-    - Pre-calculated values for computed constants:
-      - `TOP_ROW2_Y` = 2 + 23 = **25**
-      - `TOP_ROW3_Y` = 25 + 23 = **48**
-      - `MID_RIGHT_TOP_Y` = 76 - 1 = **75**
-      - `MID_RIGHT_BOTTOM_Y` = 76 + 18 = **94**
-      - `MID_ICON_Y` = 76 (same as `MID_Y`)
-      - `MID_TEXT_Y` = 76 + 18 = **94**
-      - `WX_TEXT_Y` = 139 + 18 = **157**
-      - `WX_TEXT_Y_EDGE` = 130 + 18 = **148**
-    - Direct constants (use value as-is):
-      - `ROW_SPACING_TOP` = 23, `TOP_COL1_X` = 1, `TOP_COL2_X` = 85
-      - `TOP_ROW1_Y` = 2, `SPACER` = 4
-      - `MID_Y` = 76, `MID_LEFT_X` = 22, `MID_CENTER_X` = 88
-      - `MID_RIGHT_LEFT_X` = 132, `MID_RIGHT_RIGHT_X` = 174
-      - `DIV_TOP_Y` = 68, `DIV_LEFT_X` = 8, `DIV_RIGHT_X` = 160
-      - `DATE_Y` = 114, `DATE_TEXT_X` = 88
-      - `WX_Y` = 139, `WX_Y_EDGE` = 130
-      - `WX_COL1_X` = 42, `WX_COL2_X` = 88, `WX_COL3_X` = 134
-      - `STRESS_ARC_WIDTH` = 6
-      - `WIND_ARROW_SIZE` = 7, `WIND_ARROW_WIDTH` = 0.8, `WIND_ARROW_NOTCH` = 0.5, `WIND_ARROW_Y_OFFSET` = 5
-      - `TC_Y` = 114, `TC_LABEL_HEIGHT` = 16, `TC_CURVE_HEIGHT` = 36
-      - `TC_LABEL_GAP` = 2, `TC_LEFT_X` = 14, `TC_RIGHT_X` = 162
-      - `TC_NOW_GAP_HALF` = 2, `TC_TRI_WIDTH` = 4, `TC_TRI_HEIGHT` = 5, `TC_TRI_GAP` = 3
-    - String constants inlined as literals: `"5"` (notification), `">"` (sunrise), `"?"` (sunset)
-    - Add `/* CONST_NAME */` comment at each usage site for maintainability
-    - _Bug_Condition: 46 private static const declarations generate ~1-2KB of unnecessary bytecode_
-    - _Expected_Behavior: inline literals eliminate declaration + reference bytecode overhead_
-    - _Preservation: every inlined value matches the original computed value exactly — pixel-identical rendering_
-    - _Requirements: 1.3, 2.3, 3.3, 3.6_
-  - [x] 5.3 Build for Instinct 2X and verify in simulator
-    - Build succeeds with no errors
-    - Shore mode: all UI elements at same pixel positions as reference screenshots
-    - Surf mode: all UI elements at same pixel positions as reference screenshots
-    - View > Memory: record new Used/Peak values (expect ~1-2KB reduction from task 4 baseline)
+### Confirmed Working Optimizations (foreground only)
+- [x] Remove dead code: `drawIconHeart()` — saves ~0.1KB
+- [x] Load only active clock font — saves ~0.7KB
+- [x] Inline 46 `private static const` as literals — saves ~0.1KB
+- [x] Remove 30 unused font files from resources/fonts/ — saves ~0.6KB
+- [x] Trim crystal-icons from 17 to 3 glyphs — no measurable savings (Garmin may use fixed texture size)
 
-- [x] 6. Trim crystal-icons font to 3 glyphs
-  - [x] 6.1 Create Python script to trim the `.fnt` and `.png` files
-    - Script reads `resources/fonts/crystal-icons.fnt`, keeps only char id=53, id=62, id=63
-    - Script reads `resources/fonts/crystal-icons.png` (or `crystal-icons-small.png` per the `page` reference), crops to include only the pixel regions for the 3 retained glyphs
-    - Updates x/y offsets in `.fnt` to match new `.png` layout
-    - Updates `chars count=3`
-    - Writes trimmed `.fnt` and `.png` back to `resources/fonts/`
-    - _Requirements: 2.5_
-  - [x] 6.2 Run the Python script and verify output
-    - Trimmed `.fnt` has exactly 3 char entries (id=53, id=62, id=63)
-    - Trimmed `.png` is smaller than original (only 3 glyph regions)
-    - _Requirements: 2.5_
-  - [x] 6.3 Build for Instinct 2X and verify in simulator
-    - Build succeeds with no errors
-    - Notification bell icon (char 53 = "5") renders correctly in shore mode
-    - Sunrise icon (char 62 = ">") renders correctly in shore and surf mode
-    - Sunset icon (char 63 = "?") renders correctly in shore and surf mode
-    - Compare against reference screenshots — icons identical
-    - View > Memory: record new Used/Peak values
-    - _Bug_Condition: 14 unused glyphs waste font data memory on CIQ 3.x_
-    - _Expected_Behavior: only 3 used glyphs loaded, reducing font memory footprint_
-    - _Preservation: chars 53, 62, 63 render identically to original_
-    - _Requirements: 1.5, 2.5, 3.5_
+### Attempted But Failed (background memory)
+- [ ] Move DataManager to Globals module — added 80 bytes overhead, didn't help
+- [ ] Remove bodyBattery field + helper functions — no change (overhead is from properties/strings, not DataManager fields)
+- [ ] Untyped Globals var — no change (compiler still resolves types from App method calls)
 
-- [ ] 7. Verify bug condition exploration test now passes
-  - **Property 1: Expected Behavior** - Peak Memory Within Heap Limit
-  - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
-  - Build optimized code for Instinct 2X with all optimizations applied (tasks 3-6)
-  - Open View > Memory panel in simulator
-  - **EXPECTED OUTCOME**: Peak memory ≤ 56.8KB (at least 3KB headroom below 59.8KB limit)
-  - Compare against baseline values from task 1 — confirm significant reduction
-  - Document final memory values and total savings
-  - _Requirements: 2.1_
+### Unresolved: Background Memory Architecture
+The fundamental issue is that the App class (`:background`) references DataManager through its methods (`onBackgroundData`, `onSettingsChanged`, `getInitialView`). This pulls DataManager's type into the background process. Every new property/string/setting increases the compiled app size and reduces background free memory.
 
-- [ ] 8. Verify preservation tests still pass
-  - **Property 2: Preservation** - Rendering Output Unchanged After All Optimizations
-  - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
-  - Compare optimized rendering against reference screenshots from task 2
-  - Shore mode: all UI elements at same pixel positions with same content
-  - Surf mode: all UI elements at same pixel positions with same content
-  - Clock font switching: Saira (ClockFont=0) and Rajdhani (ClockFont=1) both work correctly
-  - Crystal icons: notification, sunrise, sunset render identically
-  - Bluetooth icon: seg34Icons "L" glyph renders correctly
-  - Build for Instinct 3 (instinct3solar45mm) — verify identical rendering on CIQ 4.x+
-  - **EXPECTED OUTCOME**: All rendering pixel-identical to reference screenshots (no regressions)
-  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
+Possible solutions (not yet attempted):
+1. **Reduce swell memory in background** — store only current hour values instead of full 24h arrays, freeing ~3KB for tide. Tradeoff: loses offline hourly swell advancement.
+2. **Refactor App to not reference DataManager** — move all foreground logic to the View, use Storage flags for background→foreground communication. Big refactor, risk of I/O-per-tick regression.
+3. **Split swell and tide into separate background cycles** — fetch swell on one temporal event, tide on the next. Doubles the time to get both datasets but avoids memory contention.
+4. **Use Prettier Monkey C optimizer** — community tool that does constant inlining, dead code removal, constant folding automatically. May reduce compiled code size enough.
 
-- [ ] 9. Checkpoint - Ensure all tests pass
-  - All optimizations applied and verified individually (tasks 3-6)
-  - Bug condition resolved: peak memory ≤ 56.8KB on Instinct 2X (task 7)
-  - Preservation confirmed: rendering identical to baseline (task 8)
-  - No build errors or warnings
-  - Ready for v1.1.0 feature work with safe memory headroom
-  - Ask the user if questions arise
+## WARNING: Do NOT implement v1.1.0 features without resolving the background memory issue first.
+Adding any new properties, strings, or settings will increase background memory usage and break tide fetching on Instinct 2/2X.
