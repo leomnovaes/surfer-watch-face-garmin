@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Write bug condition exploration test
+- [x] 1. Write bug condition exploration test
   - **Property 1: Bug Condition** - App References DataManager in Background
   - **CRITICAL**: This test MUST FAIL on unfixed code — failure confirms the bug exists
   - **DO NOT attempt to fix the test or the code when it fails**
@@ -15,7 +15,7 @@
   - Mark task complete when test is written, run, and failure is documented
   - _Requirements: 1.2, 1.3, 1.4, 2.1, 2.2_
 
-- [ ] 2. Write preservation property tests (BEFORE implementing fix)
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
   - **Property 2: Preservation** - Data Flow and Settings Behavior Unchanged
   - **IMPORTANT**: Follow observation-first methodology
   - Observe on UNFIXED code: `onBackgroundData()` with weather dict → `dataManager.onWeatherData()` sets temperature, weatherConditionId, windSpeed, windDeg, sunrise, sunset, precipProbability, isDay, owmFetchedAt and calls `persistWeatherData()`
@@ -28,7 +28,7 @@
   - Verify tests pass on UNFIXED code
   - _Requirements: 3.1, 3.2, 3.3, 3.5, 3.6, 3.7, 3.8_
 
-- [ ] 3. Baseline measurement (USER captures current numbers)
+- [x] 3. Baseline measurement (USER captures current numbers)
   - USER: Build the project for Instinct 2X (`instinct2x`)
   - USER: Launch simulator, open the watch face
   - USER: Foreground memory — open View > Memory in simulator, record peak and current usage
@@ -38,7 +38,7 @@
   - These numbers are the "before" reference for every subsequent task
   - _Requirements: 1.1, 1.2_
 
-- [ ] 4. Remove unused font files (zero risk, confirmed savings)
+- [x] 4. Remove unused font files (zero risk, confirmed savings)
   - Delete 29 font files in `resources/fonts/` that are NOT referenced by `fonts.xml`
   - Referenced fonts (keep): `crystal-icons.fnt`, `crystal-icons.png`, `weather-icons.fnt`, `weather-icons_0.png`, `moon.fnt`, `moon.png`, `seg34-icons.fnt`, `seg34-icons.png`, `surfer-icons.fnt`, `surfer-icons.png`, `heart-icon.fnt`, `heart-icon.png`, `clock-SairaCondensed-Bold-40.fnt`, `clock-SairaCondensed-Bold-40.png`, `clock-Rajdhani-Bold-40.fnt`, `clock-Rajdhani-Bold-40.png`, `fonts.xml`
   - Delete all other `.fnt` and `.png` files in `resources/fonts/` (garmin-icons-*, weather-icons-12/15/16/18/20/22/24*, fa-brands-16*, crystal-icons-small.png)
@@ -47,7 +47,7 @@
   - USER: Measure background memory (System.getSystemStats prints)
   - _Requirements: 1.7, 2.7_
 
-- [ ] 5. Remove dead code `drawIconHeart` (zero risk)
+- [x] 5. Remove dead code `drawIconHeart` (zero risk)
   - Delete the `drawIconHeart()` function from `source/SurferWatchFaceView.mc` (line ~486, uses seg34IconsFont glyph "h", never called)
   - Do NOT remove `seg34IconsFont` — it is still used by `drawIconBluetooth()` for glyph "L"
   - Build for Instinct 2X — must succeed

@@ -483,12 +483,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         }
     }
 
-    private function drawIconHeart(dc as Dc, x as Number, y as Number) as Void {
-        if (seg34IconsFont != null) {
-            drawTextAligned(dc, x, y, seg34IconsFont, "h", Graphics.TEXT_JUSTIFY_LEFT);
-        }
-    }
-
     // =========================================================
     // Composite component methods — each renders a reusable UI
     // unit (text + icon) that can be placed anywhere via x, y.
