@@ -113,7 +113,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // =========================================================
 
     function onTemporalEvent() as Void {
-        System.println("BG: onTemporalEvent freeMem=" + System.getSystemStats().freeMemory);
         // Clear previous cycle's response code
         Application.Storage.setValue("sgLastResponseCode", 0);
 
@@ -176,10 +175,8 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             var weatherNeeded = false;
             var weatherSource = Application.Properties.getValue("WeatherSource");
             if (weatherSource != null && weatherSource == 1) {
-                // Open-Meteo: always fetch (free, no key)
                 weatherNeeded = true;
             } else if (weatherSource != null && weatherSource == 2) {
-                // OWM: needs API key
                 var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
                 if (apiKey != null && !apiKey.equals("")) { weatherNeeded = true; }
             }
@@ -204,7 +201,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     }
 
     private function startTideFetch() as Void {
-        System.println("BG: startTideFetch freeMem=" + System.getSystemStats().freeMemory);
         var apiKey = getStormGlassApiKey();
         if (apiKey == null) { chainAfterTide(); return; }
         var ts = new TideService(method(:onTideComplete));
