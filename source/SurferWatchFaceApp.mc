@@ -94,34 +94,29 @@ class SurferWatchFaceApp extends Application.AppBase {
         WatchUi.requestUpdate();
     }
 
-    // Called by the system after Background.exit() — routes data to DataManager
+    // Called by the system after Background.exit() — writes to Storage only.
+    // View reads from Storage on next onUpdate() via DataManager.checkBackgroundFlags().
+    // This follows the Crystal Face pattern: App never references foreground classes.
     function onBackgroundData(data) as Void {
         if (data instanceof Dictionary) {
-            if (dataManager != null) {
-                var weatherData = data["weather"];
-                if (weatherData != null && weatherData instanceof Dictionary) {
-                    var surfMode = Application.Properties.getValue("SurfMode");
-                    if (surfMode != null && surfMode == 1) {
-                        dataManager.onSurfWindData(weatherData as Dictionary);
-                    } else {
-                        dataManager.onWeatherData(weatherData as Dictionary);
-                    }
-                }
-                var tideData = data["tideUpdated"];
-                if (tideData != null) {
-                    // Tide data written to Storage by delegate — reload it
-                    dataManager.onTideData();
-                }
-                var swellData = data["swell"];
-                if (swellData != null && swellData instanceof Dictionary) {
-                    dataManager.onSwellData(swellData as Dictionary);
-                }
+            var weatherData = data["weather"];
+            if (weatherData != null) {
+                Application.Storage.setValue("bgWeatherData", weatherData);
+                Application.Storage.setValue("weatherUpdated", true);
+            }
+            var tideData = data["tideUpdated"];
+            if (tideData != null) {
+                // Tide arrays already written to Storage by delegate — just set flag
+                Application.Storage.setValue("tideUpdated", true);
+            }
+            var swellData = data["swell"];
+            if (swellData != null) {
+                Application.Storage.setValue("bgSwellData", swellData);
+                Application.Storage.setValue("swellUpdated", true);
             }
         }
-        // Compute sunrise/sunset + Garmin weather on every background cycle
-        if (dataManager != null) {
-            dataManager.refreshWeatherOnBackgroundEvent();
-        }
+        // Set flag for View to refresh weather (sunrise/sunset + Garmin weather)
+        Application.Storage.setValue("bgEventOccurred", true);
         // Re-register for next background event in 5 minutes
         if (Background has :registerForTemporalEvent) {
             Background.registerForTemporalEvent(new Time.Duration(5 * 60));

@@ -76,9 +76,9 @@
   - USER: Switch modes back and forth, verify data reloads correctly each time
   - _Requirements: 1.6, 2.6_
 
-- [ ] 8. Refactor `onBackgroundData` to write Storage only (medium risk — critical step)
+- [x] 8. Refactor `onBackgroundData` to write Storage only (medium risk — critical step)
 
-  - [ ] 8.1 Refactor `onBackgroundData()` in `SurferWatchFaceApp.mc`
+  - [x] 8.1 Refactor `onBackgroundData()` in `SurferWatchFaceApp.mc`
     - Remove all `dataManager.*` calls from `onBackgroundData()`
     - Weather data: `Application.Storage.setValue("bgWeatherData", weatherData)` + `Application.Storage.setValue("weatherUpdated", true)`
     - Swell data: `Application.Storage.setValue("bgSwellData", swellData)` + `Application.Storage.setValue("swellUpdated", true)`
@@ -90,7 +90,7 @@
     - _Preservation: All data still flows to DataManager via View on next onUpdate()_
     - _Requirements: 1.3, 2.1, 2.3, 3.1, 3.2, 3.8_
 
-  - [ ] 8.2 Add Storage flag handling in `SurferWatchFaceView.mc` `onUpdate()`
+  - [x] 8.2 Add Storage flag handling in `SurferWatchFaceView.mc` `onUpdate()`
     - At the top of `onUpdate()`, before rendering, check Storage flags:
     - `"weatherUpdated"` → read `Application.Storage.getValue("bgWeatherData")`, call `dataManager.onWeatherData()` or `dataManager.onSurfWindData()` based on SurfMode, clear flag
     - `"swellUpdated"` → read `Application.Storage.getValue("bgSwellData")`, call `dataManager.onSwellData()`, clear flag
@@ -98,7 +98,7 @@
     - After any flag handled, call `dataManager.refreshWeatherOnBackgroundEvent()` (computes sunrise/sunset + Garmin weather)
     - _Requirements: 2.3, 3.1, 3.2_
 
-  - [ ] 8.3 Build and full verification
+  - [x] 8.3 Build and full verification
     - Build for Instinct 2X — must succeed
     - USER: Measure foreground memory (View > Memory)
     - USER: Measure background memory (System.getSystemStats prints)

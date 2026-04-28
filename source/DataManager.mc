@@ -107,6 +107,57 @@ class DataManager {
     }
 
     // =========================================================
+    // checkBackgroundFlags() — checks Storage flags set by
+    // App.onBackgroundData() and processes any pending data.
+    // Called from onUpdate() each tick — flags are only set on
+    // background events (every 5 min), so most ticks do nothing.
+    // =========================================================
+    function checkBackgroundFlags() as Void {
+        var bgEvent = Application.Storage.getValue("bgEventOccurred");
+        if (bgEvent == null || bgEvent != true) { return; }
+
+        // Clear the event flag first
+        Application.Storage.setValue("bgEventOccurred", false);
+
+        // Weather data
+        var weatherUpdated = Application.Storage.getValue("weatherUpdated");
+        if (weatherUpdated != null && weatherUpdated == true) {
+            var weatherData = Application.Storage.getValue("bgWeatherData");
+            if (weatherData != null && weatherData instanceof Dictionary) {
+                var surfMode = Application.Properties.getValue("SurfMode");
+                if (surfMode != null && surfMode == 1) {
+                    onSurfWindData(weatherData as Dictionary);
+                } else {
+                    onWeatherData(weatherData as Dictionary);
+                }
+            }
+            Application.Storage.setValue("weatherUpdated", false);
+            Application.Storage.setValue("bgWeatherData", null);
+        }
+
+        // Swell data
+        var swellUpdated = Application.Storage.getValue("swellUpdated");
+        if (swellUpdated != null && swellUpdated == true) {
+            var swellData = Application.Storage.getValue("bgSwellData");
+            if (swellData != null && swellData instanceof Dictionary) {
+                onSwellData(swellData as Dictionary);
+            }
+            Application.Storage.setValue("swellUpdated", false);
+            Application.Storage.setValue("bgSwellData", null);
+        }
+
+        // Tide data (arrays already in Storage — just reload)
+        var tideUpdated = Application.Storage.getValue("tideUpdated");
+        if (tideUpdated != null && tideUpdated == true) {
+            onTideData();
+            Application.Storage.setValue("tideUpdated", false);
+        }
+
+        // Refresh weather (sunrise/sunset + Garmin weather if applicable)
+        refreshWeatherOnBackgroundEvent();
+    }
+
+    // =========================================================
     // updateSensorData() — called from onUpdate() each tick
     // Reads HR, battery, notifications, BT status, GPS
     // Writes lat/lng/BT to Application.Storage for background

@@ -133,6 +133,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
         var dm = (Application.getApp() as SurferWatchFaceApp).getDataManager();
 
+        // Check background data flags (set by App.onBackgroundData via Storage)
+        dm.checkBackgroundFlags();
+
         var surfMode = Application.Properties.getValue("SurfMode");
 
         if (surfMode != null && surfMode == 1) {
