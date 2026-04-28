@@ -1,41 +1,73 @@
 # Memory Optimization — Implementation Plan
 
-## Status: ON HOLD — v1.1.0 features blocked until background memory issue resolved
+## Status: READY — execute in order, measure after each step
 
-## Key Findings
+## Background
 
-### Foreground Memory (Instinct 2X, 59.8KB max)
-- v1.0.2 baseline: 55.3KB used, 58.2KB peak (1.6KB headroom)
-- After optimizations (dead code, single clock font, inline constants, font cleanup): 53.8KB used, 56.6KB peak (3.2KB headroom)
-- v1.1.0 features add ~2.2KB code — fits in foreground with optimizations
+v1.0.2 works but is at the memory edge:
+- Foreground: 55.3KB / 58.2KB peak (59.8KB max, 1.6KB headroom)
+- Background: 21,056 used / 28,488 total (3,424 free before tide fetch)
+- Adding new properties/strings breaks tide fetching (-403 OOM in background)
+- Root cause: App class references DataManager, pulling 51 fields into background
 
-### Background Memory (28,488 bytes total)
-- v1.0.2: 21,056 used, 7,416 free at start, 3,424 free before tide fetch
-- v1.1.0 (any changes): 21,536+ used, 6,936 free at start, 2,936 free before tide fetch
-- Tide JSON parsing needs >3KB — fails with -403 (NETWORK_RESPONSE_OUT_OF_MEMORY) at 2.9KB free
-- **Root cause**: Any new properties/strings/settings increase the compiled app size, which reduces background free memory. The App class is `:background` and pulls in all referenced types.
-- **The swell fetch consumes ~4.5KB** in the background before tide fetch starts. This was already marginal in v1.0.2 (3.4KB free) and any code additions push it over.
+## Tasks
 
-### Confirmed Working Optimizations (foreground only)
-- [x] Remove dead code: `drawIconHeart()` — saves ~0.1KB
-- [x] Load only active clock font — saves ~0.7KB
-- [x] Inline 46 `private static const` as literals — saves ~0.1KB
-- [x] Remove 30 unused font files from resources/fonts/ — saves ~0.6KB
-- [x] Trim crystal-icons from 17 to 3 glyphs — no measurable savings (Garmin may use fixed texture size)
+### Phase 1 — Zero-risk quick wins
 
-### Attempted But Failed (background memory)
-- [ ] Move DataManager to Globals module — added 80 bytes overhead, didn't help
-- [ ] Remove bodyBattery field + helper functions — no change (overhead is from properties/strings, not DataManager fields)
-- [ ] Untyped Globals var — no change (compiler still resolves types from App method calls)
+- [ ] 1. Enable compiler optimization -O2
+  - [ ] 1.1 Add `project.optimization = 2` to `monkey.jungle`
+  - [ ] 1.2 Build for Instinct 2X, measure foreground + background memory
+  - [ ] 1.3 Compare against baseline (foreground: 55.3/58.2, background: 21,056 used)
+  - Note: SDK 4.1.4+ compiler does constant folding, branch elimination automatically. May save 1-2KB with zero code changes.
 
-### Unresolved: Background Memory Architecture
-The fundamental issue is that the App class (`:background`) references DataManager through its methods (`onBackgroundData`, `onSettingsChanged`, `getInitialView`). This pulls DataManager's type into the background process. Every new property/string/setting increases the compiled app size and reduces background free memory.
+- [ ] 2. Remove unused font files
+  - [ ] 2.1 Delete all .fnt/.png files in resources/fonts/ not referenced by fonts.xml (29 files)
+  - [ ] 2.2 Build and measure memory
+  - Note: Confirmed 0.6KB foreground savings in previous testing.
 
-Possible solutions (not yet attempted):
-1. **Reduce swell memory in background** — store only current hour values instead of full 24h arrays, freeing ~3KB for tide. Tradeoff: loses offline hourly swell advancement.
-2. **Refactor App to not reference DataManager** — move all foreground logic to the View, use Storage flags for background→foreground communication. Big refactor, risk of I/O-per-tick regression.
-3. **Split swell and tide into separate background cycles** — fetch swell on one temporal event, tide on the next. Doubles the time to get both datasets but avoids memory contention.
-4. **Use Prettier Monkey C optimizer** — community tool that does constant inlining, dead code removal, constant folding automatically. May reduce compiled code size enough.
+- [ ] 3. Remove dead code
+  - [ ] 3.1 Delete `drawIconHeart()` function (uses seg34IconsFont, never called — `drawHrHeart()` is the actual renderer)
+  - [ ] 3.2 Build and measure memory
 
-## WARNING: Do NOT implement v1.1.0 features without resolving the background memory issue first.
-Adding any new properties, strings, or settings will increase background memory usage and break tide fetching on Instinct 2/2X.
+### Phase 2 — Architecture refactor (unblocks v1.1.0)
+
+- [ ] 4. Refactor onBackgroundData to not reference DataManager
+  - [ ] 4.1 Change `onBackgroundData()` to write received weather/swell data to Application.Storage with flag keys (e.g., `weatherDataReady=true`, `swellDataReady=true`)
+  - [ ] 4.2 Tide data already uses this pattern (delegate writes to Storage, foreground reloads on `tideUpdated` flag) — no change needed for tide
+  - [ ] 4.3 In DataManager or View's `onUpdate()`, check the flags and load data from Storage when set
+  - [ ] 4.4 Remove all `dataManager.onWeatherData()`, `dataManager.onSurfWindData()`, `dataManager.onSwellData()` calls from the App
+  - [ ] 4.5 Build and measure background memory — should see significant reduction
+  - Note: This follows the Crystal Face pattern where onBackgroundData only writes to Storage.
+
+- [ ] 5. Move onSettingsChanged logic to the View
+  - [ ] 5.1 In App's `onSettingsChanged()`, just set a Storage flag (`settingsChanged=true`) and call `requestUpdate()`
+  - [ ] 5.2 In View's `onUpdate()`, check the flag and handle: clear weather data, reload caches, recompute sunrise/sunset, reload clock font
+  - [ ] 5.3 Remove all `dataManager.*` calls from App's `onSettingsChanged()`
+  - [ ] 5.4 Build and measure
+
+- [ ] 6. Remove DataManager field from App
+  - [ ] 6.1 Remove `var dataManager as DataManager or Null` from the App class
+  - [ ] 6.2 Remove `getDataManager()` from the App
+  - [ ] 6.3 Create DataManager in the View's `onLayout()` or `initialize()` instead of `getInitialView()`
+  - [ ] 6.4 Update View to access DataManager directly (it already does via `getApp().getDataManager()` — change to local field)
+  - [ ] 6.5 Build and measure background memory — this is the big payoff
+  - [ ] 6.6 Test tide fetching on Instinct 2X — should work now with more background free memory
+
+- [ ] 7. Verify all functionality
+  - [ ] 7.1 Shore mode: weather, tide, sunrise/sunset, all sensors
+  - [ ] 7.2 Surf mode: swell, tide, wind, water temp, solar
+  - [ ] 7.3 Settings changes: weather source switch, mode switch, clock font switch
+  - [ ] 7.4 Background events: fire multiple, verify data flows correctly
+  - [ ] 7.5 Memory: foreground and background within safe limits on Instinct 2X
+
+### Phase 3 — Additional foreground optimizations
+
+- [ ] 8. Single clock font loading
+  - [ ] 8.1 Load only the selected clock font in `onLayout()`
+  - [ ] 8.2 Add `reloadClockFont()` on View, triggered by settings change flag
+  - [ ] 8.3 Build and measure (expect ~0.7KB savings)
+
+### Phase 4 — v1.1.0 features (after refactor verified)
+
+See `.kiro/specs/surf-mode/tasks.md` Phase 5 for feature tasks.
+Each feature should be added incrementally with memory measurement after each step.

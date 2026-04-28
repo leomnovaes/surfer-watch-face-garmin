@@ -231,3 +231,77 @@ On the ~65KB heap, reading unused sensors causes OOM. Every sensor read MUST be 
 3. Implement the gate in `updateSensorData()` or `updateSurfSensors()`
 4. If it uses SensorHistory, put the read in its own private function (isolates iterator from main stack)
 5. Test with all setting combinations to verify no OOM
+
+## Monkey C Compiler & Code Size Best Practices
+
+### Compiler Optimization
+- Use `-O2` (or `project.optimization = 2` in monkey.jungle) for release builds
+- SDK 4.1.4+ compiler performs constant folding, constant substitution, and branch elimination automatically
+- This makes manual constant inlining unnecessary in most cases
+- Check optimization level is set before doing manual code size optimizations
+
+### What costs code memory
+- `private static const` declarations: each generates bytecode for declaration + every reference site. The compiler with `-O2` may fold these automatically.
+- `switch/case`: more expensive than `if/else` chains
+- Dictionaries: huge overhead for both code and data — avoid for lookup tables
+- Array initialization with named constants: generates more code than literal values
+- Fully qualified names (`$.Foo.Bar.Baz`): generates more code than short names (`Bar.Baz`)
+- Each class, module, enum, and function has fixed overhead even if unused
+- `const FOO = 1+1` generates more code than `const FOO = 2` (no constant folding without `-O2`)
+
+### What costs data memory
+- Each class field (var) costs ~8-16 bytes regardless of whether it holds a value
+- `Application.Storage.setValue()` writes to flash — never call per tick
+- `Application.Properties.getValue()` reads from in-memory settings — safe per tick
+- `SensorHistory` iterators allocate heap memory temporarily — only one at a time
+- Custom fonts on CIQ 3.x load into app heap; on CIQ 4.x+ they use a separate graphics pool
+- Font memory correlates with file size — keep .fnt/.png files small, remove unused glyphs
+
+### What does NOT cost significant memory
+- Comments (stripped at compile time)
+- Inline literal numbers vs named constants (similar cost with `-O2`)
+- `Application.Properties.getValue()` calls (in-memory, no I/O)
+
+## Background/Foreground Architecture (CRITICAL)
+
+### The Problem
+The App class (`AppBase`) is `:background` annotated — it runs in BOTH foreground and background processes. Any class referenced by the App's fields or methods gets pulled into the background process, consuming its limited memory (~28KB on Instinct 2X).
+
+**Rule: The App class MUST NOT reference foreground-only classes (DataManager, View) in its fields or method bodies.**
+
+If the App has `var dataManager as DataManager`, the entire DataManager class (all fields, all method signatures) gets compiled into the background process even though the background never uses it.
+
+### Correct Pattern (Crystal Face reference)
+```
+App (:background, thin shell):
+  - getServiceDelegate() → returns ServiceDelegate
+  - onBackgroundData(data) → writes to Application.Storage, calls requestUpdate()
+  - getInitialView() → creates View (no foreground class stored as field)
+  - onSettingsChanged() → writes flag to Storage, calls requestUpdate()
+  - NO DataManager field, NO View field, NO foreground method calls
+
+View (NOT :background):
+  - onUpdate() → checks Storage flags, loads data if changed, renders
+  - Owns DataManager or handles data directly
+  - All foreground logic lives here
+
+ServiceDelegate (:background):
+  - onTemporalEvent() → reads from Storage/Properties, fetches APIs
+  - Writes results to Application.Storage
+  - Calls Background.exit() with minimal payload
+  - NO foreground class references
+```
+
+### Background Memory Budget
+- Instinct 2X: 28,488 bytes total for background process
+- Code + AppBase + globals consume ~21KB, leaving ~7KB for API responses
+- Swell fetch (Open-Meteo Marine) consumes ~4.5KB of that
+- Tide fetch (StormGlass) needs ~3.5KB+ for JSON parsing
+- If swell + tide don't fit, the tide response returns -403 (NETWORK_RESPONSE_OUT_OF_MEMORY)
+- Every new property, string, or setting increases compiled app size and reduces background free memory
+
+### When adding new features
+1. Check background memory impact: add debug prints (`System.getSystemStats().freeMemory`) in `onTemporalEvent()`
+2. Ensure the App class doesn't gain new foreground class references
+3. If background memory is tight, consider splitting API chains across separate temporal events
+4. Test on Instinct 2X simulator — it has the tightest memory budget
