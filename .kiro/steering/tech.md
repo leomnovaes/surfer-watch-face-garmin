@@ -293,10 +293,11 @@ ServiceDelegate (:background):
 ```
 
 ### Background Memory Budget
-- Instinct 2X: 28,488 bytes total for background process
+- Instinct 2/2X: 28,488 bytes total for background process
 - Code + AppBase + globals consume ~21KB, leaving ~7KB for API responses
-- Swell fetch (Open-Meteo Marine) consumes ~4.5KB of that
-- Tide fetch (StormGlass) needs ~3.5KB+ for JSON parsing
+- OWM/Open-Meteo weather fetch consumes ~3KB, leaving ~4KB for tide
+- Tide fetch (StormGlass) needs ~3.5KB+ for JSON parsing — fits with ~4KB free
+- **NEVER use `System.println()` with string concatenation in background** — temporary string allocations consume the free memory needed for API responses. This was confirmed to cause -403 OOM.
 - If swell + tide don't fit, the tide response returns -403 (NETWORK_RESPONSE_OUT_OF_MEMORY)
 - Every new property, string, or setting increases compiled app size and reduces background free memory
 
