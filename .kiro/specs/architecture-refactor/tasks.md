@@ -55,7 +55,7 @@
   - USER: Measure background memory
   - _Requirements: 1.8, 2.8, 3.9_
 
-- [ ] 6. Gate sensors by mode in `updateSensorData()` (low risk)
+- [x] 6. Gate sensors by mode in `updateSensorData()` (low risk)
   - In `DataManager.updateSensorData()`, gate HR read: only read `Activity.getActivityInfo().currentHeartRate` when NOT in surf mode (shore mode only, when ShoreSubscreen setting needs it)
   - Gate stress read: only call `SensorHistory.getStressHistory()` when the active arc setting requires it (ShoreArc=0 in shore mode, or SurfArc=1 in surf mode) — skip entirely otherwise and set `stress = null`
   - Read `SurfMode`, `ShoreArc`, `SurfArc` from `Application.Properties.getValue()` at the top of the function
@@ -67,7 +67,7 @@
   - USER: Verify stress arc still works when ShoreArc=0 or SurfArc=1
   - _Requirements: 1.5, 2.5_
 
-- [ ] 7. Null inactive mode fields on mode switch (low risk)
+- [x] 7. Null inactive mode fields on mode switch (low risk)
   - In `DataManager.loadSurfCache()`, after loading surf data, null out shore-only fields: `temperature`, `weatherConditionId`, `windSpeed`, `windDeg`, `sunrise`, `sunset`, `owmFetchedAt`, `precipProbability`, `isDay`, `heartRate`, `stress`
   - In `DataManager.loadShoreCache()`, after loading shore data, null out surf-only fields: `swellHeight`, `swellPeriod`, `swellDirection`, `surfWindSpeed`, `surfWindDeg`, `surfSunrise`, `surfSunset`, `waterTemp`, `seaSurfaceTemp`, `solarIntensity`, `interpTideHeight`, `_swellHeightsCache`, `_swellPeriodsCache`, `_swellDirectionsCache`, `_seaSurfaceTempsCache`, `_windSpeedsCache`, `_windDirectionsCache`
   - Build for Instinct 2X — must succeed

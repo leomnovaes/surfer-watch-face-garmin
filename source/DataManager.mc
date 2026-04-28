@@ -112,34 +112,28 @@ class DataManager {
     // Writes lat/lng/BT to Application.Storage for background
     // =========================================================
     function updateSensorData() as Void {
-        // Heart rate
-        var activityInfo = Activity.getActivityInfo();
-        if (activityInfo != null) {
-            heartRate = activityInfo.currentHeartRate;
-        } else {
-            heartRate = null;
-        }
-
-        // Stress (from SensorHistory, updates every ~3 min)
-        if (SensorHistory has :getStressHistory) {
-            var stressIter = SensorHistory.getStressHistory({:period => 1});
-            if (stressIter != null) {
-                var sample = stressIter.next();
-                if (sample != null && sample.data != null) {
-                    var val = sample.data;
-                    if (val >= 0 && val <= 100) {
-                        stress = val.toNumber();
-                    } else {
-                        stress = null;
-                    }
-                } else {
-                    stress = null;
-                }
+        // Heart rate + Stress — only in shore mode (surf shows tide height + solar arc)
+        var surfMode = Application.Properties.getValue("SurfMode");
+        if (surfMode == null || surfMode == 0) {
+            var activityInfo = Activity.getActivityInfo();
+            if (activityInfo != null) {
+                heartRate = activityInfo.currentHeartRate;
             } else {
-                stress = null;
+                heartRate = null;
             }
-        } else {
-            stress = null;
+
+            if (SensorHistory has :getStressHistory) {
+                var stressIter = SensorHistory.getStressHistory({:period => 1});
+                if (stressIter != null) {
+                    var sample = stressIter.next();
+                    if (sample != null && sample.data != null) {
+                        var val = sample.data;
+                        if (val >= 0 && val <= 100) {
+                            stress = val.toNumber();
+                        } else { stress = null; }
+                    } else { stress = null; }
+                } else { stress = null; }
+            } else { stress = null; }
         }
 
         // Battery
@@ -712,6 +706,18 @@ class DataManager {
         nextTideTime = null;
         extractTideCurveData();
         loadForecastCaches();
+        // Null shore-only fields to free memory
+        temperature = null;
+        weatherConditionId = null;
+        windSpeed = null;
+        windDeg = null;
+        sunrise = null;
+        sunset = null;
+        owmFetchedAt = null;
+        precipProbability = null;
+        isDay = null;
+        heartRate = null;
+        stress = null;
     }
 
     // =========================================================
@@ -721,8 +727,26 @@ class DataManager {
     function loadShoreCache() as Void {
         loadTideData();
         loadWeatherData();
-        nextTideTime = null; // Force recomputation from new tide data
+        nextTideTime = null;
         extractTideCurveData();
+        // Null surf-only fields to free memory
+        swellHeight = null;
+        swellPeriod = null;
+        swellDirection = null;
+        surfWindSpeed = null;
+        surfWindDeg = null;
+        surfSunrise = null;
+        surfSunset = null;
+        waterTemp = null;
+        seaSurfaceTemp = null;
+        solarIntensity = null;
+        interpTideHeight = null;
+        _swellHeightsCache = null;
+        _swellPeriodsCache = null;
+        _swellDirectionsCache = null;
+        _seaSurfaceTempsCache = null;
+        _windSpeedsCache = null;
+        _windDirectionsCache = null;
     }
 
     // =========================================================

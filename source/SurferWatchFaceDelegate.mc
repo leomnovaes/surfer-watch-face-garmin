@@ -113,6 +113,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // =========================================================
 
     function onTemporalEvent() as Void {
+        System.println("BG: onTemporalEvent freeMem=" + System.getSystemStats().freeMemory);
         // Clear previous cycle's response code
         Application.Storage.setValue("sgLastResponseCode", 0);
 
@@ -203,6 +204,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     }
 
     private function startTideFetch() as Void {
+        System.println("BG: startTideFetch freeMem=" + System.getSystemStats().freeMemory);
         var apiKey = getStormGlassApiKey();
         if (apiKey == null) { chainAfterTide(); return; }
         var ts = new TideService(method(:onTideComplete));

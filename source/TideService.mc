@@ -51,6 +51,7 @@ class TideService {
 
     // Callback for StormGlass response
     function onTideResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
+        System.println("BG: onTideResponse code=" + responseCode);
         Application.Storage.setValue("sgLastResponseCode", responseCode);
 
         // On 402 (quota exhausted), immediately retry with backup key if available
