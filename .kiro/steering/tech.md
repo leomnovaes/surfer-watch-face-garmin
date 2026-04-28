@@ -235,10 +235,10 @@ On the ~65KB heap, reading unused sensors causes OOM. Every sensor read MUST be 
 ## Monkey C Compiler & Code Size Best Practices
 
 ### Compiler Optimization
-- Use `-O2` (or `project.optimization = 2` in monkey.jungle) for release builds
+- The default optimization level is **-O2** (release) — no need to set it explicitly
 - SDK 4.1.4+ compiler performs constant folding, constant substitution, and branch elimination automatically
-- This makes manual constant inlining unnecessary in most cases
-- Check optimization level is set before doing manual code size optimizations
+- Manual constant inlining is unnecessary — use `private static const` for readability
+- Higher levels (-O3) are not documented as providing additional benefits
 
 ### What costs code memory
 - Each class, module, enum, and function has fixed overhead even if unused

@@ -19,13 +19,8 @@ The App class is `:background` annotated. It has `var dataManager as DataManager
 
 **This is the #1 priority — nothing else matters until this is fixed.**
 
-### 2. HIGH: Compiler optimization level not set (saves ~1-2KB code, both foreground and background)
-**Impact**: Free code size reduction
-**Risk**: None
-
-The Garmin compiler (SDK 4.1.4+) has built-in optimization levels: `-O0` (none) to `-O2` (release). Our `monkey.jungle` has no optimization setting, so we're using the default. Setting `-O2` enables constant folding, constant substitution, branch elimination — exactly the optimizations we tried to do manually by inlining constants.
-
-**Fix**: Add `project.optimization = 2` to `monkey.jungle`. This is a one-line change with zero risk. It may also make our manual constant inlining unnecessary.
+### ~~2. HIGH: Compiler optimization level not set~~ — REMOVED
+**The default optimization level is already -O2.** Confirmed via Garmin forums: "The default is -O2." Our SDK 9.1.0 already applies constant folding, constant substitution, and branch elimination. No action needed.
 
 ### 3. HIGH: 30 unused font files in resources/fonts/ (saves ~0.6KB foreground)
 **Impact**: Confirmed savings from our testing
@@ -76,17 +71,18 @@ Reading unused sensors (HR in surf mode, stress when arc shows solar) wastes Sen
 
 ## Recommended Execution Order
 
-1. **Set compiler optimization to -O2** (1 line, zero risk, may save 1-2KB)
-2. **Remove unused font files** (confirmed 0.6KB savings)
-3. **Remove dead code** (confirmed 0.1KB savings)
-4. **Refactor App to not reference DataManager** (the big one — unblocks v1.1.0)
-   - Step 4a: Make `onBackgroundData()` write to Storage only (no DataManager calls)
-   - Step 4b: Make View/DataManager read from Storage on flag change
-   - Step 4c: Move `onSettingsChanged()` logic to View
-   - Step 4d: Remove `dataManager` field from App
-   - Step 4e: Measure background memory — should be significantly lower
-5. **Single clock font loading** (confirmed 0.7KB savings)
-6. **Implement v1.1.0 features** with continuous memory monitoring
+1. **Remove unused font files** (confirmed 0.6KB foreground savings)
+2. **Remove dead code** (confirmed 0.1KB foreground savings)
+3. **Refactor App to not reference DataManager** (the big one — unblocks v1.1.0)
+   - Step 3a: Make `onBackgroundData()` write to Storage only (no DataManager calls)
+   - Step 3b: Make View/DataManager read from Storage on flag change
+   - Step 3c: Move `onSettingsChanged()` logic to View
+   - Step 3d: Remove `dataManager` field from App
+   - Step 3e: Measure background memory — should be significantly lower
+4. **Single clock font loading** (confirmed 0.7KB foreground savings)
+5. **Implement v1.1.0 features** with continuous memory monitoring
+
+Note: Compiler -O2 is already the default — no action needed. Manual constant inlining is unnecessary.
 
 ## Reference Architecture (Crystal Face pattern)
 
