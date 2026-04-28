@@ -706,18 +706,6 @@ class DataManager {
         nextTideTime = null;
         extractTideCurveData();
         loadForecastCaches();
-        // Null shore-only fields to free memory
-        temperature = null;
-        weatherConditionId = null;
-        windSpeed = null;
-        windDeg = null;
-        sunrise = null;
-        sunset = null;
-        owmFetchedAt = null;
-        precipProbability = null;
-        isDay = null;
-        heartRate = null;
-        stress = null;
     }
 
     // =========================================================
@@ -729,24 +717,6 @@ class DataManager {
         loadWeatherData();
         nextTideTime = null;
         extractTideCurveData();
-        // Null surf-only fields to free memory
-        swellHeight = null;
-        swellPeriod = null;
-        swellDirection = null;
-        surfWindSpeed = null;
-        surfWindDeg = null;
-        surfSunrise = null;
-        surfSunset = null;
-        waterTemp = null;
-        seaSurfaceTemp = null;
-        solarIntensity = null;
-        interpTideHeight = null;
-        _swellHeightsCache = null;
-        _swellPeriodsCache = null;
-        _swellDirectionsCache = null;
-        _seaSurfaceTempsCache = null;
-        _windSpeedsCache = null;
-        _windDirectionsCache = null;
     }
 
     // =========================================================
