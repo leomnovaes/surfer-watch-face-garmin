@@ -102,3 +102,50 @@ BackgroundService (`:background`):
   - onTemporalEvent() → fetches data, writes to Storage, calls exit()
   - No foreground class references
 ```
+
+
+## Additional Findings — Data Held in Memory Unnecessarily
+
+### Mode-specific fields always allocated (both modes)
+
+DataManager has 51 fields total:
+- 12 shore-only fields (weather, HR, stress, notifications, etc.)
+- 22 surf-only fields (swell, surf wind, water temp, solar, tide curve, 6 forecast cache arrays)
+- 17 shared fields (tide, moon, battery, GPS, etc.)
+
+**In shore mode**: 22 surf-only fields are allocated and may hold stale data from a previous surf session. The 6 forecast cache arrays (`_swellHeightsCache`, etc.) each hold 24-element arrays — that's significant memory for data that's never displayed.
+
+**In surf mode**: 12 shore-only fields hold stale weather/HR/stress data.
+
+**Recommendation**: When switching modes, null out the inactive mode's fields to free memory. The `loadSurfCache()` and `loadShoreCache()` methods already reload the active mode's data — they should also clear the other mode's fields. This is a low-risk change.
+
+### Per-tick reads not gated by mode (v1.0.2)
+
+In surf mode, `updateSensorData()` reads:
+- **HR** (Activity.getActivityInfo) — not displayed in surf mode. Low cost but unnecessary.
+- **Stress** (SensorHistory.getStressHistory) — not displayed in surf mode. HIGH cost (SensorHistory iterator).
+- **Notifications** — not displayed in surf mode. Negligible cost (same getDeviceSettings call as BT).
+
+**Recommendation**: Gate HR and stress to shore mode only. Already designed in the Sensor Gating Rules (steering/tech.md). This was tested and works — just needs to be applied to v1.0.2 base.
+
+### checkCopyGPS() runs every tick in surf mode
+
+Reads `Properties.getValue("CopyGPSToSurfSpot")` every tick. This is a one-shot action that only fires when the user toggles the setting. Could be moved to `onSettingsChanged()` only.
+
+**Recommendation**: Low priority — Properties reads are in-memory and cheap.
+
+### Background delegate patterns — OK
+
+The delegate correctly:
+- Reads from Storage/Properties (14 reads, 13 Properties reads)
+- Writes results to Storage (14 writes)
+- Chains API calls sequentially (swell → tide → wind)
+- Has -403 guard to stop chain on memory exhaustion
+
+No issues found with the delegate pattern itself. The problem is purely that the App class pulls DataManager into the background.
+
+### Forecast arrays loaded on startup regardless of mode
+
+`DataManager.initialize()` calls `loadTideData()` and `loadWeatherData()` unconditionally. If the user is in surf mode, shore tide/weather data is loaded unnecessarily (and vice versa).
+
+**Recommendation**: Load only the active mode's data on startup. Already partially done — `getInitialView()` calls `loadSurfCache()` if in surf mode. But `initialize()` always loads shore data first. Could be optimized.
