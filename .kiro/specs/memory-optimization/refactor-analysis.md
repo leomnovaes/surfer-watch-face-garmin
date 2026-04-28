@@ -52,7 +52,7 @@ Both clock fonts (Saira 4.3KB + Rajdhani 4.0KB) are loaded in `onLayout()`. Only
 **Fix**: Delete `drawIconHeart()`.
 
 ### 6. LOW: DataManager has 51 fields (41 public + 10 private)
-**Impact**: Each field costs ~8-16 bytes in both foreground and background (due to issue #1)
+**Impact**: Each field costs ~8-16 bytes. Currently amplified by issue #1 (fields pulled into background). After #1 is fixed, this becomes less critical.
 **Risk**: Medium (requires careful analysis of which fields are needed)
 
 Many fields could potentially be computed on the fly instead of cached:
@@ -60,17 +60,13 @@ Many fields could potentially be computed on the fly instead of cached:
 - `nextTideTime`, `nextTideType`, `currentTideHeight` — recomputed every tick anyway
 - `owmFetchedAt` — read from Storage, could stay there
 
-**Fix**: After issue #1 is resolved (DataManager no longer in background), field count matters less. Defer this.
+**Fix**: Defer until after issue #1 is resolved. Re-evaluate if still needed.
 
-### 7. LOW: Inline constants (saves ~0.1KB)
-**Impact**: Minimal — compiler optimization (#2) may handle this automatically
-**Risk**: Low but reduces readability
+### ~~7. LOW: Inline constants~~ — REMOVED
+~~Our testing showed only 0.1KB savings from inlining 46 constants.~~
+**The compiler with `-O2` handles constant folding, constant substitution, and branch elimination automatically.** Manual inlining is unnecessary and reduces readability. Do not inline constants — use `private static const` for layout values and let the compiler optimize.
 
-Our testing showed only 0.1KB savings from inlining 46 constants. With `-O2` compiler optimization, this may be unnecessary.
-
-**Fix**: Try `-O2` first. If still needed, inline constants.
-
-### 8. INFO: Sensor gating (no memory savings, prevents OOM on specific configs)
+### 7. INFO: Sensor gating (no memory savings, prevents OOM on specific configs)
 **Impact**: Required for v1.1.0 body battery feature
 **Risk**: Low
 

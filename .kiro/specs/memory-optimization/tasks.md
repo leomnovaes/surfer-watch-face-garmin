@@ -10,64 +10,96 @@ v1.0.2 works but is at the memory edge:
 - Adding new properties/strings breaks tide fetching (-403 OOM in background)
 - Root cause: App class references DataManager, pulling 51 fields into background
 
+## Baseline Measurements (v1.0.2, Instinct 2X simulator)
+
+Record these BEFORE making any changes. All measurements on Instinct 2X (`instinct2x`).
+
+| Metric | Where to measure | v1.0.2 value |
+|--------|-----------------|--------------|
+| Foreground used | View > Memory, idle shore mode | 55.3 KB |
+| Foreground peak | View > Memory, after background events + GPS set | 58.2 KB |
+| Foreground max | View > Memory (device limit) | 59.8 KB |
+| Background used at start | Console: `System.getSystemStats().usedMemory` in `onTemporalEvent()` | 21,056 bytes |
+| Background free at start | Console: `System.getSystemStats().freeMemory` in `onTemporalEvent()` | 7,416 bytes |
+| Background free before tide | Console: `System.getSystemStats().freeMemory` in `startTideFetch()` | 3,424 bytes |
+| Background total | Console: `System.getSystemStats().totalMemory` | 28,488 bytes |
+| Tide fetch result | Console: response code from `onTideResponse()` | 200 (success) |
+
 ## Tasks
 
 ### Phase 1 — Zero-risk quick wins
 
 - [ ] 1. Enable compiler optimization -O2
   - [ ] 1.1 Add `project.optimization = 2` to `monkey.jungle`
-  - [ ] 1.2 Build for Instinct 2X, measure foreground + background memory
-  - [ ] 1.3 Compare against baseline (foreground: 55.3/58.2, background: 21,056 used)
-  - Note: SDK 4.1.4+ compiler does constant folding, branch elimination automatically. May save 1-2KB with zero code changes.
+  - [ ] 1.2 Build for Instinct 2X
+  - [ ] 1.3 USER: Measure foreground memory (View > Memory, idle shore mode)
+  - [ ] 1.4 USER: Add debug prints to delegate, fire background event, measure background memory
+  - [ ] 1.5 USER: Fire background event with StormGlass key + GPS set, verify tide fetch succeeds (response code 200)
+  - [ ] 1.6 Record all measurements, compare against baseline
+  - Note: SDK 4.1.4+ compiler does constant folding, branch elimination. May save 1-2KB with zero code changes. If this alone fixes the background -403, Phase 2 may be less urgent.
 
 - [ ] 2. Remove unused font files
-  - [ ] 2.1 Delete all .fnt/.png files in resources/fonts/ not referenced by fonts.xml (29 files)
-  - [ ] 2.2 Build and measure memory
-  - Note: Confirmed 0.6KB foreground savings in previous testing.
+  - [ ] 2.1 Delete all .fnt/.png files in resources/fonts/ not referenced by fonts.xml (29 files identified)
+  - [ ] 2.2 Build for Instinct 2X
+  - [ ] 2.3 USER: Measure foreground memory, compare against task 1 result
+  - Note: Confirmed 0.6KB foreground savings in previous testing. May also reduce background code size.
 
 - [ ] 3. Remove dead code
-  - [ ] 3.1 Delete `drawIconHeart()` function (uses seg34IconsFont, never called — `drawHrHeart()` is the actual renderer)
-  - [ ] 3.2 Build and measure memory
+  - [ ] 3.1 Delete `drawIconHeart()` function (uses seg34IconsFont, never called)
+  - [ ] 3.2 Build for Instinct 2X
+  - [ ] 3.3 USER: Measure foreground memory, compare against task 2 result
+
+- [ ] 4. Phase 1 checkpoint
+  - [ ] 4.1 USER: Full test — shore mode, surf mode, background events, tide fetch, weather
+  - [ ] 4.2 USER: Record final Phase 1 measurements (foreground + background)
+  - [ ] 4.3 USER: Fire background event on surf mode with swell + tide, check if tide succeeds now
+  - [ ] 4.4 Decision: if tide fetch now succeeds (-O2 freed enough background memory), Phase 2 may be deferred. If still -403, proceed to Phase 2.
 
 ### Phase 2 — Architecture refactor (unblocks v1.1.0)
 
-- [ ] 4. Refactor onBackgroundData to not reference DataManager
-  - [ ] 4.1 Change `onBackgroundData()` to write received weather/swell data to Application.Storage with flag keys (e.g., `weatherDataReady=true`, `swellDataReady=true`)
-  - [ ] 4.2 Tide data already uses this pattern (delegate writes to Storage, foreground reloads on `tideUpdated` flag) — no change needed for tide
-  - [ ] 4.3 In DataManager or View's `onUpdate()`, check the flags and load data from Storage when set
-  - [ ] 4.4 Remove all `dataManager.onWeatherData()`, `dataManager.onSurfWindData()`, `dataManager.onSwellData()` calls from the App
-  - [ ] 4.5 Build and measure background memory — should see significant reduction
-  - Note: This follows the Crystal Face pattern where onBackgroundData only writes to Storage.
+Only proceed if Phase 1 checkpoint shows tide still fails with -403.
 
-- [ ] 5. Move onSettingsChanged logic to the View
-  - [ ] 5.1 In App's `onSettingsChanged()`, just set a Storage flag (`settingsChanged=true`) and call `requestUpdate()`
-  - [ ] 5.2 In View's `onUpdate()`, check the flag and handle: clear weather data, reload caches, recompute sunrise/sunset, reload clock font
-  - [ ] 5.3 Remove all `dataManager.*` calls from App's `onSettingsChanged()`
-  - [ ] 5.4 Build and measure
+- [ ] 5. Refactor onBackgroundData to not reference DataManager
+  - [ ] 5.1 Change `onBackgroundData()` to write received weather data to Storage with a flag key (e.g., `Storage.setValue("bgWeatherData", weatherDict)` + `Storage.setValue("bgDataReady", true)`)
+  - [ ] 5.2 Swell data: same pattern — write to Storage with flag
+  - [ ] 5.3 Tide data already uses this pattern (delegate writes to Storage, foreground reloads on `tideUpdated` flag) — no change needed
+  - [ ] 5.4 In DataManager, add a method to check flags and load from Storage (called from `onUpdate()` or on background event)
+  - [ ] 5.5 Remove all `dataManager.onWeatherData()`, `dataManager.onSurfWindData()`, `dataManager.onSwellData()` calls from the App
+  - [ ] 5.6 Build and verify data still flows: fire background event, check weather/swell/tide display
+  - [ ] 5.7 USER: Measure background memory — compare against Phase 1 checkpoint
 
-- [ ] 6. Remove DataManager field from App
-  - [ ] 6.1 Remove `var dataManager as DataManager or Null` from the App class
-  - [ ] 6.2 Remove `getDataManager()` from the App
-  - [ ] 6.3 Create DataManager in the View's `onLayout()` or `initialize()` instead of `getInitialView()`
-  - [ ] 6.4 Update View to access DataManager directly (it already does via `getApp().getDataManager()` — change to local field)
-  - [ ] 6.5 Build and measure background memory — this is the big payoff
-  - [ ] 6.6 Test tide fetching on Instinct 2X — should work now with more background free memory
+- [ ] 6. Move onSettingsChanged logic to the View
+  - [ ] 6.1 In App's `onSettingsChanged()`, just set `Storage.setValue("settingsChanged", true)` and call `requestUpdate()`
+  - [ ] 6.2 In View's `onUpdate()` (or a helper called from it), check the flag and handle: clear weather data, reload caches, recompute sunrise/sunset, reload clock font
+  - [ ] 6.3 Remove all `dataManager.*` calls from App's `onSettingsChanged()`
+  - [ ] 6.4 Build and verify: change settings (weather source, surf mode, clock font), confirm everything updates correctly
+  - [ ] 6.5 USER: Measure background memory
 
-- [ ] 7. Verify all functionality
-  - [ ] 7.1 Shore mode: weather, tide, sunrise/sunset, all sensors
-  - [ ] 7.2 Surf mode: swell, tide, wind, water temp, solar
-  - [ ] 7.3 Settings changes: weather source switch, mode switch, clock font switch
-  - [ ] 7.4 Background events: fire multiple, verify data flows correctly
-  - [ ] 7.5 Memory: foreground and background within safe limits on Instinct 2X
+- [ ] 7. Remove DataManager field from App
+  - [ ] 7.1 Remove `var dataManager as DataManager or Null` from the App class
+  - [ ] 7.2 Remove `getDataManager()` from the App
+  - [ ] 7.3 Create DataManager in the View (e.g., in `onLayout()` or as a field initialized in `initialize()`)
+  - [ ] 7.4 Update View to access DataManager as its own field instead of `getApp().getDataManager()`
+  - [ ] 7.5 Build for Instinct 2X
+  - [ ] 7.6 USER: Measure background memory — this is the big payoff, DataManager type no longer in background
+  - [ ] 7.7 USER: Fire background event with swell + tide, verify tide fetch succeeds (response code 200)
+
+- [ ] 8. Phase 2 checkpoint
+  - [ ] 8.1 USER: Full test — shore mode, surf mode, all background events, all settings changes
+  - [ ] 8.2 USER: Record final measurements (foreground + background)
+  - [ ] 8.3 Compare background free memory before tide fetch against baseline (was 3,424 in v1.0.2)
+  - [ ] 8.4 Verify no regressions: weather, tide, swell, wind, sunrise/sunset all display correctly
 
 ### Phase 3 — Additional foreground optimizations
 
-- [ ] 8. Single clock font loading
-  - [ ] 8.1 Load only the selected clock font in `onLayout()`
-  - [ ] 8.2 Add `reloadClockFont()` on View, triggered by settings change flag
-  - [ ] 8.3 Build and measure (expect ~0.7KB savings)
+- [ ] 9. Single clock font loading
+  - [ ] 9.1 Load only the selected clock font in `onLayout()`
+  - [ ] 9.2 Signal font reload via Storage flag from `onSettingsChanged()` (already refactored in Phase 2)
+  - [ ] 9.3 View checks flag and calls `reloadClockFont()` 
+  - [ ] 9.4 Build and measure (expect ~0.7KB foreground savings)
 
 ### Phase 4 — v1.1.0 features (after refactor verified)
 
 See `.kiro/specs/surf-mode/tasks.md` Phase 5 for feature tasks.
-Each feature should be added incrementally with memory measurement after each step.
+Each feature added incrementally with memory measurement after each step.
+Ensure background memory is checked when adding new properties/strings.

@@ -241,13 +241,13 @@ On the ~65KB heap, reading unused sensors causes OOM. Every sensor read MUST be 
 - Check optimization level is set before doing manual code size optimizations
 
 ### What costs code memory
-- `private static const` declarations: each generates bytecode for declaration + every reference site. The compiler with `-O2` may fold these automatically.
+- Each class, module, enum, and function has fixed overhead even if unused
 - `switch/case`: more expensive than `if/else` chains
 - Dictionaries: huge overhead for both code and data — avoid for lookup tables
 - Array initialization with named constants: generates more code than literal values
 - Fully qualified names (`$.Foo.Bar.Baz`): generates more code than short names (`Bar.Baz`)
-- Each class, module, enum, and function has fixed overhead even if unused
-- `const FOO = 1+1` generates more code than `const FOO = 2` (no constant folding without `-O2`)
+- Without `-O2`: `private static const` declarations and expressions like `const FOO = 1+1` generate extra bytecode
+- With `-O2`: the compiler handles constant folding and substitution — use `private static const` freely for readability
 
 ### What costs data memory
 - Each class field (var) costs ~8-16 bytes regardless of whether it holds a value
