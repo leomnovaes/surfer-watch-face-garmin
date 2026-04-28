@@ -109,9 +109,9 @@
     - USER: Verify settings changes still work (weather source, surf mode, clock font)
     - _Requirements: 2.1, 3.1, 3.2, 3.3, 3.5, 3.6_
 
-- [ ] 9. Move `onSettingsChanged` logic to View (medium risk)
+- [x] 9. Move `onSettingsChanged` logic to View (medium risk)
 
-  - [ ] 9.1 Refactor `onSettingsChanged()` in `SurferWatchFaceApp.mc`
+  - [x] 9.1 Refactor `onSettingsChanged()` in `SurferWatchFaceApp.mc`
     - Remove all `dataManager.*` calls from `onSettingsChanged()`
     - Replace with: `Application.Storage.setValue("settingsChanged", true)` + store current weather source for change detection: `Application.Storage.setValue("lastWeatherSource", currentSource)`
     - Keep `WatchUi.requestUpdate()` and background re-registration attempt
@@ -121,7 +121,7 @@
     - _Preservation: Settings changes apply within one onUpdate() cycle_
     - _Requirements: 1.4, 2.4, 3.3_
 
-  - [ ] 9.2 Add `settingsChanged` flag handling in View's `onUpdate()`
+  - [x] 9.2 Add `settingsChanged` flag handling in View's `onUpdate()`
     - Check `"settingsChanged"` flag in Storage
     - Read `"lastWeatherSource"` — compare with previous source to detect weather source change
     - If source changed: call `dataManager.clearWeatherData()`, `dataManager.clearPersistedWeatherData()`
@@ -132,7 +132,7 @@
     - Track `_lastWeatherSource` in View instead of App
     - _Requirements: 2.4, 3.3_
 
-  - [ ] 9.3 Build and full verification
+  - [x] 9.3 Build and full verification
     - Build for Instinct 2X — must succeed
     - USER: Measure foreground memory
     - USER: Measure background memory

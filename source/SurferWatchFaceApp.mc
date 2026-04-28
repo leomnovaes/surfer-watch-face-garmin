@@ -9,7 +9,6 @@ import Toybox.WatchUi;
 class SurferWatchFaceApp extends Application.AppBase {
 
     var dataManager as DataManager or Null;
-    private var _lastWeatherSource as Number = -1;
 
     function initialize() {
         AppBase.initialize();
@@ -45,8 +44,6 @@ class SurferWatchFaceApp extends Application.AppBase {
     // Return the initial view — only called in foreground process
     function getInitialView() as [Views] or [Views, InputDelegates] {
         dataManager = new DataManager();
-        var ws = Application.Properties.getValue("WeatherSource");
-        _lastWeatherSource = (ws != null) ? ws : 0;
         // Load correct cache based on current mode
         var surfMode = Application.Properties.getValue("SurfMode");
         if (surfMode != null && surfMode == 1) {
@@ -56,33 +53,16 @@ class SurferWatchFaceApp extends Application.AppBase {
         dataManager.updateSensorData();
         // Compute sunrise/sunset + Garmin weather if applicable
         dataManager.refreshWeatherOnBackgroundEvent();
+        // Store initial weather source for change detection
+        var ws = Application.Properties.getValue("WeatherSource");
+        Application.Storage.setValue("lastWeatherSource", (ws != null) ? ws : 0);
         return [ new SurferWatchFaceView() ];
     }
 
-    // New app settings have been received so trigger a UI update
+    // New app settings have been received so trigger a UI update.
+    // Sets a Storage flag — View handles all DataManager interactions.
     function onSettingsChanged() as Void {
-        if (dataManager != null) {
-            // Clear weather data only if WeatherSource changed — prevents
-            // condition code mismatch between mappers (WMO vs OWM vs Garmin).
-            var ws = Application.Properties.getValue("WeatherSource");
-            var currentSource = (ws != null) ? ws : 0;
-            if (currentSource != _lastWeatherSource) {
-                dataManager.clearWeatherData();
-                dataManager.clearPersistedWeatherData();
-                _lastWeatherSource = currentSource;
-            }
-
-            var surfMode = Application.Properties.getValue("SurfMode");
-            if (surfMode != null && surfMode == 1) {
-                dataManager.loadSurfCache();
-            } else {
-                dataManager.loadShoreCache();
-            }
-            // Compute sunrise/sunset + Garmin weather if applicable
-            dataManager.refreshWeatherOnBackgroundEvent();
-            // Copy GPS to surf spot if toggled (works regardless of current mode)
-            dataManager.checkCopyGPS();
-        }
+        Application.Storage.setValue("settingsChanged", true);
         // Try to trigger immediate background fetch for fresh data
         if (Background has :registerForTemporalEvent) {
             try {
