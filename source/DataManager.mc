@@ -113,37 +113,6 @@ class DataManager {
     // background events (every 5 min), so most ticks do nothing.
     // =========================================================
     function checkBackgroundFlags() as Void {
-        // Settings changed flag (from onSettingsChanged)
-        var settingsChanged = Application.Storage.getValue("settingsChanged");
-        if (settingsChanged != null && settingsChanged == true) {
-            Application.Storage.setValue("settingsChanged", false);
-
-            // Clear weather if source changed
-            var ws = Application.Properties.getValue("WeatherSource");
-            var currentSource = (ws != null) ? ws : 0;
-            var lastSource = Application.Storage.getValue("lastWeatherSource");
-            if (lastSource == null || currentSource != lastSource) {
-                clearWeatherData();
-                clearPersistedWeatherData();
-                Application.Storage.setValue("lastWeatherSource", currentSource);
-            }
-
-            // Load correct mode cache
-            var surfMode = Application.Properties.getValue("SurfMode");
-            if (surfMode != null && surfMode == 1) {
-                loadSurfCache();
-            } else {
-                loadShoreCache();
-            }
-
-            // Refresh weather (sunrise/sunset + Garmin weather)
-            refreshWeatherOnBackgroundEvent();
-            // Copy GPS to surf spot if toggled
-            checkCopyGPS();
-            return; // Settings handled — skip background data check this tick
-        }
-
-        // Background event flag
         var bgEvent = Application.Storage.getValue("bgEventOccurred");
         if (bgEvent == null || bgEvent != true) { return; }
 
