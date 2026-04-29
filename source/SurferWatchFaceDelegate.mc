@@ -3,6 +3,7 @@ import Toybox.Background;
 import Toybox.Communications;
 import Toybox.Lang;
 import Toybox.Math;
+import Toybox.Position;
 import Toybox.System;
 import Toybox.Time;
 import Toybox.Time.Gregorian;
@@ -116,8 +117,9 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         // Clear previous cycle's response code
         Application.Storage.setValue("src", 0);
 
-        var btConnected = Application.Storage.getValue("bt");
-        if (btConnected == null || btConnected == false) {
+        // Check BT directly from device settings (no Storage needed)
+        var settings = System.getDeviceSettings();
+        if (!settings.phoneConnected) {
             Background.exit(null);
             return;
         }
@@ -133,11 +135,16 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             _lng = surfLng.toFloat();
             if (_lat == 0.0 && _lng == 0.0) { Background.exit(null); return; }
         } else {
-            var lat = Application.Storage.getValue("lat") as Float or Null;
-            var lng = Application.Storage.getValue("lng") as Float or Null;
-            if (lat == null || lng == null) { Background.exit(null); return; }
-            _lat = lat;
-            _lng = lng;
+            // Read GPS directly from OS cache (no Storage relay needed)
+            var posInfo = Position.getInfo();
+            if (posInfo != null && posInfo.accuracy != Position.QUALITY_NOT_AVAILABLE && posInfo.position != null) {
+                var coords = posInfo.position.toDegrees();
+                _lat = coords[0].toFloat();
+                _lng = coords[1].toFloat();
+            } else {
+                Background.exit(null);
+                return;
+            }
         }
 
         if (_isSurfMode) {

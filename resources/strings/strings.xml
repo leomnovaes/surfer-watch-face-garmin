@@ -5,8 +5,6 @@
     <string id="OWMApiKeyTitle">OpenWeatherMap API Key</string>
     <string id="StormGlassApiKeyTitle">StormGlass API Key</string>
     <string id="StormGlassBackupApiKeyTitle">StormGlass Backup API Key</string>
-    <string id="HomeLatTitle">Home Latitude</string>
-    <string id="HomeLngTitle">Home Longitude</string>
     <string id="ClockFontTitle">Clock Font</string>
     <string id="FontSaira">Saira Condensed</string>
     <string id="FontRajdhani">Rajdhani</string>

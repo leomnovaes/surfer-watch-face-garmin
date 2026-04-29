@@ -145,18 +145,17 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (dm == null) {
             // Clear stale Storage on version bump (Properties/settings are preserved)
             var storedVer = Application.Storage.getValue("av");
-            if (storedVer == null || storedVer != 2) {
+            if (storedVer == null || storedVer != 3) {
                 Application.Storage.clearValues();
-                Application.Storage.setValue("av", 2);
+                Application.Storage.setValue("av", 3);
             }
             dm = new DataManager();
             dataManager = dm;
             _lastWeatherSource = _readNumProp("WeatherSource");
             if (_readNumProp("SurfMode") == 1) { dm.loadSurfCache(); }
+            dm.updateGPS();
             dm.computeMoonPhase();
-            // Write GPS + BT to Storage so background delegate can read them.
-            // Full updateSensorData() runs on next tick to avoid peak heap OOM.
-            dm.updateSensorData();
+            dm.refreshWeatherOnBackgroundEvent();
             WatchUi.requestUpdate();
             return;
         }

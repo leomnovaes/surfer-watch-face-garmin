@@ -63,12 +63,4 @@
         <settingConfig type="alphaNumeric"/>
     </setting>
 
-    <setting propertyKey="@Properties.HomeLat" title="@Strings.HomeLatTitle">
-        <settingConfig type="alphaNumeric"/>
-    </setting>
-
-    <setting propertyKey="@Properties.HomeLng" title="@Strings.HomeLngTitle">
-        <settingConfig type="alphaNumeric"/>
-    </setting>
-
 </settings>

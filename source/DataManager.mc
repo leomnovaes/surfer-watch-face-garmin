@@ -20,9 +20,6 @@ class DataManager {
     //   "tu"  = tideUpdated
     // Background data (written by App/Delegate, read by DataManager):
     //   "bwd" = bgWeatherData       "bsd" = bgSwellData
-    // GPS/BT (written by DataManager for background):
-    //   "lat" = lastKnownLat        "lng" = lastKnownLng
-    //   "bt"  = bluetoothConnected
     // Weather cache (persisted across restarts):
     //   "ct"  = cachedTemp          "cci" = cachedConditionId
     //   "cws" = cachedWindSpeed     "cwd" = cachedWindDeg
@@ -118,9 +115,6 @@ class DataManager {
     var bottomToggleState as Number;
 
     // --- Storage write tracking (avoid flash I/O every tick) ---
-    private var _prevStoredLat as Float or Null;
-    private var _prevStoredLng as Float or Null;
-    private var _prevStoredBt as Boolean;
     private var _tideExpiredWritten as Boolean;
 
     function initialize() {
@@ -129,9 +123,6 @@ class DataManager {
         notificationCount = 0;
         bluetoothConnected = false;
         bottomToggleState = 0;
-        _prevStoredLat = null;
-        _prevStoredLng = null;
-        _prevStoredBt = false;
         _tideExpiredWritten = false;
         tideCurveMinH = 0.0;
         tideCurveMaxH = 1.0;
@@ -190,6 +181,8 @@ class DataManager {
             Application.Storage.setValue("tu", false);
         }
 
+        // Update GPS from OS cache (event-driven, not per-tick)
+        updateGPS();
         // Refresh weather (sunrise/sunset + Garmin weather if applicable)
         refreshWeatherOnBackgroundEvent();
         // Recompute moon phase (changes daily, no need to run per tick)
@@ -198,8 +191,8 @@ class DataManager {
 
     // =========================================================
     // updateSensorData() — called from onUpdate() each tick
-    // Reads HR, battery, notifications, BT status, GPS
-    // Writes lat/lng/BT to Application.Storage for background
+    // Reads display-only sensors: HR, stress, battery, BT, notifications
+    // GPS is read on background events only (see updateGPS)
     // =========================================================
     function updateSensorData() as Void {
         // Heart rate + Stress — only in shore mode (surf shows tide height + solar arc)
@@ -234,45 +227,20 @@ class DataManager {
         var settings = System.getDeviceSettings();
         notificationCount = settings.notificationCount;
         bluetoothConnected = settings.phoneConnected;
+    }
 
-        // GPS — try Position.getInfo(), fall back to HomeLat/HomeLng from settings
+    // =========================================================
+    // updateGPS() — reads GPS position from OS cache.
+    // Called on background events and init — NOT per tick.
+    // Position.getInfo() is an in-memory read (no I/O).
+    // Used by computeSunriseSunset() and checkCopyGPS().
+    // =========================================================
+    function updateGPS() as Void {
         var posInfo = Position.getInfo();
         if (posInfo != null && posInfo.accuracy != Position.QUALITY_NOT_AVAILABLE && posInfo.position != null) {
             var coords = posInfo.position.toDegrees();
             lastKnownLat = coords[0].toFloat();
             lastKnownLng = coords[1].toFloat();
-        } else if (lastKnownLat == null) {
-            // Fall back to HomeLat/HomeLng from app settings
-            var homeLat = Application.Properties.getValue("HomeLat");
-            var homeLng = Application.Properties.getValue("HomeLng");
-            if (homeLat != null && homeLng != null) {
-                var lat = homeLat.toFloat();
-                var lng = homeLng.toFloat();
-                // Treat 0.0 as "not configured"
-                if (lat != 0.0 || lng != 0.0) {
-                    lastKnownLat = lat;
-                    lastKnownLng = lng;
-                } else {
-                    lastKnownLat = null;
-                    lastKnownLng = null;
-                }
-            } else {
-                lastKnownLat = null;
-                lastKnownLng = null;
-            }
-        }
-
-        // Write shared state to Application.Storage for background process
-        // Only write when values actually change to avoid flash I/O every tick
-        if (lastKnownLat != _prevStoredLat || lastKnownLng != _prevStoredLng) {
-            Application.Storage.setValue("lat", lastKnownLat);
-            Application.Storage.setValue("lng", lastKnownLng);
-            _prevStoredLat = lastKnownLat;
-            _prevStoredLng = lastKnownLng;
-        }
-        if (bluetoothConnected != _prevStoredBt) {
-            Application.Storage.setValue("bt", bluetoothConnected);
-            _prevStoredBt = bluetoothConnected;
         }
     }
 
@@ -280,27 +248,23 @@ class DataManager {
     // refreshWeatherOnBackgroundEvent() — called on every
     // background event, settings change, and startup.
     //
-    // 1. Always computes sunrise/sunset for the current mode
-    //    (shore from GPS, surf from surf spot coordinates).
-    //    API responses overwrite these when they arrive.
-    // 2. For Garmin mode: also reads built-in weather and flows
-    //    through onWeatherData() same as API sources.
+    // For Garmin mode: computes sunrise/sunset locally (no API),
+    //   reads built-in weather, flows through onWeatherData().
+    // For Garmin + surf: computes surf sunrise/sunset locally.
+    // For API modes (OWM/Open-Meteo): sunrise/sunset comes from
+    //   the API response via onWeatherData/onSurfWindData — no
+    //   local computation needed.
     // =========================================================
     function refreshWeatherOnBackgroundEvent() as Void {
         var surfMode = Application.Properties.getValue("SurfMode");
         var weatherSource = Application.Properties.getValue("WeatherSource");
 
-        if (surfMode != null && surfMode == 1) {
-            // Surf mode: always compute surf sunrise/sunset as baseline
-            computeSurfSunriseSunset();
-        } else {
-            // Shore mode: always compute sunrise/sunset from GPS as baseline
-            computeSunriseSunset();
-        }
-
-        // Garmin mode: also read built-in weather (API modes get weather from background fetch)
+        // Garmin mode: compute sunrise/sunset locally + read built-in weather
         if (weatherSource == null || weatherSource == 0) {
-            if (surfMode == null || surfMode == 0) {
+            if (surfMode != null && surfMode == 1) {
+                computeSurfSunriseSunset();
+            } else {
+                computeSunriseSunset();
                 // Shore + Garmin: build weather dict with computed sunrise/sunset
                 var weatherDict = {} as Dictionary<String, Application.PropertyValueType>;
                 if (Weather has :getCurrentConditions) {
@@ -317,8 +281,9 @@ class DataManager {
                 Application.Storage.setValue("ofa", Time.now().value());
                 onWeatherData(weatherDict);
             }
-            // Surf + Garmin: no wind API, surfSunrise/surfSunset already computed above
         }
+        // API modes (OWM/Open-Meteo): sunrise/sunset delivered by API via
+        // onWeatherData() or onSurfWindData() — no local computation.
     }
 
     // =========================================================
@@ -384,7 +349,8 @@ class DataManager {
 
     // =========================================================
     // computeSunriseSunset() — calculates sunrise/sunset from
-    // lat/lon + current date using simplified solar position.
+    // lat/lon + current date using SunCalc algorithm (Julian date
+    // with equation of time correction and atmospheric refraction).
     // Used when WeatherSource=0 (Garmin) since Weather.getSunrise()
     // requires CIQ 4.1 and we target 3.4.
     // =========================================================
@@ -392,78 +358,19 @@ class DataManager {
         if (lastKnownLat == null || lastKnownLng == null) {
             return;
         }
-        var lat = lastKnownLat;
-        var lng = lastKnownLng;
-
-        var now = Time.now();
-        var info = Gregorian.info(now, Time.FORMAT_SHORT);
-
-        // Day of year
-        var N = dayOfYear(info.year, info.month, info.day);
-
-        // Solar declination (radians)
-        var decl = -23.45 * Math.PI / 180.0 * Math.cos(2.0 * Math.PI / 365.0 * (N + 10));
-
-        // Hour angle at sunrise/sunset
-        var latRad = lat * Math.PI / 180.0;
-        var cosH = -Math.tan(latRad) * Math.tan(decl);
-
-        // Clamp for polar regions
-        if (cosH < -1.0) {
-            // Midnight sun — no sunset
+        var result = calcSunTimes(lastKnownLat.toDouble(), lastKnownLng.toDouble());
+        if (result != null) {
+            sunrise = result[0];
+            sunset = result[1];
+        } else {
             sunrise = null;
             sunset = null;
-            return;
         }
-        if (cosH > 1.0) {
-            // Polar night — no sunrise
-            sunrise = null;
-            sunset = null;
-            return;
-        }
-
-        var H = Math.acos(cosH) * 180.0 / Math.PI; // hour angle in degrees
-
-        // Solar noon (hours UTC)
-        var solarNoon = 12.0 - lng / 15.0;
-
-        var sunriseHour = solarNoon - H / 15.0;
-        var sunsetHour = solarNoon + H / 15.0;
-
-        // Convert to unix timestamps for today
-        var startOfDay = Gregorian.moment({
-            :year => info.year,
-            :month => info.month,
-            :day => info.day,
-            :hour => 0,
-            :minute => 0,
-            :second => 0
-        });
-        var dayStart = startOfDay.value();
-
-        sunrise = dayStart + (sunriseHour * 3600).toNumber();
-        sunset = dayStart + (sunsetHour * 3600).toNumber();
-    }
-
-    // Helper: day of year (1-366)
-    private function dayOfYear(year as Number, month as Number, day as Number) as Number {
-        var daysInMonth = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        if (year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)) {
-            daysInMonth[2] = 29;
-        }
-        var doy = 0;
-        for (var m = 1; m < month; m++) {
-            doy += daysInMonth[m];
-        }
-        return doy + day;
     }
 
     // =========================================================
-    // computeSurfSunriseSunset() — calculates sunrise/sunset from
-    // surf spot coordinates + current date. Uses the same solar
-    // position algorithm as computeSunriseSunset() but reads from
+    // computeSurfSunriseSunset() — same algorithm but reads from
     // SurfSpotLat/SurfSpotLng settings instead of GPS.
-    // Stores in separate surfSunrise/surfSunset fields.
     // =========================================================
     function computeSurfSunriseSunset() as Void {
         var surfLatStr = Application.Properties.getValue("SurfSpotLat");
@@ -480,33 +387,66 @@ class DataManager {
             surfSunset = null;
             return;
         }
-
-        var now = Time.now();
-        var info = Gregorian.info(now, Time.FORMAT_SHORT);
-        var N = dayOfYear(info.year, info.month, info.day);
-        var decl = -23.45 * Math.PI / 180.0 * Math.cos(2.0 * Math.PI / 365.0 * (N + 10));
-        var latRad = lat * Math.PI / 180.0;
-        var cosH = -Math.tan(latRad) * Math.tan(decl);
-
-        if (cosH < -1.0 || cosH > 1.0) {
+        var result = calcSunTimes(lat.toDouble(), lng.toDouble());
+        if (result != null) {
+            surfSunrise = result[0];
+            surfSunset = result[1];
+        } else {
             surfSunrise = null;
             surfSunset = null;
-            return;
+        }
+    }
+
+    // =========================================================
+    // calcSunTimes(lat, lng) — SunCalc algorithm (Julian date).
+    // Returns [sunriseUnix, sunsetUnix] or null for polar regions.
+    // Includes equation of time and -0.833° atmospheric refraction.
+    // Adapted from haraldh/SunCalc (MIT license).
+    // =========================================================
+    private function calcSunTimes(lat as Double, lng as Double) as Array or Null {
+        var RAD = Math.PI / 180.0;
+        var PI2 = Math.PI * 2.0;
+        var J1970 = 2440588;
+        var J2000 = 2451545;
+        var DAYS = 86400;
+
+        var d = Time.now().value().toDouble() / DAYS - 0.5 + J1970 - J2000;
+        var lngRad = lng * RAD;
+        var latRad = lat * RAD;
+
+        // Julian cycle
+        var n = (d - 0.0009 + lngRad / PI2 + 0.5).toNumber().toFloat();
+        var ds = 0.0009 - lngRad / PI2 + n - 1.1574e-5 * 68;
+
+        // Mean anomaly and equation of center
+        var M = 6.240059967 + 0.0172019715 * ds;
+        var sinM = Math.sin(M);
+        var C = (1.9148 * sinM + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M)) * RAD;
+
+        // Ecliptic longitude and declination
+        var L = M + C + 1.796593063 + Math.PI;
+        var sin2L = Math.sin(2 * L);
+        var dec = Math.asin(0.397783703 * Math.sin(L));
+
+        // Solar noon (Julian)
+        var Jnoon = J2000 + ds + 0.0053 * sinM - 0.0069 * sin2L;
+
+        // Hour angle for sunrise/sunset (-0.833° = atmospheric refraction)
+        var cosH = (Math.sin(-0.833 * RAD) - Math.sin(latRad) * Math.sin(dec))
+                   / (Math.cos(latRad) * Math.cos(dec));
+
+        if (cosH > 1.0 || cosH < -1.0) {
+            return null; // polar region
         }
 
-        var H = Math.acos(cosH) * 180.0 / Math.PI;
-        var solarNoon = 12.0 - lng / 15.0;
-        var sunriseHour = solarNoon - H / 15.0;
-        var sunsetHour = solarNoon + H / 15.0;
+        var dsSet = 0.0009 + (Math.acos(cosH) - lngRad) / PI2 + n - 1.1574e-5 * 68;
+        var Jset = J2000 + dsSet + 0.0053 * sinM - 0.0069 * sin2L;
+        var Jrise = Jnoon - (Jset - Jnoon);
 
-        var startOfDay = Gregorian.moment({
-            :year => info.year, :month => info.month, :day => info.day,
-            :hour => 0, :minute => 0, :second => 0
-        });
-        var dayStart = startOfDay.value();
-
-        surfSunrise = dayStart + (sunriseHour * 3600).toNumber();
-        surfSunset = dayStart + (sunsetHour * 3600).toNumber();
+        // Convert Julian to Unix
+        var srUnix = ((Jrise + 0.5 - J1970) * DAYS).toNumber();
+        var ssUnix = ((Jset + 0.5 - J1970) * DAYS).toNumber();
+        return [srUnix, ssUnix];
     }
 
     // =========================================================
