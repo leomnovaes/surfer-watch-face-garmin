@@ -179,28 +179,28 @@
     - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
 
 
-- [ ] 10. Split `refreshWeatherOnBackgroundEvent()` into focused methods (low risk — code clarity + enables future optimization)
+- [x] 10. Split `refreshWeatherOnBackgroundEvent()` into focused methods (low risk — code clarity + enables future optimization)
   - Currently `refreshWeatherOnBackgroundEvent()` does three things: (1) compute sunrise/sunset for the current mode, (2) read Garmin built-in weather when WeatherSource=0, (3) flow Garmin weather through `onWeatherData()`. It's called from `checkBackgroundFlags()`, `onUpdate()` via settings handler, and startup — but not all callers need all three behaviors.
   - This task splits it so each caller invokes only what it needs, reducing unnecessary work per tick and making the code easier to reason about.
 
-  - [ ] 10.1 Extract `computeSunriseSunsetForMode()` from `refreshWeatherOnBackgroundEvent()`
+  - [x] 10.1 Extract `computeSunriseSunsetForMode()` from `refreshWeatherOnBackgroundEvent()`
     - New method in DataManager: reads SurfMode, calls `computeSurfSunriseSunset()` or `computeSunriseSunset()` accordingly
     - This is the "always needed on background event or GPS change" part
     - _Requirements: 3.1, 3.5, 3.6_
 
-  - [ ] 10.2 Extract Garmin weather read into `readGarminWeatherFull()`
+  - [x] 10.2 Extract Garmin weather read into `readGarminWeatherFull()`
     - New method in DataManager: the "build weather dict from Weather.getCurrentConditions + computed sunrise/sunset, flow through onWeatherData()" logic
     - Only called when WeatherSource=0 AND shore mode — not needed for API weather sources or surf mode
     - _Requirements: 3.1, 3.5_
 
-  - [ ] 10.3 Update callers to use the new focused methods
+  - [x] 10.3 Update callers to use the new focused methods
     - `checkBackgroundFlags()`: call `computeSunriseSunsetForMode()` + `readGarminWeatherFull()` (replaces `refreshWeatherOnBackgroundEvent()`)
     - Settings changed handler in View: call `computeSunriseSunsetForMode()` + `readGarminWeatherFull()` (replaces `refreshWeatherOnBackgroundEvent()`)
     - Startup in `onLayout()`: call `computeSunriseSunsetForMode()` + `readGarminWeatherFull()` (replaces `refreshWeatherOnBackgroundEvent()`)
     - Remove `refreshWeatherOnBackgroundEvent()` once all callers are updated
     - _Requirements: 3.1, 3.5, 3.6_
 
-  - [ ] 10.4 Build and verify
+  - [x] 10.4 Build and verify
     - Build for Instinct 2X — must succeed
     - USER: Verify weather displays correctly for all three sources (Garmin, Open-Meteo, OWM)
     - USER: Verify sunrise/sunset displays correctly in both shore and surf mode
@@ -210,19 +210,19 @@
 - [ ] 11. Move per-tick computations to event-driven (low risk — reduces unnecessary work each second)
   - Currently `computeMoonPhase()` runs every `onUpdate()` tick (once per second) but the moon phase only changes daily. `checkCopyGPS()` runs every tick in surf mode but only matters on settings change.
 
-  - [ ] 11.1 Move `computeMoonPhase()` to event-driven
+  - [x] 11.1 Move `computeMoonPhase()` to event-driven
     - Call `computeMoonPhase()` in `checkBackgroundFlags()` (runs on background events, ~every 5 min) and in the settings-changed handler — NOT per tick in `onUpdate()`
     - Remove the `dm.computeMoonPhase()` calls from both shore and surf branches of `onUpdate()`
     - Also call it once during startup (in `onLayout()` init sequence)
     - Moon phase value persists in DataManager field between ticks — no visual change
     - _Requirements: 3.5, 3.6_
 
-  - [ ] 11.2 Move `checkCopyGPS()` to settings-changed handler only
+  - [x] 11.2 Move `checkCopyGPS()` to settings-changed handler only
     - Remove `dm.checkCopyGPS()` from the surf mode branch of `onUpdate()`
     - It's already called in the settings-changed handler (task 9.5) — that's the only time it matters (user toggles CopyGPSToSurfSpot in Garmin Connect app, which triggers `onSettingsChanged`)
     - _Requirements: 3.3_
 
-  - [ ] 11.3 Build and verify
+  - [x] 11.3 Build and verify
     - Build for Instinct 2X — must succeed
     - USER: Verify moon phase icon displays correctly in both modes
     - USER: Verify CopyGPSToSurfSpot still works when toggled in settings

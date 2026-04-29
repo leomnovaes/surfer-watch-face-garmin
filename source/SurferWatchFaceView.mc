@@ -154,6 +154,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             _lastWeatherSource = _readNumProp("WeatherSource");
             if (_readNumProp("SurfMode") == 1) { dm.loadSurfCache(); }
             dm.computeMoonPhase();
+            // Write GPS + BT to Storage so background delegate can read them.
+            // Full updateSensorData() runs on next tick to avoid peak heap OOM.
+            dm.updateSensorData();
             WatchUi.requestUpdate();
             return;
         }

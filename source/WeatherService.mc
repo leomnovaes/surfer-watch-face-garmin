@@ -7,20 +7,14 @@ import Toybox.Time;
 (:background)
 class WeatherService {
 
-    private var _lat as Float;
-    private var _lon as Float;
     private var _callback as Method;
 
     function initialize(callback as Method) {
-        _lat = 0.0f;
-        _lon = 0.0f;
         _callback = callback;
     }
 
     // Builds OWM 2.5 Current Weather URL, makes async request
     function fetch(lat as Float, lon as Float, apiKey as String, units as String) as Void {
-        _lat = lat;
-        _lon = lon;
 
         var url = "https://api.openweathermap.org/data/2.5/weather"
             + "?lat=" + lat.toString()
@@ -74,11 +68,8 @@ class WeatherService {
             weatherDict["sunset"] = sys["sunset"] as Application.PropertyValueType;
         }
 
-        // Write fetch metadata to Application.Storage on success
-        var now = Time.now().value();
-        Application.Storage.setValue("ofa", now);
-        Application.Storage.setValue("ofl", _lat);
-        Application.Storage.setValue("ofo", _lon);
+        // Write fetch timestamp to Application.Storage on success
+        Application.Storage.setValue("ofa", Time.now().value());
 
         _callback.invoke(weatherDict);
     }

@@ -27,8 +27,7 @@ class DataManager {
     //   "ct"  = cachedTemp          "cci" = cachedConditionId
     //   "cws" = cachedWindSpeed     "cwd" = cachedWindDeg
     //   "csr" = cachedSunrise       "css" = cachedSunset
-    //   "ofa" = owmFetchedAt        "ofl" = owmFetchLat
-    //   "ofo" = owmFetchLon
+    //   "ofa" = owmFetchedAt
     // Surf forecast arrays:
     //   "ssh" = surf_swellHeights   "ssp" = surf_swellPeriods
     //   "ssd" = surf_swellDirections "sst" = surf_seaSurfaceTemps
@@ -239,13 +238,9 @@ class DataManager {
         // GPS — try Position.getInfo(), fall back to HomeLat/HomeLng from settings
         var posInfo = Position.getInfo();
         if (posInfo != null && posInfo.accuracy != Position.QUALITY_NOT_AVAILABLE && posInfo.position != null) {
-            // Only call toDegrees() if we don't already have a position — avoids
-            // allocating a temporary Double array every tick
-            if (lastKnownLat == null) {
-                var coords = posInfo.position.toDegrees();
-                lastKnownLat = coords[0].toFloat();
-                lastKnownLng = coords[1].toFloat();
-            }
+            var coords = posInfo.position.toDegrees();
+            lastKnownLat = coords[0].toFloat();
+            lastKnownLng = coords[1].toFloat();
         } else if (lastKnownLat == null) {
             // Fall back to HomeLat/HomeLng from app settings
             var homeLat = Application.Properties.getValue("HomeLat");
@@ -875,22 +870,6 @@ class DataManager {
         } else {
             solarIntensity = null;
         }
-    }
-
-    // =========================================================
-    // persistTideData() — saves tideExtremes and tideFetchedDay
-    // to Application.Storage
-    // =========================================================
-    function persistTideData() as Void {
-        Application.Storage.setValue("th", tideHeights);
-        Application.Storage.setValue("tt", tideTimes);
-        Application.Storage.setValue("tp", tideTypes);
-        var now = Time.now();
-        var today = Gregorian.info(now, Time.FORMAT_SHORT);
-        tideFetchedDay = today.year.format("%04d") + "-" +
-                         today.month.format("%02d") + "-" +
-                         today.day.format("%02d");
-        Application.Storage.setValue("tfd", tideFetchedDay);
     }
 
     // =========================================================
