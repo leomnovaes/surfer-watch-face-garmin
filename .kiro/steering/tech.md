@@ -274,25 +274,38 @@ The App class (`AppBase`) is `:background` annotated — it runs in BOTH foregro
 
 If the App has `var dataManager as DataManager`, the entire DataManager class (all fields, all method signatures) gets compiled into the background process even though the background never uses it.
 
-### Correct Pattern (Crystal Face reference)
+### Correct Pattern (Crystal Face reference — IMPLEMENTED in v1.0.3)
 ```
 App (:background, thin shell):
   - getServiceDelegate() → returns ServiceDelegate
-  - onBackgroundData(data) → writes to Application.Storage, calls requestUpdate()
-  - getInitialView() → creates View (no foreground class stored as field)
-  - onSettingsChanged() → writes flag to Storage, calls requestUpdate()
+  - onBackgroundData(data) → writes to Application.Storage + flags, calls requestUpdate()
+  - getInitialView() → returns [new View()] — no DataManager, no init logic
+  - onSettingsChanged() → writes "sc" flag to Storage, calls requestUpdate()
   - NO DataManager field, NO View field, NO foreground method calls
 
-View (NOT :background):
-  - onUpdate() → checks Storage flags, loads data if changed, renders
-  - Owns DataManager or handles data directly
-  - All foreground logic lives here
+View (NOT :background, owns DataManager):
+  - onLayout() → load fonts (single clock font based on setting)
+  - onUpdate() →
+    1. Lazy-init DataManager on first tick (constructor + updateGPS + refreshWeather + moonPhase)
+    2. Handle "sc" (settings changed) flag: reload caches, clear stale weather, swap font
+    3. dm.checkBackgroundFlags() → processes weather/swell/tide data from Storage
+    4. dm.updateSensorData() (per-tick: battery, HR, stress, BT, notifications — gated by mode)
+    5. Draw everything from dm fields
+  - onExitSleep() → double wrist gesture detection for surf mode toggle
+
+DataManager (NOT :background, business logic):
+  - checkBackgroundFlags() → reads Storage flags, processes data, updateGPS, refreshWeather, moonPhase
+  - updateSensorData() → per-tick display sensors only (no GPS, no Storage writes)
+  - updateGPS() → reads Position.getInfo() on background events and init only
+  - refreshWeatherOnBackgroundEvent() → Garmin mode only: compute sunrise/sunset + read built-in weather
+  - calcSunTimes() → SunCalc Julian date algorithm with equation of time + refraction
+  - All business logic lives here
 
 ServiceDelegate (:background):
-  - onTemporalEvent() → reads from Storage/Properties, fetches APIs
+  - onTemporalEvent() → reads GPS via Position.getInfo(), BT via getDeviceSettings(), fetches APIs
   - Writes results to Application.Storage
   - Calls Background.exit() with minimal payload
-  - NO foreground class references
+  - NO foreground class references, NO Storage relay for GPS/BT
 ```
 
 ### Background Memory Budget
@@ -300,12 +313,23 @@ ServiceDelegate (:background):
 - Code + AppBase + globals consume ~21KB, leaving ~7KB for API responses
 - OWM/Open-Meteo weather fetch consumes ~3KB, leaving ~4KB for tide
 - Tide fetch (StormGlass) needs ~3.5KB+ for JSON parsing — fits with ~4KB free
-- **NEVER use `System.println()` with string concatenation in background** — temporary string allocations consume the free memory needed for API responses. This was confirmed to cause -403 OOM.
-- If swell + tide don't fit, the tide response returns -403 (NETWORK_RESPONSE_OUT_OF_MEMORY)
+- **NEVER use `System.println()` with string concatenation in background** — temporary string allocations consume the free memory needed for API responses. Confirmed to cause -403 OOM.
+- Background delegate reads GPS via `Position.getInfo()` and BT via `System.getDeviceSettings()` directly — no Storage relay needed
 - Every new property, string, or setting increases compiled app size and reduces background free memory
 
+### Foreground Memory Budget (Instinct 2)
+- Total heap: 59.8KB
+- v1.0.3 peak: ~58.2KB (~1.6KB headroom)
+- Code size: ~32KB, Application data: ~9.6KB
+- Single clock font loaded at a time saves ~4KB vs loading both
+- Storage keys use 2-3 char names to minimize data memory
+- Version-gated `Storage.clearValues()` on startup prevents stale key bloat from updates
+
 ### When adding new features
-1. Check background memory impact: add debug prints (`System.getSystemStats().freeMemory`) in `onTemporalEvent()`
+1. Measure foreground peak memory in simulator (View > Memory) — must stay under 59.8KB
 2. Ensure the App class doesn't gain new foreground class references
-3. If background memory is tight, consider splitting API chains across separate temporal events
+3. Use short Storage key names (2-3 chars) — document in DataManager.mc key reference
+4. Bump Storage version number in View's lazy init when changing key names
+5. If background memory is tight, consider splitting API chains across separate temporal events
+6. Test on Instinct 2 (tightest memory) — Instinct 3 has more headroom
 4. Test on Instinct 2X simulator — it has the tightest memory budget

@@ -240,7 +240,7 @@
   - USER: Verify clock displays correctly with both Saira (default) and Rajdhani (setting=1)
   - _Requirements: 1.7, 2.7_
 
-- [ ] 13. Final verification — all measurements, full functional test
+- [x] 13. Final verification — all measurements, full functional test
   - USER: Build for Instinct 2X — must succeed
   - USER: Foreground memory (View > Memory) — record final number, compare to baseline from task 3
   - USER: Background memory (System.getSystemStats prints) — record final number, expect 500+ bytes more free than baseline

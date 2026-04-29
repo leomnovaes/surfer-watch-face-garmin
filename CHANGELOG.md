@@ -1,5 +1,26 @@
 # Changelog
 
+## v1.0.3
+
+### Fixed
+- Sunrise/sunset times now accurate to ±1 minute (was ±5 min). Upgraded from simplified solar position to SunCalc Julian date algorithm with equation of time correction and atmospheric refraction.
+- Sunrise/sunset no longer overwritten by local computation when API provides values (OWM/Open-Meteo). Only Garmin weather source computes locally.
+
+### Changed
+- Architecture refactored to Crystal Face pattern: App class has zero DataManager references, freeing background memory for tide JSON parsing
+- Single clock font loaded at a time (saves ~4KB). Live reload on settings change — no app restart needed.
+- Removed Home Latitude / Home Longitude settings (GPS position from watch is sufficient)
+
+### Improved
+- Peak foreground memory reduced from 59.7KB to ~58.2KB (1.5KB more headroom)
+- GPS reads moved from per-tick to event-driven (every 5 min on background events)
+- Moon phase computation moved from per-tick to event-driven
+- Background delegate reads GPS and Bluetooth directly from OS APIs instead of relaying through Storage
+- All Storage keys shortened to 2-3 characters to reduce data memory
+- Storage version gating: stale keys from previous versions automatically cleared on update
+- Removed debug println from background process (was consuming memory via string allocation)
+- Removed dead code: persistTideData(), unused WeatherService fields, unused font files
+
 ## v1.0.0
 
 Initial public release of Surfer Watch.
@@ -52,7 +73,6 @@ Initial public release of Surfer Watch.
 - Display Mode (Shore/Surf), Surf Temperature Source (Watch/Ocean)
 - Surf Spot Lat/Lng, Copy GPS to Surf Spot
 - OWM API Key, StormGlass API Key + Backup
-- Home Lat/Lng
 
 
 ## v1.0.2

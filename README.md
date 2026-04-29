@@ -22,7 +22,7 @@ Built by a surfer for his own wrist, spec-driven with AI assistance. The entire 
 - **Battery** — percentage + proportional fill bar icon
 - **Notifications** — count + speech bubble icon
 - **Tide** — next high/low time, direction icon, predicted height (via StormGlass API, MLLW datum)
-- **Sunrise/Sunset** — next event time with directional icon. Garmin mode: computed locally from GPS + date. OWM mode: from API response.
+- **Sunrise/Sunset** — next event time with directional icon. Garmin mode: computed locally using SunCalc algorithm (±1 min accuracy). OWM/Open-Meteo: from API response.
 - **Weather** — condition icon with day/night variants, temperature. Default: Garmin built-in (zero config). Optional: OpenWeatherMap 2.5 (free, no credit card)
 - **Wind** — procedural arrow rotated to exact degree, speed with configurable unit (auto/km/h/knots/mph/m/s)
 - **Precipitation** — umbrella icon + chance % (from Garmin built-in weather)
@@ -145,7 +145,7 @@ Seconds are hidden by default to save battery. They appear automatically when yo
 
 The watch face works out of the box using Garmin's built-in weather data. Just install and go — weather, wind, temperature, and precipitation are provided by your phone's Garmin Connect app.
 
-Sunrise/sunset times are computed locally from your GPS position.
+Sunrise/sunset times are computed locally from your GPS position using the SunCalc algorithm (accurate to ±1 minute).
 
 ### Optional: Open-Meteo (no key needed, more frequent updates)
 
@@ -197,8 +197,6 @@ OWM uses station observations which tend to be more accurate for current conditi
 | OWM API Key | Your OpenWeatherMap API key (only needed if Weather Source = OWM or surf mode wind) |
 | StormGlass API Key | Your StormGlass API key (for tide data) |
 | StormGlass Backup API Key | Optional backup key, used automatically if primary returns 402 (quota exhausted) |
-| Home Latitude | Fallback latitude if GPS is unavailable (e.g., `33.8688`) |
-| Home Longitude | Fallback longitude if GPS is unavailable (e.g., `151.2093`) |
 | Surf Mode | 0 = Shore (default), 1 = Surf |
 | Surf Spot Lat | Latitude of your surf spot (e.g., `48.4992`) |
 | Surf Spot Lng | Longitude of your surf spot (e.g., `-124.3003`) |

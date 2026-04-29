@@ -14,7 +14,7 @@ Surfers and outdoor athletes who wear the Garmin Instinct 2X Solar and want a si
 - Notification count
 - Bluetooth connectivity status
 - Next tide time and direction (high/low), current tide height — via StormGlass API
-- Next sunrise/sunset time and direction icon — via OWM API or local computation
+- Next sunrise/sunset time and direction icon — via OWM API, Open-Meteo API, or local SunCalc computation (Garmin mode)
 - Weather condition icon and temperature — via Garmin built-in (default), Open-Meteo (no key), or OWM API
 - Wind direction and speed — via Garmin built-in, Open-Meteo, or OWM API
 - Precipitation chance — via DataManager (Garmin built-in, Open-Meteo API, or Garmin fallback for OWM)

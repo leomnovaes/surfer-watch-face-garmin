@@ -93,63 +93,59 @@ _For any_ background data event (weather, swell, tide) or settings change, the f
 
 **Validates: Requirements 3.1, 3.2, 3.3, 3.5, 3.6**
 
-## Fix Implementation
+## Fix Implementation (COMPLETED — v1.0.3)
 
-### Changes Required
-
-Assuming our root cause analysis is correct:
+### Changes Implemented
 
 **File**: `source/SurferWatchFaceApp.mc`
-
-**Changes**:
-1. **Remove `dataManager` field**: Delete `var dataManager as DataManager or Null` and `getDataManager()` method entirely.
-
-2. **Refactor `onBackgroundData()`**: Replace all DataManager method calls with `Application.Storage.setValue()` writes:
-   - Weather data: `Storage.setValue("bgWeatherData", weatherData)` + `Storage.setValue("weatherUpdated", true)`
-   - Swell data: `Storage.setValue("bgSwellData", swellData)` + `Storage.setValue("swellUpdated", true)`
-   - Tide data: `Storage.setValue("tideUpdated", true)` (already flag-based, just remove `dataManager.onTideData()` call)
-   - Remove `dataManager.refreshWeatherOnBackgroundEvent()` call — View handles this
-   - Keep `WatchUi.requestUpdate()` and background re-registration
-
-3. **Refactor `onSettingsChanged()`**: Replace all DataManager calls with a single Storage flag:
-   - `Storage.setValue("settingsChanged", true)` + `Storage.setValue("lastWeatherSource", currentSource)` (for source-change detection)
-   - Remove all `dataManager.*` calls
-   - Keep `WatchUi.requestUpdate()` and background re-registration attempt
-
-4. **Refactor `getInitialView()`**: Remove `dataManager = new DataManager()` and all `dataManager.*` calls. Just return `[new SurferWatchFaceView()]`.
-
-5. **Remove `_lastWeatherSource` field**: Move weather source change tracking to Storage or View.
+- Removed `dataManager` field, `getDataManager()` method, `_lastWeatherSource` field
+- `getInitialView()` returns `[new SurferWatchFaceView()]` — no DataManager init
+- `onBackgroundData()` writes to Storage flags only (`"bwd"`, `"wu"`, `"bsd"`, `"su"`, `"tu"`, `"bge"`)
+- `onSettingsChanged()` writes `"sc"` flag only
+- Removed `getApp()` helper function (dead code)
+- App has ZERO references to DataManager
 
 **File**: `source/SurferWatchFaceView.mc`
+- Owns DataManager via `private var dataManager` field with lazy init on first `onUpdate()` tick
+- Handles `"sc"` (settings changed) flag: weather source change detection, cache reload, font swap, GPS copy
+- Single clock font loading in `onLayout()` with live reload on settings change
+- `_readNumProp()` helper handles Garmin type quirk (Properties can return String/Float instead of Number)
+- Storage version gating: checks `"av"` key, calls `clearValues()` on mismatch
 
-**Changes**:
-1. **Add `dataManager` field**: `private var dataManager as DataManager or Null;` — View owns DataManager.
-
-2. **Create DataManager in `onLayout()`**: After font loading, create DataManager, load mode-specific cache, run initial sensor read and weather refresh (same sequence as current `getInitialView()`).
-
-3. **Add Storage flag checking at top of `onUpdate()`**: Before rendering, check and handle:
-   - `"weatherUpdated"` flag → call `dataManager.onWeatherData(Storage.getValue("bgWeatherData"))` or `dataManager.onSurfWindData(...)` based on mode, then clear flag
-   - `"swellUpdated"` flag → call `dataManager.onSwellData(Storage.getValue("bgSwellData"))`, then clear flag
-   - `"tideUpdated"` flag → call `dataManager.onTideData()`, then clear flag (same as current pattern)
-   - `"settingsChanged"` flag → handle weather source change detection, call `clearWeatherData`/`clearPersistedWeatherData` if source changed, reload mode cache, call `refreshWeatherOnBackgroundEvent()`, `checkCopyGPS()`, then clear flag
-   - After any flag handled, call `dataManager.refreshWeatherOnBackgroundEvent()` (computes sunrise/sunset + Garmin weather)
-
-4. **Replace `getApp().getDataManager()` with local field**: Change `var dm = (Application.getApp() as SurferWatchFaceApp).getDataManager()` to use the local `dataManager` field directly.
+**File**: `source/SurferWatchFaceView.mc` (per-tick optimizations)
+- `computeMoonPhase()` moved from per-tick to event-driven (background events + settings changes + init)
+- `checkCopyGPS()` moved from per-tick to settings-changed handler only
+- GPS read (`Position.getInfo()`) moved from per-tick to event-driven `updateGPS()`
 
 **File**: `source/DataManager.mc`
+- `updateSensorData()` reads display sensors only (battery, HR, stress, BT, notifications) — no GPS, no Storage writes
+- `updateGPS()` new method: reads `Position.getInfo()` on background events and init
+- `checkBackgroundFlags()` processes weather/swell/tide flags, calls `updateGPS()`, `refreshWeatherOnBackgroundEvent()`, `computeMoonPhase()`
+- `refreshWeatherOnBackgroundEvent()` only computes sunrise/sunset for Garmin mode — API modes get values from API response
+- `calcSunTimes()` replaces old simplified algorithm with SunCalc Julian date algorithm (equation of time + atmospheric refraction, ±1 min accuracy)
+- Sensor gating: HR/stress only read in shore mode when displayed
+- Removed `persistTideData()` (dead code), `_prevStoredLat`/`_prevStoredLng`/`_prevStoredBt` fields, `dayOfYear()` helper
+- All Storage keys shortened to 2-3 chars (full reference in comment block at top of file)
 
-**Changes**:
-1. **Add sensor gating to `updateSensorData()`**: Gate HR read to shore mode only (when ShoreSubscreen needs it). Gate stress read to when the active arc setting requires it (ShoreArc=0 or SurfArc=1).
+**File**: `source/SurferWatchFaceDelegate.mc`
+- Reads GPS directly via `Position.getInfo()` instead of Storage relay
+- Reads BT directly via `System.getDeviceSettings()` instead of Storage relay
+- Shore tide keys use explicit short names (`"th"`, `"tt"`, `"tp"`) instead of prefix concatenation
 
-2. **Add mode-switch field nulling**: In `loadSurfCache()`, null out shore-only fields (temperature, weatherConditionId, windSpeed, windDeg, sunrise, sunset, owmFetchedAt, precipProbability, isDay, heartRate, stress, notificationCount). In `loadShoreCache()`, null out surf-only fields (swellHeight, swellPeriod, swellDirection, surfWindSpeed, surfWindDeg, surfSunrise, surfSunset, waterTemp, seaSurfaceTemp, solarIntensity, interpTideHeight, and the 6 forecast cache arrays).
+**File**: `source/WeatherService.mc`
+- Removed `_lat`/`_lon` fields and `owmFetchLat`/`owmFetchLon` Storage writes (dead code)
+- Removed unused `System` import
 
-**File**: `resources/fonts/` (multiple files)
+**File**: `source/OpenMeteoService.mc`
+- Removed unused `System` import
 
-**Changes**: Delete 29 font files not referenced by `fonts.xml`.
+**File**: `source/TideService.mc`
+- Removed `System.println()` from background (was causing string allocation OOM)
+- Removed unused `System` import
 
-**File**: `source/SurferWatchFaceView.mc`
-
-**Changes**: Delete `drawIconHeart()` dead code function.
+**Files**: `resources/settings/properties.xml`, `resources/settings/settings.xml`, `resources/strings/strings.xml`
+- Removed `HomeLat`/`HomeLng` properties, settings UI entries, and string resources
+- Removed unused font files from `resources/fonts/`
 
 ## Testing Strategy
 
