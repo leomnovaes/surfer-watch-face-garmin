@@ -78,6 +78,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private var dataManager as DataManager or Null;
     // --- Weather source tracking for settings-change detection ---
     private var _lastWeatherSource as Number = -1;
+    // --- Always show seconds setting (cached to avoid per-tick Properties read) ---
+    private var _alwaysShowSeconds as Boolean = false;
 
     // --- Sleep state: true when watch is in low power mode (no wrist gesture) ---
     private var isSleeping = false;
@@ -145,13 +147,14 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (dm == null) {
             // Clear stale Storage on version bump (Properties/settings are preserved)
             var storedVer = Application.Storage.getValue("av");
-            if (storedVer == null || storedVer != 3) {
+            if (storedVer == null || storedVer != 4) {
                 Application.Storage.clearValues();
-                Application.Storage.setValue("av", 3);
+                Application.Storage.setValue("av", 4);
             }
             dm = new DataManager();
             dataManager = dm;
             _lastWeatherSource = _readNumProp("WeatherSource");
+            _alwaysShowSeconds = _readBoolProp("AlwaysShowSeconds");
             if (_readNumProp("SurfMode") == 1) { dm.loadSurfCache(); }
             dm.updateGPS();
             dm.computeMoonPhase();
@@ -174,6 +177,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             } else {
                 dm.loadShoreCache();
             }
+            dm.updateGPS();
             dm.refreshWeatherOnBackgroundEvent();
             dm.checkCopyGPS();
             dm.computeMoonPhase();
@@ -186,6 +190,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 clockRajdhani40 = null;
                 clockSaira40 = WatchUi.loadResource(Rez.Fonts.ClockSaira40);
             }
+            _alwaysShowSeconds = _readBoolProp("AlwaysShowSeconds");
             Application.Storage.setValue("sc", false);
         }
 
@@ -195,16 +200,13 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         var surfMode = Application.Properties.getValue("SurfMode");
 
         if (surfMode != null && surfMode == 1) {
-            // Surf mode — all weather data populated via onBackgroundData/onSettingsChanged
+            // Surf mode
             dm.updateSensorData();
             dm.updateSurfSensors();
             dm.computeNextTide();
             dm.interpolateTideHeight();
             dm.updateSwellFromForecast();
-            var surfWs = Application.Properties.getValue("WeatherSource");
-            if (surfWs != null && surfWs == 1) {
-                dm.updateSurfWindFromForecast();
-            }
+            dm.updatePerTickWeather();
 
             drawHrCircle_Surf(dc, dm);
             drawTopSection_Surf(dc, dm);
@@ -217,16 +219,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 drawTideCurve(dc, dm);
             }
         } else {
-            // Shore mode — API weather via onBackgroundData, Garmin weather read per tick (OS-cached, no I/O)
+            // Shore mode
             dm.updateSensorData();
             dm.computeNextTide();
-
-            var weatherSource = Application.Properties.getValue("WeatherSource");
-            if (weatherSource == null || weatherSource == 0) {
-                // Garmin: read OS-cached weather each tick (temp, condition, wind update asynchronously)
-                // Sunrise/sunset computed in refreshWeatherOnBackgroundEvent() on background events, not here
-                dm.updateGarminWeather();
-            }
+            dm.updatePerTickWeather();
 
             drawHrCircle(dc, dm);
             drawTopSection(dc, dm);
@@ -589,8 +585,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         drawIconMoon(dc, MID_RIGHT_LEFT_X+2, MID_RIGHT_TOP_Y, dm);
         // Bottom-left: AM/PM
         drawTextAligned(dc, MID_RIGHT_LEFT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, ampm, Graphics.TEXT_JUSTIFY_LEFT);
-        // Bottom-right: seconds (only when awake — wrist gesture active)
-        if (!isSleeping) {
+        // Bottom-right: seconds (when awake, or when AlwaysShowSeconds is on)
+        if (!isSleeping || _alwaysShowSeconds) {
             drawTextAligned(dc, MID_RIGHT_RIGHT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, seconds, Graphics.TEXT_JUSTIFY_RIGHT);
         }
     }
@@ -1264,11 +1260,30 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         WatchUi.requestUpdate();
     }
 
+    // Per-second partial update in low-power mode.
+    // Only draws seconds when AlwaysShowSeconds is on.
+    // Clips to the seconds region to minimize redraw cost.
+    function onPartialUpdate(dc as Dc) as Void {
+        if (!_alwaysShowSeconds) { return; }
+        var seconds = System.getClockTime().sec.format("%02d");
+        // Clip to seconds area and clear it
+        dc.setClip(MID_RIGHT_RIGHT_X - 20, MID_RIGHT_BOTTOM_Y, 22, 18);
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.clear();
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        drawTextAligned(dc, MID_RIGHT_RIGHT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, seconds, Graphics.TEXT_JUSTIFY_RIGHT);
+    }
+
     // Safe numeric property read — handles Garmin quirk where list settings
     // can return String/Float instead of Number depending on device/firmware.
     private function _readNumProp(key as String) as Number {
         var v = Application.Properties.getValue(key);
         return (v != null) ? v.toNumber() : 0;
+    }
+
+    private function _readBoolProp(key as String) as Boolean {
+        var v = Application.Properties.getValue(key);
+        return (v != null && v == true);
     }
 
 }

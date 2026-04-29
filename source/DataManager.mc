@@ -308,6 +308,29 @@ class DataManager {
     }
 
     // =========================================================
+    // updatePerTickWeather() — called from onUpdate() each tick.
+    // Handles per-tick weather reads that depend on weather source.
+    // View calls this without knowing the source — DataManager
+    // decides internally what to do.
+    // =========================================================
+    function updatePerTickWeather() as Void {
+        var weatherSource = Application.Properties.getValue("WeatherSource");
+        var surfMode = Application.Properties.getValue("SurfMode");
+        if (weatherSource == null || weatherSource == 0) {
+            // Garmin: read OS-cached weather each tick (shore only)
+            if (surfMode == null || surfMode == 0) {
+                updateGarminWeather();
+            }
+        }
+        // Surf + Open-Meteo: advance hourly wind forecast
+        if (surfMode != null && surfMode == 1) {
+            if (weatherSource != null && weatherSource == 1) {
+                updateSurfWindFromForecast();
+            }
+        }
+    }
+
+    // =========================================================
     // clearWeatherData() — resets all weather fields to null.
     // Called when weather source setting changes to prevent
     // stale data from one source being rendered by the other's

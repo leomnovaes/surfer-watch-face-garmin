@@ -117,12 +117,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         // Clear previous cycle's response code
         Application.Storage.setValue("src", 0);
 
-        // Check BT directly from device settings (no Storage needed)
-        var settings = System.getDeviceSettings();
-        if (!settings.phoneConnected) {
-            Background.exit(null);
-            return;
-        }
+        var btConnected = System.getDeviceSettings().phoneConnected;
 
         var surfMode = Application.Properties.getValue("SurfMode");
         _isSurfMode = (surfMode != null && surfMode == 1);
@@ -130,40 +125,35 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         if (_isSurfMode) {
             var surfLat = Application.Properties.getValue("SurfSpotLat");
             var surfLng = Application.Properties.getValue("SurfSpotLng");
-            if (surfLat == null || surfLng == null) { Background.exit(null); return; }
+            if (surfLat == null || surfLng == null) { Background.exit({}); return; }
             _lat = surfLat.toFloat();
             _lng = surfLng.toFloat();
-            if (_lat == 0.0 && _lng == 0.0) { Background.exit(null); return; }
+            if (_lat == 0.0 && _lng == 0.0) { Background.exit({}); return; }
         } else {
-            // Read GPS directly from OS cache (no Storage relay needed)
             var posInfo = Position.getInfo();
             if (posInfo != null && posInfo.accuracy != Position.QUALITY_NOT_AVAILABLE && posInfo.position != null) {
                 var coords = posInfo.position.toDegrees();
                 _lat = coords[0].toFloat();
                 _lng = coords[1].toFloat();
             } else {
-                Background.exit(null);
+                Background.exit({});
                 return;
             }
         }
 
         if (_isSurfMode) {
-            _swellNeeded = true; // Open-Meteo is free, always fetch fresh swell
-            _tideNeeded = isSurfTideRefreshNeeded(_lat, _lng);
+            _swellNeeded = btConnected; // Open-Meteo needs phone for HTTP
+            _tideNeeded = btConnected && isSurfTideRefreshNeeded(_lat, _lng);
             var weatherSource = Application.Properties.getValue("WeatherSource");
             if (weatherSource != null && weatherSource == 1) {
-                // Open-Meteo: always fetch wind (free, no key)
-                _windNeeded = true;
+                _windNeeded = btConnected;
             } else if (weatherSource != null && weatherSource == 2) {
-                // OWM: needs API key
                 var owmKey = Application.Properties.getValue("OWMApiKey") as String or Null;
-                _windNeeded = (owmKey != null && !owmKey.equals(""));
+                _windNeeded = btConnected && (owmKey != null && !owmKey.equals(""));
             } else {
-                // Garmin: no wind for surf spot
                 _windNeeded = false;
             }
 
-            // Surf chain: swell → tide → wind
             if (_swellNeeded) {
                 startSwellFetch();
             } else if (_tideNeeded) {
@@ -171,29 +161,33 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             } else if (_windNeeded) {
                 startWindFetch();
             } else {
-                Background.exit(null);
+                Background.exit({});
             }
         } else {
             // Shore mode: weather → tide
-            _tideNeeded = isTideRefreshNeeded(_lat, _lng);
+            _tideNeeded = btConnected && isTideRefreshNeeded(_lat, _lng);
             _swellNeeded = false;
             _windNeeded = false;
 
             var weatherNeeded = false;
             var weatherSource = Application.Properties.getValue("WeatherSource");
-            if (weatherSource != null && weatherSource == 1) {
-                weatherNeeded = true;
-            } else if (weatherSource != null && weatherSource == 2) {
-                var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
-                if (apiKey != null && !apiKey.equals("")) { weatherNeeded = true; }
+            if (btConnected) {
+                if (weatherSource != null && weatherSource == 1) {
+                    weatherNeeded = true;
+                } else if (weatherSource != null && weatherSource == 2) {
+                    var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
+                    if (apiKey != null && !apiKey.equals("")) { weatherNeeded = true; }
+                }
             }
+            // Garmin mode (weatherSource=0): no HTTP fetch needed, but background
+            // event still fires so foreground can recompute sunrise/sunset
 
             if (weatherNeeded) {
                 startShoreWeatherFetch();
             } else if (_tideNeeded) {
                 startTideFetch();
             } else {
-                Background.exit(null);
+                Background.exit({});
             }
         }
     }
@@ -404,7 +398,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         if (result.size() > 0) {
             Background.exit(result);
         } else {
-            Background.exit(null);
+            Background.exit({});
         }
     }
 
