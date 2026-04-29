@@ -28,5 +28,9 @@
     <string id="SurfTempSourceTitle">Surf Temperature Source</string>
     <string id="SurfTempWatch">Watch Sensor (default)</string>
     <string id="SurfTempOcean">Ocean Surface</string>
+    <string id="SurfDefaultViewTitle">Surf Bottom View</string>
+    <string id="SurfViewSwell">Swell (default)</string>
+    <string id="SurfViewTideCurve">Tide Curve</string>
+    <string id="SurfViewToggleTitle">Wrist Gesture View Toggle</string>
 
 </strings>

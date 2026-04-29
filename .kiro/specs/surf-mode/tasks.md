@@ -208,11 +208,11 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 > All task checkboxes have been reset to not-started since the code was reverted to v1.0.2.
 
 ### Task 32: Always Show Seconds setting
-- [ ] 32.1 Add `AlwaysShowSeconds` boolean property (default false) to properties.xml
-- [ ] 32.2 Add setting UI entry to settings.xml with label "(more battery)"
-- [ ] 32.3 Add string resources
-- [ ] 32.4 Update `drawRightColumn()`: show seconds when `!isSleeping || AlwaysShowSeconds`
-- [ ] 32.5 Implement `onPartialUpdate(dc)` for per-second updates in low-power mode
+- [x] 32.1 Add `AlwaysShowSeconds` boolean property (default false) to properties.xml
+- [x] 32.2 Add setting UI entry to settings.xml with label "(more battery)"
+- [x] 32.3 Add string resources
+- [x] 32.4 Update `drawRightColumn()`: show seconds when `!isSleeping || AlwaysShowSeconds`
+- [x] 32.5 Implement `onPartialUpdate(dc)` for per-second updates in low-power mode
   - Clips to seconds region (20x18px), clears, redraws seconds text
   - Early return when AlwaysShowSeconds is off (near-zero battery cost)
   - Note: `onPartialUpdate` is called by the system every second on MIP devices regardless — cannot be unregistered. The early return is the gating mechanism.
@@ -245,6 +245,16 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 - [ ] 34.8 Implement `drawHrCircle()` variants: Temperature (thermometer + °C/°F), Altitude (mountain + m/ft), Steps (shoe-prints + count)
 - [ ] 34.9 Wire ShoreSubscreen setting into drawHrCircle shore branch
 - Note: Follow Sensor Gating Rules in steering/tech.md. Altitude and Steps use SensorHistory — put reads in isolated functions. Only one SensorHistory read per tick.
+
+### Task 32b: Surf bottom view configuration
+- [x] 32b.1 Add `SurfDefaultView` list property: 0=Swell (default), 1=Tide Curve
+- [x] 32b.2 Add `SurfViewToggle` boolean property: true=enabled (default), false=locked to default view
+- [x] 32b.3 Add setting UI entries and string resources
+- [x] 32b.4 Cache `_surfViewToggle` in View field (read on init + settings change, not per-tick)
+- [x] 32b.5 Gate double wrist gesture in `onExitSleep()` by `_surfViewToggle`
+- [x] 32b.6 Set `bottomToggleState` from `SurfDefaultView` on init and settings change
+- Memory: 2 Properties (in-memory reads), 4 strings, 1 View field (~8 bytes), no Storage keys, no per-tick reads
+- No new DataManager fields — reuses existing `bottomToggleState`
 
 ### Task 35: Update docs and release v1.1.0
 - [ ] 35.1 Update README with new settings

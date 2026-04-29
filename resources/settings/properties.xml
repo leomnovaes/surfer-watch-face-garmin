@@ -12,5 +12,7 @@
     <property id="CopyGPSToSurfSpot" type="boolean">false</property>
     <property id="SurfTempSource" type="number">0</property>
     <property id="AlwaysShowSeconds" type="boolean">false</property>
+    <property id="SurfDefaultView" type="number">0</property>
+    <property id="SurfViewToggle" type="boolean">true</property>
 
 </properties>

@@ -80,6 +80,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private var _lastWeatherSource as Number = -1;
     // --- Always show seconds setting (cached to avoid per-tick Properties read) ---
     private var _alwaysShowSeconds as Boolean = false;
+    // --- Surf view toggle setting (cached) ---
+    private var _surfViewToggle as Boolean = true;
 
     // --- Sleep state: true when watch is in low power mode (no wrist gesture) ---
     private var isSleeping = false;
@@ -155,7 +157,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             dataManager = dm;
             _lastWeatherSource = _readNumProp("WeatherSource");
             _alwaysShowSeconds = _readBoolProp("AlwaysShowSeconds");
-            if (_readNumProp("SurfMode") == 1) { dm.loadSurfCache(); }
+            _surfViewToggle = _readBoolProp("SurfViewToggle");
+            if (_readNumProp("SurfMode") == 1) {
+                dm.loadSurfCache();
+                dm.bottomToggleState = _readNumProp("SurfDefaultView");
+            }
             dm.updateGPS();
             dm.computeMoonPhase();
             dm.refreshWeatherOnBackgroundEvent();
@@ -191,6 +197,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 clockSaira40 = WatchUi.loadResource(Rez.Fonts.ClockSaira40);
             }
             _alwaysShowSeconds = _readBoolProp("AlwaysShowSeconds");
+            _surfViewToggle = _readBoolProp("SurfViewToggle");
+            // Reset surf bottom view to default on settings change
+            dm.bottomToggleState = _readNumProp("SurfDefaultView");
             Application.Storage.setValue("sc", false);
         }
 
@@ -1237,7 +1246,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
         // Double wrist gesture detection for surf mode bottom toggle
         var surfMode = Application.Properties.getValue("SurfMode");
-        if (surfMode != null && surfMode == 1) {
+        if (surfMode != null && surfMode == 1 && _surfViewToggle) {
             var now = Time.now().value();
             var diff = now - lastWristRaiseTime;
             if (lastWristRaiseTime > 0 && diff < 4) {

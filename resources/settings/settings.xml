@@ -43,6 +43,17 @@
         </settingConfig>
     </setting>
 
+    <setting propertyKey="@Properties.SurfDefaultView" title="@Strings.SurfDefaultViewTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.SurfViewSwell</listEntry>
+            <listEntry value="1">@Strings.SurfViewTideCurve</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.SurfViewToggle" title="@Strings.SurfViewToggleTitle">
+        <settingConfig type="boolean"/>
+    </setting>
+
     <setting propertyKey="@Properties.SurfSpotLat" title="@Strings.SurfSpotLatTitle">
         <settingConfig type="alphaNumeric"/>
     </setting>
