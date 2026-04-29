@@ -74,6 +74,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     private var clockSaira40 = null;
     private var clockRajdhani40 = null;
 
+    // --- DataManager: owned by View, NOT by App (Crystal Face pattern) ---
+    private var dataManager as DataManager or Null;
+    // --- Weather source tracking for settings-change detection ---
+    private var _lastWeatherSource as Number = -1;
+
     // --- Sleep state: true when watch is in low power mode (no wrist gesture) ---
     private var isSleeping = false;
     // --- Last wrist raise timestamp for double-gesture detection (surf mode) ---
@@ -95,8 +100,13 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         seg34IconsFont = WatchUi.loadResource(Rez.Fonts.Seg34Icons);
         surferIconsFont = WatchUi.loadResource(Rez.Fonts.SurferIcons);
         heartIconFont = WatchUi.loadResource(Rez.Fonts.HeartIcon);
-        clockSaira40 = WatchUi.loadResource(Rez.Fonts.ClockSaira40);
-        clockRajdhani40 = WatchUi.loadResource(Rez.Fonts.ClockRajdhani40);
+        clockSaira40 = null;
+        clockRajdhani40 = null;
+        if (_readNumProp("ClockFont") == 1) {
+            clockRajdhani40 = WatchUi.loadResource(Rez.Fonts.ClockRajdhani40);
+        } else {
+            clockSaira40 = WatchUi.loadResource(Rez.Fonts.ClockSaira40);
+        }
 
         // Derive subscreen circle geometry
         // Try dynamic subscreen API (available on API 4.1+ devices like Instinct 3)
@@ -131,7 +141,48 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         dc.clear();
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
 
-        var dm = (Application.getApp() as SurferWatchFaceApp).getDataManager();
+        var dm = dataManager;
+        if (dm == null) {
+            // Create DataManager — constructor loads tide/weather from Storage.
+            // Return immediately so constructor temporaries are freed before
+            // the next tick runs updateSensorData() (avoids peak heap OOM).
+            dm = new DataManager();
+            dataManager = dm;
+            _lastWeatherSource = _readNumProp("WeatherSource");
+            if (_readNumProp("SurfMode") == 1) { dm.loadSurfCache(); }
+            dm.computeMoonPhase();
+            WatchUi.requestUpdate();
+            return;
+        }
+
+        // Handle settings-changed flag (set by App.onSettingsChanged via Storage)
+        var settingsFlag = Application.Storage.getValue("settingsChanged");
+        if (settingsFlag != null && settingsFlag == true) {
+            var currentSource = _readNumProp("WeatherSource");
+            if (currentSource != _lastWeatherSource) {
+                dm.clearWeatherData();
+                dm.clearPersistedWeatherData();
+                _lastWeatherSource = currentSource;
+            }
+            if (_readNumProp("SurfMode") == 1) {
+                dm.loadSurfCache();
+            } else {
+                dm.loadShoreCache();
+            }
+            dm.refreshWeatherOnBackgroundEvent();
+            dm.checkCopyGPS();
+            dm.computeMoonPhase();
+            // Reload clock font if setting changed
+            var newFont = _readNumProp("ClockFont");
+            if (newFont == 1 && clockRajdhani40 == null) {
+                clockSaira40 = null;
+                clockRajdhani40 = WatchUi.loadResource(Rez.Fonts.ClockRajdhani40);
+            } else if (newFont != 1 && clockSaira40 == null) {
+                clockRajdhani40 = null;
+                clockSaira40 = WatchUi.loadResource(Rez.Fonts.ClockSaira40);
+            }
+            Application.Storage.setValue("settingsChanged", false);
+        }
 
         // Check background data flags (set by App.onBackgroundData via Storage)
         dm.checkBackgroundFlags();
@@ -141,11 +192,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (surfMode != null && surfMode == 1) {
             // Surf mode — all weather data populated via onBackgroundData/onSettingsChanged
             dm.updateSensorData();
-            dm.checkCopyGPS();
             dm.updateSurfSensors();
             dm.computeNextTide();
             dm.interpolateTideHeight();
-            dm.computeMoonPhase();
             dm.updateSwellFromForecast();
             var surfWs = Application.Properties.getValue("WeatherSource");
             if (surfWs != null && surfWs == 1) {
@@ -165,7 +214,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         } else {
             // Shore mode — API weather via onBackgroundData, Garmin weather read per tick (OS-cached, no I/O)
             dm.updateSensorData();
-            dm.computeMoonPhase();
             dm.computeNextTide();
 
             var weatherSource = Application.Properties.getValue("WeatherSource");
@@ -1193,7 +1241,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             var diff = now - lastWristRaiseTime;
             if (lastWristRaiseTime > 0 && diff < 4) {
                 // Double raise detected — toggle bottom view
-                var dm = (Application.getApp() as SurferWatchFaceApp).getDataManager();
+                var dm = dataManager;
                 if (dm != null) {
                     dm.bottomToggleState = (dm.bottomToggleState == 0) ? 1 : 0;
                 }
@@ -1209,6 +1257,13 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     function onEnterSleep() as Void {
         isSleeping = true;
         WatchUi.requestUpdate();
+    }
+
+    // Safe numeric property read — handles Garmin quirk where list settings
+    // can return String/Float instead of Number depending on device/firmware.
+    private function _readNumProp(key as String) as Number {
+        var v = Application.Properties.getValue(key);
+        return (v != null) ? v.toNumber() : 0;
     }
 
 }

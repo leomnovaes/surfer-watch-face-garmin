@@ -90,12 +90,12 @@
     - _Preservation: All data still flows to DataManager via View on next onUpdate()_
     - _Requirements: 1.3, 2.1, 2.3, 3.1, 3.2, 3.8_
 
-  - [x] 8.2 Add Storage flag handling in `SurferWatchFaceView.mc` `onUpdate()`
-    - At the top of `onUpdate()`, before rendering, check Storage flags:
-    - `"weatherUpdated"` → read `Application.Storage.getValue("bgWeatherData")`, call `dataManager.onWeatherData()` or `dataManager.onSurfWindData()` based on SurfMode, clear flag
-    - `"swellUpdated"` → read `Application.Storage.getValue("bgSwellData")`, call `dataManager.onSwellData()`, clear flag
-    - `"tideUpdated"` → call `dataManager.onTideData()`, clear flag (same as current pattern)
-    - After any flag handled, call `dataManager.refreshWeatherOnBackgroundEvent()` (computes sunrise/sunset + Garmin weather)
+  - [x] 8.2 Add Storage flag handling in `DataManager.checkBackgroundFlags()`
+    - Check Storage flags set by `onBackgroundData()`:
+    - `"weatherUpdated"` → read `Application.Storage.getValue("bgWeatherData")`, call `onWeatherData()` or `onSurfWindData()` based on SurfMode, clear flag
+    - `"swellUpdated"` → read `Application.Storage.getValue("bgSwellData")`, call `onSwellData()`, clear flag
+    - `"tideUpdated"` → call `onTideData()`, clear flag
+    - After any flag handled, call `refreshWeatherOnBackgroundEvent()` (computes sunrise/sunset + Garmin weather)
     - _Requirements: 2.3, 3.1, 3.2_
 
   - [x] 8.3 Build and full verification
@@ -109,58 +109,51 @@
     - USER: Verify settings changes still work (weather source, surf mode, clock font)
     - _Requirements: 2.1, 3.1, 3.2, 3.3, 3.5, 3.6_
 
-- [x] 9. Move `onSettingsChanged` logic to View (medium risk)
+- [x] 9. Refactor `onSettingsChanged` to Storage flag + move DataManager to View (medium risk — the payoff)
+  - This task combines the settings refactor and DataManager move because they are tightly coupled: we can't remove DataManager from App until `onSettingsChanged()` stops calling it, and moving DataManager to View is the whole point. Doing them together avoids an intermediate broken state.
+  - **Current state**: `onSettingsChanged()` in App still calls DataManager directly (clearWeatherData, clearPersistedWeatherData, loadSurfCache/loadShoreCache, refreshWeatherOnBackgroundEvent, checkCopyGPS). `getInitialView()` creates DataManager and runs init sequence. View accesses DataManager via `getApp().getDataManager()`.
 
   - [x] 9.1 Refactor `onSettingsChanged()` in `SurferWatchFaceApp.mc`
-    - Remove all `dataManager.*` calls from `onSettingsChanged()`
-    - Replace with: `Application.Storage.setValue("settingsChanged", true)` + store current weather source for change detection: `Application.Storage.setValue("lastWeatherSource", currentSource)`
+    - Replace all `dataManager.*` calls with a Storage flag:
+    - `Application.Storage.setValue("settingsChanged", true)`
+    - `Application.Storage.setValue("newWeatherSource", currentWeatherSourceValue)` (so View can detect source changes)
     - Keep `WatchUi.requestUpdate()` and background re-registration attempt
     - Remove `_lastWeatherSource` field from App class
-    - _Bug_Condition: isBugCondition(appClass) — removing onSettingsChanged DataManager calls_
-    - _Expected_Behavior: App sets Storage flag only, View handles all DataManager interactions_
-    - _Preservation: Settings changes apply within one onUpdate() cycle_
     - _Requirements: 1.4, 2.4, 3.3_
 
-  - [x] 9.2 Add `settingsChanged` flag handling in View's `onUpdate()`
-    - Check `"settingsChanged"` flag in Storage
-    - Read `"lastWeatherSource"` — compare with previous source to detect weather source change
-    - If source changed: call `dataManager.clearWeatherData()`, `dataManager.clearPersistedWeatherData()`
-    - Load correct mode cache: `dataManager.loadSurfCache()` or `dataManager.loadShoreCache()` based on SurfMode
-    - Call `dataManager.refreshWeatherOnBackgroundEvent()` (computes sunrise/sunset + Garmin weather)
-    - Call `dataManager.checkCopyGPS()`
-    - Clear `"settingsChanged"` flag
-    - Track `_lastWeatherSource` in View instead of App
-    - _Requirements: 2.4, 3.3_
-
-  - [x] 9.3 Build and full verification
-    - Build for Instinct 2X — must succeed
-    - USER: Measure foreground memory
-    - USER: Measure background memory
-    - USER: Verify tide fetch succeeds (response code 200, not -403)
-    - USER: Change weather source (Garmin → Open-Meteo → OWM) — verify stale data clears and new data loads
-    - USER: Toggle surf mode on/off — verify correct cache loads
-    - USER: Change clock font — verify font switches correctly
-    - USER: Verify all data displays correctly in both modes
-    - _Requirements: 2.4, 3.3, 3.5, 3.6_
-
-- [ ] 10. Remove DataManager from App, move to View (medium risk — the payoff)
-
-  - [ ] 10.1 Remove DataManager field and methods from `SurferWatchFaceApp.mc`
-    - Delete `var dataManager as DataManager or Null` field
-    - Delete `getDataManager()` method
-    - Simplify `getInitialView()`: remove `dataManager = new DataManager()` and all `dataManager.*` calls, just return `[new SurferWatchFaceView()]`
-    - At this point, App should have ZERO references to DataManager
-    - _Bug_Condition: isBugCondition(appClass) — removing the field and constructor that pull DataManager type into background_
-    - _Expected_Behavior: App class contains zero DataManager references_
+  - [x] 9.2 Simplify `getInitialView()` in `SurferWatchFaceApp.mc`
+    - Remove `dataManager = new DataManager()` and all `dataManager.*` calls
+    - Just return `[new SurferWatchFaceView()]`
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 10.2 Add DataManager ownership to `SurferWatchFaceView.mc`
+  - [x] 9.3 Remove DataManager field and getter from `SurferWatchFaceApp.mc`
+    - Delete `var dataManager as DataManager or Null` field
+    - Delete `getDataManager()` method
+    - Delete `_lastWeatherSource` field
+    - At this point, App should have ZERO references to DataManager
+    - _Requirements: 2.1, 2.2_
+
+  - [x] 9.4 Add DataManager ownership to `SurferWatchFaceView.mc`
     - Add `private var dataManager as DataManager or Null` field to View
     - In `onLayout()` (after font loading): create DataManager, load mode-specific cache, run initial sensor read, call `refreshWeatherOnBackgroundEvent()` — same init sequence as current `getInitialView()`
-    - Replace all `(Application.getApp() as SurferWatchFaceApp).getDataManager()` calls with the local `dataManager` field
+    - Add `_lastWeatherSource` field to View (initialized from Properties in `onLayout()`)
     - _Requirements: 2.2, 2.3, 2.4_
 
-  - [ ] 10.3 Build and full verification
+  - [x] 9.5 Add `settingsChanged` flag handling in View's `onUpdate()`
+    - At the top of `onUpdate()`, after getting `dm`, check `"settingsChanged"` flag in Storage
+    - Read `"newWeatherSource"` — compare with `_lastWeatherSource` to detect weather source change
+    - If source changed: call `dm.clearWeatherData()`, `dm.clearPersistedWeatherData()`, update `_lastWeatherSource`
+    - Load correct mode cache: `dm.loadSurfCache()` or `dm.loadShoreCache()` based on SurfMode
+    - Call `dm.refreshWeatherOnBackgroundEvent()` (computes sunrise/sunset + Garmin weather)
+    - Call `dm.checkCopyGPS()`
+    - Clear `"settingsChanged"` and `"newWeatherSource"` flags
+    - _Requirements: 2.4, 3.3_
+
+  - [x] 9.6 Update View's `onUpdate()` and `onExitSleep()` DataManager access
+    - Replace `var dm = (Application.getApp() as SurferWatchFaceApp).getDataManager()` with the local `dataManager` field (2 call sites: `onUpdate()` line 134, `onExitSleep()` line 1196)
+    - _Requirements: 2.2_
+
+  - [x] 9.7 Build and full verification
     - Build for Instinct 2X — must succeed
     - USER: Measure foreground memory (View > Memory) — expect similar to before
     - USER: Measure background memory (System.getSystemStats prints) — expect 500+ bytes improvement over baseline
@@ -168,26 +161,75 @@
     - USER: Verify all weather data displays correctly
     - USER: Verify all swell data displays correctly in surf mode
     - USER: Verify all tide data displays correctly
-    - USER: Verify settings changes work (weather source, surf mode, clock font)
+    - USER: Change weather source (Garmin → Open-Meteo → OWM) — verify stale data clears and new data loads
+    - USER: Toggle surf mode on/off — verify correct cache loads
+    - USER: Change clock font — verify font switches correctly
+    - USER: Double wrist gesture in surf mode — verify bottom section toggles
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
-  - [ ] 10.4 Verify bug condition exploration test now passes
+  - [x] 9.8 Verify bug condition exploration test now passes
     - **Property 1: Expected Behavior** - App Has No DataManager Reference
-    - **IMPORTANT**: Re-run the SAME test from task 1 — do NOT write a new test
-    - The test from task 1 encodes the expected behavior: App contains zero DataManager references
-    - When this test passes, it confirms the expected behavior is satisfied
-    - Run bug condition exploration test from step 1
+    - Re-run the SAME test from task 1 — do NOT write a new test
     - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed — DataManager is no longer in background binary)
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 10.5 Verify preservation tests still pass
+  - [x] 9.9 Verify preservation tests still pass
     - **Property 2: Preservation** - Data Flow and Settings Behavior Unchanged
-    - **IMPORTANT**: Re-run the SAME tests from task 2 — do NOT write new tests
-    - Run preservation property tests from step 2
-    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions — all data flows identically through Storage)
-    - Confirm all tests still pass after fix (no regressions)
+    - Re-run the SAME tests from task 2 — do NOT write new tests
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
 
-- [ ] 11. Single clock font loading (low risk, confirmed savings)
+
+- [ ] 10. Split `refreshWeatherOnBackgroundEvent()` into focused methods (low risk — code clarity + enables future optimization)
+  - Currently `refreshWeatherOnBackgroundEvent()` does three things: (1) compute sunrise/sunset for the current mode, (2) read Garmin built-in weather when WeatherSource=0, (3) flow Garmin weather through `onWeatherData()`. It's called from `checkBackgroundFlags()`, `onUpdate()` via settings handler, and startup — but not all callers need all three behaviors.
+  - This task splits it so each caller invokes only what it needs, reducing unnecessary work per tick and making the code easier to reason about.
+
+  - [ ] 10.1 Extract `computeSunriseSunsetForMode()` from `refreshWeatherOnBackgroundEvent()`
+    - New method in DataManager: reads SurfMode, calls `computeSurfSunriseSunset()` or `computeSunriseSunset()` accordingly
+    - This is the "always needed on background event or GPS change" part
+    - _Requirements: 3.1, 3.5, 3.6_
+
+  - [ ] 10.2 Extract Garmin weather read into `readGarminWeatherFull()`
+    - New method in DataManager: the "build weather dict from Weather.getCurrentConditions + computed sunrise/sunset, flow through onWeatherData()" logic
+    - Only called when WeatherSource=0 AND shore mode — not needed for API weather sources or surf mode
+    - _Requirements: 3.1, 3.5_
+
+  - [ ] 10.3 Update callers to use the new focused methods
+    - `checkBackgroundFlags()`: call `computeSunriseSunsetForMode()` + `readGarminWeatherFull()` (replaces `refreshWeatherOnBackgroundEvent()`)
+    - Settings changed handler in View: call `computeSunriseSunsetForMode()` + `readGarminWeatherFull()` (replaces `refreshWeatherOnBackgroundEvent()`)
+    - Startup in `onLayout()`: call `computeSunriseSunsetForMode()` + `readGarminWeatherFull()` (replaces `refreshWeatherOnBackgroundEvent()`)
+    - Remove `refreshWeatherOnBackgroundEvent()` once all callers are updated
+    - _Requirements: 3.1, 3.5, 3.6_
+
+  - [ ] 10.4 Build and verify
+    - Build for Instinct 2X — must succeed
+    - USER: Verify weather displays correctly for all three sources (Garmin, Open-Meteo, OWM)
+    - USER: Verify sunrise/sunset displays correctly in both shore and surf mode
+    - USER: Verify settings changes still work
+    - _Requirements: 3.1, 3.3, 3.5, 3.6_
+
+- [ ] 11. Move per-tick computations to event-driven (low risk — reduces unnecessary work each second)
+  - Currently `computeMoonPhase()` runs every `onUpdate()` tick (once per second) but the moon phase only changes daily. `checkCopyGPS()` runs every tick in surf mode but only matters on settings change.
+
+  - [ ] 11.1 Move `computeMoonPhase()` to event-driven
+    - Call `computeMoonPhase()` in `checkBackgroundFlags()` (runs on background events, ~every 5 min) and in the settings-changed handler — NOT per tick in `onUpdate()`
+    - Remove the `dm.computeMoonPhase()` calls from both shore and surf branches of `onUpdate()`
+    - Also call it once during startup (in `onLayout()` init sequence)
+    - Moon phase value persists in DataManager field between ticks — no visual change
+    - _Requirements: 3.5, 3.6_
+
+  - [ ] 11.2 Move `checkCopyGPS()` to settings-changed handler only
+    - Remove `dm.checkCopyGPS()` from the surf mode branch of `onUpdate()`
+    - It's already called in the settings-changed handler (task 9.5) — that's the only time it matters (user toggles CopyGPSToSurfSpot in Garmin Connect app, which triggers `onSettingsChanged`)
+    - _Requirements: 3.3_
+
+  - [ ] 11.3 Build and verify
+    - Build for Instinct 2X — must succeed
+    - USER: Verify moon phase icon displays correctly in both modes
+    - USER: Verify CopyGPSToSurfSpot still works when toggled in settings
+    - USER: Measure foreground memory — may see slight improvement from less per-tick work
+    - _Requirements: 3.5, 3.6_
+
+- [x] 12. Single clock font loading (low risk, confirmed savings)
   - In `SurferWatchFaceView.onLayout()`, read `Application.Properties.getValue("ClockFont")` and load only the active font
   - If `ClockFont == 1`: load only `clockRajdhani40`, set `clockSaira40 = null`
   - Else (default): load only `clockSaira40`, set `clockRajdhani40 = null`
@@ -198,7 +240,7 @@
   - USER: Verify clock displays correctly with both Saira (default) and Rajdhani (setting=1)
   - _Requirements: 1.7, 2.7_
 
-- [ ] 12. Final verification — all measurements, full functional test
+- [ ] 13. Final verification — all measurements, full functional test
   - USER: Build for Instinct 2X — must succeed
   - USER: Foreground memory (View > Memory) — record final number, compare to baseline from task 3
   - USER: Background memory (System.getSystemStats prints) — record final number, expect 500+ bytes more free than baseline

@@ -155,6 +155,8 @@ class DataManager {
 
         // Refresh weather (sunrise/sunset + Garmin weather if applicable)
         refreshWeatherOnBackgroundEvent();
+        // Recompute moon phase (changes daily, no need to run per tick)
+        computeMoonPhase();
     }
 
     // =========================================================
@@ -199,10 +201,14 @@ class DataManager {
         // GPS — try Position.getInfo(), fall back to HomeLat/HomeLng from settings
         var posInfo = Position.getInfo();
         if (posInfo != null && posInfo.accuracy != Position.QUALITY_NOT_AVAILABLE && posInfo.position != null) {
-            var coords = posInfo.position.toDegrees();
-            lastKnownLat = coords[0].toFloat();
-            lastKnownLng = coords[1].toFloat();
-        } else {
+            // Only call toDegrees() if we don't already have a position — avoids
+            // allocating a temporary Double array every tick
+            if (lastKnownLat == null) {
+                var coords = posInfo.position.toDegrees();
+                lastKnownLat = coords[0].toFloat();
+                lastKnownLng = coords[1].toFloat();
+            }
+        } else if (lastKnownLat == null) {
             // Fall back to HomeLat/HomeLng from app settings
             var homeLat = Application.Properties.getValue("HomeLat");
             var homeLng = Application.Properties.getValue("HomeLng");
