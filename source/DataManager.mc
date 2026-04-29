@@ -71,6 +71,7 @@ class DataManager {
     // --- Device/sensor data (updated each onUpdate()) ---
     var heartRate as Number or Null;
     var stress as Number or Null;
+    var bodyBattery as Number or Null;
     var battery as Number;
     var notificationCount as Number;
     var bluetoothConnected as Boolean;
@@ -99,7 +100,6 @@ class DataManager {
     // --- Surf mode: sensor data ---
     var waterTemp as Float or Null;
     var seaSurfaceTemp as Float or Null;
-    var solarIntensity as Number or Null;
 
     // --- Surf mode: interpolated tide ---
     var interpTideHeight as Float or Null;
@@ -206,29 +206,54 @@ class DataManager {
     // GPS is read on background events only (see updateGPS)
     // =========================================================
     function updateSensorData() as Void {
-        // Heart rate + Stress — only in shore mode (surf shows tide height + solar arc)
         var surfMode = Application.Properties.getValue("SurfMode");
+
+        // Heart rate — only in shore mode
         if (surfMode == null || surfMode == 0) {
             var activityInfo = Activity.getActivityInfo();
             if (activityInfo != null) {
                 heartRate = activityInfo.currentHeartRate;
-            } else {
-                heartRate = null;
-            }
+            } else { heartRate = null; }
+        }
 
+        // Arc sensor — read only the one matching the active arc setting
+        // SensorHistory constraint: only one iterator per tick
+        var arcSetting;
+        if (surfMode != null && surfMode == 1) {
+            arcSetting = Application.Properties.getValue("SurfArc");
+        } else {
+            arcSetting = Application.Properties.getValue("ShoreArc");
+        }
+        // 0=Stress(shore)/Solar(surf), 1=Solar(shore)/Stress(surf), 2=BodyBattery, 3=Disabled
+        // Stress: ShoreArc=0 or SurfArc=1
+        var needStress = (surfMode == null || surfMode == 0) ? (arcSetting == null || arcSetting == 0) : (arcSetting != null && arcSetting == 1);
+        var needBB = (arcSetting != null && arcSetting == 2);
+
+        if (needStress) {
             if (SensorHistory has :getStressHistory) {
-                var stressIter = SensorHistory.getStressHistory({:period => 1});
-                if (stressIter != null) {
-                    var sample = stressIter.next();
-                    if (sample != null && sample.data != null) {
-                        var val = sample.data;
-                        if (val >= 0 && val <= 100) {
-                            stress = val.toNumber();
-                        } else { stress = null; }
+                var si = SensorHistory.getStressHistory({:period => 1});
+                if (si != null) {
+                    var s = si.next();
+                    if (s != null && s.data != null) {
+                        var v = s.data;
+                        stress = (v >= 0 && v <= 100) ? v.toNumber() : null;
                     } else { stress = null; }
                 } else { stress = null; }
             } else { stress = null; }
-        }
+        } else { stress = null; }
+
+        if (needBB) {
+            if (SensorHistory has :getBodyBatteryHistory) {
+                var bi = SensorHistory.getBodyBatteryHistory({:period => 1});
+                if (bi != null) {
+                    var s = bi.next();
+                    if (s != null && s.data != null) {
+                        var v = s.data;
+                        bodyBattery = (v >= 0 && v <= 100) ? v.toNumber() : null;
+                    } else { bodyBattery = null; }
+                } else { bodyBattery = null; }
+            } else { bodyBattery = null; }
+        } else { bodyBattery = null; }
 
         // Battery
         var stats = System.getSystemStats();
@@ -238,6 +263,20 @@ class DataManager {
         var settings = System.getDeviceSettings();
         notificationCount = settings.notificationCount;
         bluetoothConnected = settings.phoneConnected;
+
+        // Water temperature — surf mode only, gated by SurfTempSource
+        if (surfMode != null && surfMode == 1) {
+            var surfTempSource = Application.Properties.getValue("SurfTempSource");
+            if (surfTempSource == null || surfTempSource == 0) {
+                if (SensorHistory has :getTemperatureHistory) {
+                    var ti = SensorHistory.getTemperatureHistory({:period => 1});
+                    if (ti != null) {
+                        var s = ti.next();
+                        waterTemp = (s != null && s.data != null) ? s.data.toFloat() : null;
+                    } else { waterTemp = null; }
+                } else { waterTemp = null; }
+            }
+        }
     }
 
     // =========================================================
@@ -259,15 +298,29 @@ class DataManager {
                 var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
                 subscreenValue = isMetric ? interpTideHeight.format("%.1f") : (interpTideHeight * 3.281).format("%.1f");
             } else { subscreenValue = "--"; }
-            var stats = System.getSystemStats();
-            if (stats has :solarIntensity && stats.solarIntensity != null && stats.solarIntensity >= 0) {
-                arcValue = stats.solarIntensity.toNumber();
-            } else { arcValue = 0; }
+            // Surf arc: 0=Solar, 1=Stress, 2=BB, 3=Disabled
+            var sa = Application.Properties.getValue("SurfArc");
+            if (sa != null && sa == 3) { arcValue = null; }
+            else if (sa != null && sa == 2) { arcValue = (bodyBattery != null) ? bodyBattery : 0; }
+            else if (sa != null && sa == 1) { arcValue = (stress != null) ? stress : 0; }
+            else {
+                // Default (0): Solar
+                var st = System.getSystemStats();
+                arcValue = (st has :solarIntensity && st.solarIntensity != null && st.solarIntensity >= 0) ? st.solarIntensity.toNumber() : 0;
+            }
         } else {
             subscreenIcon = "h";
             subscreenFont = 0;
             subscreenValue = (heartRate != null) ? heartRate.toString() : "--";
-            arcValue = (stress != null) ? stress : 0;
+            // Shore arc: 0=Stress, 1=Solar, 2=BB, 3=Disabled
+            var sa = Application.Properties.getValue("ShoreArc");
+            if (sa != null && sa == 3) { arcValue = null; }
+            else if (sa != null && sa == 2) { arcValue = (bodyBattery != null) ? bodyBattery : 0; }
+            else if (sa != null && sa == 1) {
+                var st = System.getSystemStats();
+                arcValue = (st has :solarIntensity && st.solarIntensity != null && st.solarIntensity >= 0) ? st.solarIntensity.toNumber() : 0;
+            }
+            else { arcValue = (stress != null) ? stress : 0; } // Default (0): Stress
         }
     }
 
@@ -838,43 +891,6 @@ class DataManager {
         Application.Properties.setValue("SurfSpotLat", lastKnownLat.toString());
         Application.Properties.setValue("SurfSpotLng", lastKnownLng.toString());
         Application.Properties.setValue("CopyGPSToSurfSpot", false);
-    }
-
-    // =========================================================
-    // updateSurfSensors() — reads water temp and solar intensity
-    // from SensorHistory. Called from onUpdate() when SurfMode=1.
-    // =========================================================
-    function updateSurfSensors() as Void {
-        // Water temperature
-        if (SensorHistory has :getTemperatureHistory) {
-            var tempIter = SensorHistory.getTemperatureHistory({:period => 1});
-            if (tempIter != null) {
-                var sample = tempIter.next();
-                if (sample != null && sample.data != null) {
-                    waterTemp = sample.data.toFloat();
-                } else {
-                    waterTemp = null;
-                }
-            } else {
-                waterTemp = null;
-            }
-        } else {
-            waterTemp = null;
-        }
-
-        // Solar intensity — from System.getSystemStats().solarIntensity
-        // Returns 0-100 on solar devices, null on non-solar devices
-        var stats2 = System.getSystemStats();
-        if (stats2 has :solarIntensity && stats2.solarIntensity != null) {
-            var val = stats2.solarIntensity;
-            if (val >= 0) {
-                solarIntensity = val.toNumber();
-            } else {
-                solarIntensity = null; // negative = not charging
-            }
-        } else {
-            solarIntensity = null;
-        }
     }
 
     // =========================================================

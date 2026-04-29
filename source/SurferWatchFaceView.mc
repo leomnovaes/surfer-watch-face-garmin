@@ -211,7 +211,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (surfMode != null && surfMode == 1) {
             // Surf mode
             dm.updateSensorData();
-            dm.updateSurfSensors();
             dm.computeNextTide();
             dm.interpolateTideHeight();
             dm.updateSwellFromForecast();
@@ -338,160 +337,79 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             var isNight = false;
             var weatherSource = Application.Properties.getValue("WeatherSource");
             if (weatherSource != null && weatherSource == 1 && dm.isDay != null) {
-                // Open-Meteo: use is_day field directly
                 isNight = (dm.isDay == 0);
             } else if (dm.sunrise != null && dm.sunset != null) {
                 var now = Time.now().value();
                 isNight = (now < dm.sunrise || now >= dm.sunset);
             }
-            var glyph;
-            if (weatherSource != null && weatherSource == 2) {
-                glyph = owmToWeatherGlyph(dm.weatherConditionId, isNight);
-            } else if (weatherSource != null && weatherSource == 1) {
-                glyph = wmoToWeatherGlyph(dm.weatherConditionId, isNight);
-            } else {
-                glyph = garminToWeatherGlyph(dm.weatherConditionId, isNight);
-            }
+            var glyph = conditionToGlyph(dm.weatherConditionId, isNight, weatherSource);
             drawTextAligned(dc, x, y, weatherIconsFont, glyph, Graphics.TEXT_JUSTIFY_CENTER);
         }
     }
 
-    // Maps OWM condition code to Erik Flowers Weather Icons glyph character
-    // Day: A-V, Night: a-g. Full OWM mapping from erikflowers.github.io
-    private function owmToWeatherGlyph(code as Number, isNight as Boolean) as String {
-        // Clear
-        if (code == 800) { return isNight ? "a" : "A"; }
-        // Clouds
-        if (code == 801 || code == 802) { return isNight ? "b" : "C"; }     // few/scattered → day-cloudy / night-cloudy
-        if (code == 803) { return "D"; }                                      // broken clouds → cloudy (same day/night)
-        if (code == 804) { return "D"; }                                      // overcast → cloudy (same day/night)
-        // Thunderstorm (200-232)
-        if (code >= 200 && code <= 202) { return isNight ? "e" : "F"; }      // thunderstorm with rain
-        if (code >= 210 && code <= 221) { return isNight ? "e" : "F"; }      // thunderstorm
-        if (code >= 230 && code <= 232) { return isNight ? "e" : "F"; }      // thunderstorm with drizzle
-        // Drizzle (300-321)
-        if (code == 300 || code == 301 || code == 321) { return isNight ? "d" : "G"; } // sprinkle
-        if (code >= 302 && code <= 314) { return isNight ? "c" : "H"; }      // rain
-        if (code == 500) { return isNight ? "d" : "G"; }                     // light rain → sprinkle
-        // Rain (501-531)
-        if (code >= 501 && code <= 504) { return isNight ? "c" : "H"; }      // rain
-        if (code == 511) { return "K"; }                                      // freezing rain → rain-mix
-        if (code >= 520 && code <= 522) { return isNight ? "d" : "I"; }      // showers
-        if (code == 531) { return isNight ? "d" : "I"; }                      // ragged showers
-        // Snow (600-622)
-        if (code == 600 || code == 601 || code == 621 || code == 622) { return isNight ? "f" : "J"; } // snow
-        if (code == 602) { return isNight ? "f" : "J"; }                      // heavy snow
-        if (code >= 611 && code <= 612) { return "M"; }                       // sleet
-        if (code >= 613 && code <= 620) { return "K"; }                       // rain-mix
-        // Atmosphere (700-781)
-        if (code == 701) { return "E"; }                                      // mist → fog
-        if (code == 711) { return "N"; }                                      // smoke
-        if (code == 721) { return "O"; }                                      // haze
-        if (code == 731 || code == 761 || code == 762) { return "P"; }       // dust
-        if (code == 741) { return "E"; }                                      // fog
-        if (code == 771) { return "Q"; }                                      // squalls → cloudy-gusts
-        if (code == 781) { return "R"; }                                      // tornado
-        // Extreme
-        if (code == 900) { return "R"; }                                      // tornado
-        if (code == 901) { return "L"; }                                      // tropical storm
-        if (code == 902) { return "S"; }                                      // hurricane
-        if (code == 903) { return "T"; }                                      // cold
-        if (code == 904) { return "U"; }                                      // hot
-        if (code == 905) { return "V"; }                                      // windy
-        return isNight ? "a" : "A"; // fallback: clear
-    }
-
-    // Maps Garmin Weather.CONDITION_* codes to weather icon glyphs
-    // Garmin codes 0-53, mapped to same glyph set as OWM
-    private function garminToWeatherGlyph(code as Number, isNight as Boolean) as String {
-        // Clear/fair
-        if (code == 0 || code == 40) { return isNight ? "a" : "A"; }
-        // Partly cloudy/clear
-        if (code == 1 || code == 22 || code == 23 || code == 52) { return isNight ? "b" : "B"; }
-        // Mostly/fully cloudy
-        if (code == 2 || code == 20) { return "D"; }
-        // Rain
-        if (code == 3 || code == 15) { return isNight ? "c" : "H"; }
-        // Light rain
-        if (code == 14 || code == 45) { return isNight ? "d" : "G"; }
-        // Snow
-        if (code == 4 || code == 17 || code == 43 || code == 46) { return isNight ? "f" : "J"; }
-        // Light snow / flurries
-        if (code == 16 || code == 48) { return isNight ? "f" : "J"; }
-        // Windy
-        if (code == 5) { return "V"; }
-        // Thunderstorms
-        if (code == 6 || code == 12 || code == 28) { return isNight ? "e" : "F"; }
-        // Wintry mix / rain-snow
-        if (code == 7 || code == 18 || code == 19 || code == 21 || code == 44 || code == 47 || code == 51) { return "K"; }
-        // Fog
-        if (code == 8) { return "E"; }
-        // Hazy / haze
-        if (code == 9 || code == 39) { return "O"; }
-        // Hail / ice
-        if (code == 10 || code == 34) { return "M"; }
-        // Showers
-        if (code == 11 || code == 24 || code == 25 || code == 26 || code == 27) { return isNight ? "d" : "I"; }
-        // Unknown precipitation
-        if (code == 13) { return isNight ? "c" : "H"; }
-        // Mist
-        if (code == 29) { return isNight ? "d" : "I"; }
-        // Dust / sand / sandstorm
-        if (code == 30 || code == 35 || code == 37) { return "P"; }
-        // Drizzle
-        if (code == 31) { return isNight ? "d" : "G"; }
-        // Tornado
-        if (code == 32) { return "R"; }
-        // Smoke
-        if (code == 33) { return "N"; }
-        // Squall
-        if (code == 36) { return "Q"; }
-        // Volcanic ash
-        if (code == 38) { return "P"; }
-        // Hurricane / tropical storm
-        if (code == 41) { return "S"; }
-        if (code == 42) { return "L"; }
-        // Freezing rain
-        if (code == 49) { return "K"; }
-        // Sleet
-        if (code == 50) { return "M"; }
-        return isNight ? "a" : "A"; // fallback: clear
-    }
-
-    // Maps WMO weather interpretation codes to Erik Flowers Weather Icons glyphs
-    // WMO codes 0-99. Used when WeatherSource=1 (Open-Meteo).
-    // Fewer conditions than OWM — no smoke, haze, dust, tornado, tropical storm, hurricane, cold, hot, windy.
-    private function wmoToWeatherGlyph(code as Number, isNight as Boolean) as String {
-        // Clear sky
-        if (code == 0) { return isNight ? "a" : "A"; }
-        // Mainly clear
-        if (code == 1) { return isNight ? "b" : "B"; }
-        // Partly cloudy
-        if (code == 2) { return isNight ? "b" : "C"; }
-        // Overcast
-        if (code == 3) { return "D"; }
-        // Fog, rime fog
-        if (code == 45 || code == 48) { return "E"; }
-        // Drizzle (light, moderate, dense)
-        if (code == 51 || code == 53 || code == 55) { return isNight ? "d" : "G"; }
-        // Freezing drizzle
-        if (code == 56 || code == 57) { return "K"; }
-        // Rain (slight, moderate, heavy)
-        if (code == 61 || code == 63 || code == 65) { return isNight ? "c" : "H"; }
-        // Freezing rain
-        if (code == 66 || code == 67) { return "K"; }
-        // Snow (slight, moderate, heavy)
-        if (code == 71 || code == 73 || code == 75) { return isNight ? "f" : "J"; }
-        // Snow grains
-        if (code == 77) { return "M"; }
-        // Rain showers (slight, moderate, violent)
-        if (code == 80 || code == 81 || code == 82) { return isNight ? "d" : "I"; }
-        // Snow showers (slight, heavy)
-        if (code == 85 || code == 86) { return isNight ? "f" : "J"; }
-        // Thunderstorm (slight/moderate, with hail)
-        if (code == 95 || code == 96 || code == 99) { return isNight ? "e" : "F"; }
-        // Fallback: clear
-        return isNight ? "a" : "A";
+    // Unified weather condition → glyph mapper. Handles OWM (src=2), WMO (src=1), Garmin (src=0/null).
+    // Common conditions share code paths; source-specific edge cases handled inline.
+    private function conditionToGlyph(code as Number, n as Boolean, src) as String {
+        if (src != null && src == 2) {
+            // OWM codes
+            if (code == 800) { return n ? "a" : "A"; }
+            if (code == 801 || code == 802) { return n ? "b" : "C"; }
+            if (code >= 803) { if (code <= 804) { return "D"; } }
+            if (code >= 200 && code <= 232) { return n ? "e" : "F"; }
+            if (code == 300 || code == 301 || code == 321 || code == 500) { return n ? "d" : "G"; }
+            if ((code >= 302 && code <= 314) || (code >= 501 && code <= 504)) { return n ? "c" : "H"; }
+            if (code == 511 || (code >= 613 && code <= 620)) { return "K"; }
+            if ((code >= 520 && code <= 522) || code == 531) { return n ? "d" : "I"; }
+            if ((code >= 600 && code <= 602) || code == 621 || code == 622) { return n ? "f" : "J"; }
+            if (code >= 611 && code <= 612) { return "M"; }
+            if (code == 701 || code == 741) { return "E"; }
+            if (code == 711) { return "N"; }
+            if (code == 721) { return "O"; }
+            if (code == 731 || code == 761 || code == 762) { return "P"; }
+            if (code == 771) { return "Q"; }
+            if (code == 781 || code == 900) { return "R"; }
+            if (code == 901) { return "L"; }
+            if (code == 902) { return "S"; }
+            if (code == 903) { return "T"; }
+            if (code == 904) { return "U"; }
+            if (code == 905) { return "V"; }
+        } else if (src != null && src == 1) {
+            // WMO codes
+            if (code == 0) { return n ? "a" : "A"; }
+            if (code == 1) { return n ? "b" : "B"; }
+            if (code == 2) { return n ? "b" : "C"; }
+            if (code == 3) { return "D"; }
+            if (code == 45 || code == 48) { return "E"; }
+            if (code == 51 || code == 53 || code == 55) { return n ? "d" : "G"; }
+            if (code == 56 || code == 57 || code == 66 || code == 67) { return "K"; }
+            if (code == 61 || code == 63 || code == 65) { return n ? "c" : "H"; }
+            if (code == 71 || code == 73 || code == 75 || code == 85 || code == 86) { return n ? "f" : "J"; }
+            if (code == 77) { return "M"; }
+            if (code == 80 || code == 81 || code == 82) { return n ? "d" : "I"; }
+            if (code == 95 || code == 96 || code == 99) { return n ? "e" : "F"; }
+        } else {
+            // Garmin codes
+            if (code == 0 || code == 40) { return n ? "a" : "A"; }
+            if (code == 1 || code == 22 || code == 23 || code == 52) { return n ? "b" : "B"; }
+            if (code == 2 || code == 20) { return "D"; }
+            if (code == 3 || code == 13 || code == 15) { return n ? "c" : "H"; }
+            if (code == 14 || code == 31 || code == 45) { return n ? "d" : "G"; }
+            if (code == 4 || code == 16 || code == 17 || code == 43 || code == 46 || code == 48) { return n ? "f" : "J"; }
+            if (code == 5) { return "V"; }
+            if (code == 6 || code == 12 || code == 28) { return n ? "e" : "F"; }
+            if (code == 7 || code == 18 || code == 19 || code == 21 || code == 44 || code == 47 || code == 49 || code == 51) { return "K"; }
+            if (code == 8) { return "E"; }
+            if (code == 9 || code == 39) { return "O"; }
+            if (code == 10 || code == 34 || code == 50) { return "M"; }
+            if (code == 11 || code == 24 || code == 25 || code == 26 || code == 27 || code == 29) { return n ? "d" : "I"; }
+            if (code == 30 || code == 35 || code == 37 || code == 38) { return "P"; }
+            if (code == 32) { return "R"; }
+            if (code == 33) { return "N"; }
+            if (code == 36) { return "Q"; }
+            if (code == 41) { return "S"; }
+            if (code == 42) { return "L"; }
+        }
+        return n ? "a" : "A";
     }
 
     private function drawIconWind(dc as Dc, x as Number, y as Number, dm as DataManager) as Void {

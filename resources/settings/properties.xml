@@ -14,5 +14,7 @@
     <property id="AlwaysShowSeconds" type="boolean">false</property>
     <property id="SurfDefaultView" type="number">0</property>
     <property id="SurfViewToggle" type="boolean">true</property>
+    <property id="ShoreArc" type="number">0</property>
+    <property id="SurfArc" type="number">0</property>
 
 </properties>

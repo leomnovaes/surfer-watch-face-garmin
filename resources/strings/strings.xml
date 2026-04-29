@@ -32,5 +32,11 @@
     <string id="SurfViewSwell">Swell (default)</string>
     <string id="SurfViewTideCurve">Tide Curve</string>
     <string id="SurfViewToggleTitle">Wrist Gesture View Toggle</string>
+    <string id="ShoreArcTitle">Shore Arc</string>
+    <string id="SurfArcTitle">Surf Arc</string>
+    <string id="ArcStress">Stress</string>
+    <string id="ArcSolar">Solar Intensity</string>
+    <string id="ArcBodyBattery">Body Battery</string>
+    <string id="ArcDisabled">Disabled</string>
 
 </strings>

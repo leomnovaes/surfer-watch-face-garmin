@@ -54,6 +54,24 @@
         <settingConfig type="boolean"/>
     </setting>
 
+    <setting propertyKey="@Properties.ShoreArc" title="@Strings.ShoreArcTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.ArcStress</listEntry>
+            <listEntry value="1">@Strings.ArcSolar</listEntry>
+            <listEntry value="2">@Strings.ArcBodyBattery</listEntry>
+            <listEntry value="3">@Strings.ArcDisabled</listEntry>
+        </settingConfig>
+    </setting>
+
+    <setting propertyKey="@Properties.SurfArc" title="@Strings.SurfArcTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.ArcSolar</listEntry>
+            <listEntry value="1">@Strings.ArcStress</listEntry>
+            <listEntry value="2">@Strings.ArcBodyBattery</listEntry>
+            <listEntry value="3">@Strings.ArcDisabled</listEntry>
+        </settingConfig>
+    </setting>
+
     <setting propertyKey="@Properties.SurfSpotLat" title="@Strings.SurfSpotLatTitle">
         <settingConfig type="alphaNumeric"/>
     </setting>
