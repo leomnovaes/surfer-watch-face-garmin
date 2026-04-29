@@ -13,18 +13,19 @@ SHORE MODE (default)
 • Precipitation chance
 • Sunrise/sunset with next event time
 • Moon phase (28 phases, computed locally)
-• Heart rate with stress arc gauge
+• Heart rate with configurable arc gauge (stress, solar, body battery, or disabled)
 • Battery, notifications, Bluetooth connectivity
 • Custom clock font (switchable via settings)
-• Seconds on wrist raise
+• Seconds on wrist raise (or always-on via setting)
 
 SURF MODE
 • Swell height, period, and direction from Open-Meteo Marine API (free, no key)
-• Tide curve graph with "now" marker (toggle with double wrist gesture)
+• Tide curve graph with "now" marker
+• Configurable bottom view: swell or tide curve (set default, enable/disable wrist gesture toggle)
 • Interpolated current tide height in subscreen circle
 • Wind direction and speed for your surf spot
 • Water temperature: watch sensor or ocean surface (Open-Meteo Marine, hourly, works offline)
-• Solar intensity arc gauge
+• Configurable arc gauge (solar, stress, body battery, or disabled)
 • Sunrise/sunset for surf spot
 • Surf spot location: manual entry or one-tap GPS copy
 
