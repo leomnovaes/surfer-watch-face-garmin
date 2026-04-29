@@ -1,7 +1,6 @@
 import Toybox.Application;
 import Toybox.Communications;
 import Toybox.Lang;
-import Toybox.System;
 import Toybox.Time;
 import Toybox.Time.Gregorian;
 
@@ -93,7 +92,7 @@ class OpenMeteoService {
 
         // Write fetch metadata
         var now = Time.now().value();
-        Application.Storage.setValue("owmFetchedAt", now);
+        Application.Storage.setValue("ofa", now);
 
         _callback.invoke(weatherDict);
     }

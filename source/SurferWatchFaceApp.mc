@@ -45,7 +45,7 @@ class SurferWatchFaceApp extends Application.AppBase {
     // All DataManager interactions happen in View's onUpdate() to keep App clean
     // of foreground class references (Crystal Face pattern).
     function onSettingsChanged() as Void {
-        Application.Storage.setValue("settingsChanged", true);
+        Application.Storage.setValue("sc", true);
         if (Background has :registerForTemporalEvent) {
             try {
                 Background.registerForTemporalEvent(Time.now());
@@ -62,22 +62,22 @@ class SurferWatchFaceApp extends Application.AppBase {
         if (data instanceof Dictionary) {
             var weatherData = data["weather"];
             if (weatherData != null) {
-                Application.Storage.setValue("bgWeatherData", weatherData);
-                Application.Storage.setValue("weatherUpdated", true);
+                Application.Storage.setValue("bwd", weatherData);
+                Application.Storage.setValue("wu", true);
             }
-            var tideData = data["tideUpdated"];
+            var tideData = data["tu"];
             if (tideData != null) {
                 // Tide arrays already written to Storage by delegate — just set flag
-                Application.Storage.setValue("tideUpdated", true);
+                Application.Storage.setValue("tu", true);
             }
             var swellData = data["swell"];
             if (swellData != null) {
-                Application.Storage.setValue("bgSwellData", swellData);
-                Application.Storage.setValue("swellUpdated", true);
+                Application.Storage.setValue("bsd", swellData);
+                Application.Storage.setValue("su", true);
             }
         }
         // Set flag for View to refresh weather (sunrise/sunset + Garmin weather)
-        Application.Storage.setValue("bgEventOccurred", true);
+        Application.Storage.setValue("bge", true);
         // Re-register for next background event in 5 minutes
         if (Background has :registerForTemporalEvent) {
             Background.registerForTemporalEvent(new Time.Duration(5 * 60));

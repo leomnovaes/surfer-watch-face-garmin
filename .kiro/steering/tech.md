@@ -150,6 +150,9 @@ Key-value persistent storage that survives watch face restarts and watch reboots
 - `Application.Storage.setValue("key", value)` — stores any Monkey C object
 - `Application.Storage.getValue("key")` — retrieves stored value (returns null if not set)
 - Used for: StormGlass tide cache, last fetch timestamps, last fetch coordinates
+- **Key naming**: Use 2-3 character short keys to save memory (string keys are stored in flash). Full key reference is in the comment block at the top of `DataManager.mc`.
+- **Version gating**: On startup, View checks `Storage.getValue("av")` against current version. On mismatch, `Storage.clearValues()` wipes stale keys from previous builds. Bump the version number whenever Storage keys change.
+- Storage persists across app updates — stale keys from old versions waste memory if not cleared.
 
 ### Timer vs Background
 - `Timer.Timer` — runs in main process, cannot make HTTP requests, fine for UI refresh triggers

@@ -73,35 +73,35 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // =========================================================
 
     private function isTideRefreshNeeded(lat as Float, lng as Float) as Boolean {
-        var tideFetchedDay = Application.Storage.getValue("tideFetchedDay") as String or Null;
+        var tideFetchedDay = Application.Storage.getValue("tfd") as String or Null;
         var today = todayUTC();
         if (tideFetchedDay == null) { return true; }
         if (!tideFetchedDay.equals(today)) { return true; }
         // Even if fetch day matches, refresh if we have no actual data
-        var tideData = Application.Storage.getValue("tideHeights");
+        var tideData = Application.Storage.getValue("th");
         if (tideData == null) { return true; }
-        var tideFetchLat = Application.Storage.getValue("tideFetchLat") as Float or Null;
-        var tideFetchLng = Application.Storage.getValue("tideFetchLng") as Float or Null;
+        var tideFetchLat = Application.Storage.getValue("tfl") as Float or Null;
+        var tideFetchLng = Application.Storage.getValue("tfn") as Float or Null;
         if (tideFetchLat != null && tideFetchLng != null) {
             if (distanceBetween(lat, lng, tideFetchLat, tideFetchLng) > 50000.0f) { return true; }
         }
-        var tideDataExpired = Application.Storage.getValue("tideDataExpired");
+        var tideDataExpired = Application.Storage.getValue("tde");
         if (tideDataExpired != null && tideDataExpired == true) { return true; }
         return false;
     }
 
     private function isSurfTideRefreshNeeded(lat as Float, lng as Float) as Boolean {
-        var tideFetchedDay = Application.Storage.getValue("surf_tideFetchedDay") as String or Null;
+        var tideFetchedDay = Application.Storage.getValue("std") as String or Null;
         var today = todayUTC();
         if (tideFetchedDay == null) { return true; }
         if (!tideFetchedDay.equals(today)) { return true; }
-        var surfTideData = Application.Storage.getValue("surf_tideHeights");
+        var surfTideData = Application.Storage.getValue("sth");
         if (surfTideData == null) { return true; }
-        var tideFetchLat = Application.Storage.getValue("surf_tideFetchLat") as Float or Null;
-        var tideFetchLng = Application.Storage.getValue("surf_tideFetchLng") as Float or Null;
+        var tideFetchLat = Application.Storage.getValue("stl") as Float or Null;
+        var tideFetchLng = Application.Storage.getValue("stn") as Float or Null;
         if (tideFetchLat == null || tideFetchLng == null) { return true; }
         if (tideFetchLat != lat || tideFetchLng != lng) { return true; }
-        var tideDataExpired = Application.Storage.getValue("surf_tideDataExpired");
+        var tideDataExpired = Application.Storage.getValue("ste");
         if (tideDataExpired != null && tideDataExpired == true) { return true; }
         return false;
     }
@@ -114,9 +114,9 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
 
     function onTemporalEvent() as Void {
         // Clear previous cycle's response code
-        Application.Storage.setValue("sgLastResponseCode", 0);
+        Application.Storage.setValue("src", 0);
 
-        var btConnected = Application.Storage.getValue("bluetoothConnected");
+        var btConnected = Application.Storage.getValue("bt");
         if (btConnected == null || btConnected == false) {
             Background.exit(null);
             return;
@@ -133,8 +133,8 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             _lng = surfLng.toFloat();
             if (_lat == 0.0 && _lng == 0.0) { Background.exit(null); return; }
         } else {
-            var lat = Application.Storage.getValue("lastKnownLat") as Float or Null;
-            var lng = Application.Storage.getValue("lastKnownLng") as Float or Null;
+            var lat = Application.Storage.getValue("lat") as Float or Null;
+            var lng = Application.Storage.getValue("lng") as Float or Null;
             if (lat == null || lng == null) { Background.exit(null); return; }
             _lat = lat;
             _lng = lng;
@@ -253,10 +253,10 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     function onSwellDone(swellData as Dictionary or Null) as Void {
         if (swellData != null) {
             // Store flat arrays directly — no conversion needed
-            Application.Storage.setValue("surf_swellHeights", swellData["heights"]);
-            Application.Storage.setValue("surf_swellPeriods", swellData["periods"]);
-            Application.Storage.setValue("surf_swellDirections", swellData["directions"]);
-            Application.Storage.setValue("surf_seaSurfaceTemps", swellData["seaSurfaceTemps"]);
+            Application.Storage.setValue("ssh", swellData["heights"]);
+            Application.Storage.setValue("ssp", swellData["periods"]);
+            Application.Storage.setValue("ssd", swellData["directions"]);
+            Application.Storage.setValue("sst", swellData["seaSurfaceTemps"]);
 
             // Extract current hour for immediate display
             var heights = swellData["heights"] as Array;
@@ -293,18 +293,26 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     // Tide done → chain to wind (surf) or exit (shore)
     function onTideComplete(tideData as Dictionary or Null) as Void {
         if (tideData != null) {
-            // Store flat arrays to Storage — memory efficient
-            var prefix = _isSurfMode ? "surf_" : "";
-            Application.Storage.setValue(prefix + "tideHeights", tideData["heights"]);
-            Application.Storage.setValue(prefix + "tideTimes", tideData["times"]);
-            Application.Storage.setValue(prefix + "tideTypes", tideData["types"]);
-            Application.Storage.setValue(prefix + "tideFetchedDay", todayUTC());
-            Application.Storage.setValue(prefix + "tideFetchLat", _lat);
-            Application.Storage.setValue(prefix + "tideFetchLng", _lng);
-            Application.Storage.setValue(prefix + "tideDataExpired", false);
+            if (_isSurfMode) {
+                Application.Storage.setValue("sth", tideData["heights"]);
+                Application.Storage.setValue("stt", tideData["times"]);
+                Application.Storage.setValue("sty", tideData["types"]);
+                Application.Storage.setValue("std", todayUTC());
+                Application.Storage.setValue("stl", _lat);
+                Application.Storage.setValue("stn", _lng);
+                Application.Storage.setValue("ste", false);
+            } else {
+                Application.Storage.setValue("th", tideData["heights"]);
+                Application.Storage.setValue("tt", tideData["times"]);
+                Application.Storage.setValue("tp", tideData["types"]);
+                Application.Storage.setValue("tfd", todayUTC());
+                Application.Storage.setValue("tfl", _lat);
+                Application.Storage.setValue("tfn", _lng);
+                Application.Storage.setValue("tde", false);
+            }
             _tideResult = true;
         }
-        var lastCode = Application.Storage.getValue("sgLastResponseCode") as Number or Null;
+        var lastCode = Application.Storage.getValue("src") as Number or Null;
         if (lastCode != null && lastCode == -403) {
             exitWithAllResults();
             return;
@@ -339,8 +347,8 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
     function onSurfWindForecastDone(windData as Dictionary or Null) as Void {
         if (windData != null) {
             // Store 24h forecast arrays for offline advancement
-            Application.Storage.setValue("surf_windSpeeds", windData["speeds"]);
-            Application.Storage.setValue("surf_windDirections", windData["directions"]);
+            Application.Storage.setValue("sws", windData["speeds"]);
+            Application.Storage.setValue("swd", windData["directions"]);
 
             // Extract current hour for immediate display
             var speeds = windData["speeds"] as Array;
@@ -381,7 +389,7 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
         }
         if (_tideResult) {
             // Tide data already written to Storage — just signal foreground to reload
-            result["tideUpdated"] = true as Application.PropertyValueType;
+            result["tu"] = true as Application.PropertyValueType;
         }
         if (_swellResult != null) {
             result["swell"] = _swellResult as Application.PropertyValueType;

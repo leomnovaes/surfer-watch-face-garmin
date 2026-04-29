@@ -2,7 +2,6 @@ import Toybox.Application;
 import Toybox.Background;
 import Toybox.Communications;
 import Toybox.Lang;
-import Toybox.System;
 import Toybox.Time;
 
 (:background)
@@ -77,9 +76,9 @@ class WeatherService {
 
         // Write fetch metadata to Application.Storage on success
         var now = Time.now().value();
-        Application.Storage.setValue("owmFetchedAt", now);
-        Application.Storage.setValue("owmFetchLat", _lat);
-        Application.Storage.setValue("owmFetchLon", _lon);
+        Application.Storage.setValue("ofa", now);
+        Application.Storage.setValue("ofl", _lat);
+        Application.Storage.setValue("ofo", _lon);
 
         _callback.invoke(weatherDict);
     }

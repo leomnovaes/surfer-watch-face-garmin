@@ -143,9 +143,12 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
 
         var dm = dataManager;
         if (dm == null) {
-            // Create DataManager — constructor loads tide/weather from Storage.
-            // Return immediately so constructor temporaries are freed before
-            // the next tick runs updateSensorData() (avoids peak heap OOM).
+            // Clear stale Storage on version bump (Properties/settings are preserved)
+            var storedVer = Application.Storage.getValue("av");
+            if (storedVer == null || storedVer != 2) {
+                Application.Storage.clearValues();
+                Application.Storage.setValue("av", 2);
+            }
             dm = new DataManager();
             dataManager = dm;
             _lastWeatherSource = _readNumProp("WeatherSource");
@@ -156,7 +159,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         }
 
         // Handle settings-changed flag (set by App.onSettingsChanged via Storage)
-        var settingsFlag = Application.Storage.getValue("settingsChanged");
+        var settingsFlag = Application.Storage.getValue("sc");
         if (settingsFlag != null && settingsFlag == true) {
             var currentSource = _readNumProp("WeatherSource");
             if (currentSource != _lastWeatherSource) {
@@ -181,7 +184,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
                 clockRajdhani40 = null;
                 clockSaira40 = WatchUi.loadResource(Rez.Fonts.ClockSaira40);
             }
-            Application.Storage.setValue("settingsChanged", false);
+            Application.Storage.setValue("sc", false);
         }
 
         // Check background data flags (set by App.onBackgroundData via Storage)

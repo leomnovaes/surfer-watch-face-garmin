@@ -11,6 +11,44 @@ import Toybox.Weather;
 
 class DataManager {
 
+    // =========================================================
+    // Application.Storage key reference (short keys save memory)
+    // =========================================================
+    // Flags (set by App, read/cleared by View):
+    //   "sc"  = settingsChanged     "bge" = bgEventOccurred
+    //   "wu"  = weatherUpdated      "su"  = swellUpdated
+    //   "tu"  = tideUpdated
+    // Background data (written by App/Delegate, read by DataManager):
+    //   "bwd" = bgWeatherData       "bsd" = bgSwellData
+    // GPS/BT (written by DataManager for background):
+    //   "lat" = lastKnownLat        "lng" = lastKnownLng
+    //   "bt"  = bluetoothConnected
+    // Weather cache (persisted across restarts):
+    //   "ct"  = cachedTemp          "cci" = cachedConditionId
+    //   "cws" = cachedWindSpeed     "cwd" = cachedWindDeg
+    //   "csr" = cachedSunrise       "css" = cachedSunset
+    //   "ofa" = owmFetchedAt        "ofl" = owmFetchLat
+    //   "ofo" = owmFetchLon
+    // Surf forecast arrays:
+    //   "ssh" = surf_swellHeights   "ssp" = surf_swellPeriods
+    //   "ssd" = surf_swellDirections "sst" = surf_seaSurfaceTemps
+    //   "sws" = surf_windSpeeds     "swd" = surf_windDirections
+    // Surf tide arrays:
+    //   "sth" = surf_tideHeights    "stt" = surf_tideTimes
+    //   "sty" = surf_tideTypes      "std" = surf_tideFetchedDay
+    //   "stl" = surf_tideFetchLat   "stn" = surf_tideFetchLng
+    //   "ste" = surf_tideDataExpired
+    // Shore tide arrays:
+    //   "th"  = tideHeights         "tt"  = tideTimes
+    //   "tp"  = tideTypes           "tfd" = tideFetchedDay
+    //   "tfl" = tideFetchLat        "tfn" = tideFetchLng
+    //   "tde" = tideDataExpired
+    // Tide metadata:
+    //   "src" = sgLastResponseCode
+    // Version:
+    //   "av"  = appVersion
+    // =========================================================
+
     // --- Cached weather data (from OWM or Open-Meteo, received via onBackgroundData) ---
     var temperature as Float or Null;
     var weatherConditionId as Number or Null;
@@ -113,16 +151,16 @@ class DataManager {
     // background events (every 5 min), so most ticks do nothing.
     // =========================================================
     function checkBackgroundFlags() as Void {
-        var bgEvent = Application.Storage.getValue("bgEventOccurred");
+        var bgEvent = Application.Storage.getValue("bge");
         if (bgEvent == null || bgEvent != true) { return; }
 
         // Clear the event flag first
-        Application.Storage.setValue("bgEventOccurred", false);
+        Application.Storage.setValue("bge", false);
 
         // Weather data
-        var weatherUpdated = Application.Storage.getValue("weatherUpdated");
+        var weatherUpdated = Application.Storage.getValue("wu");
         if (weatherUpdated != null && weatherUpdated == true) {
-            var weatherData = Application.Storage.getValue("bgWeatherData");
+            var weatherData = Application.Storage.getValue("bwd");
             if (weatherData != null && weatherData instanceof Dictionary) {
                 var surfMode = Application.Properties.getValue("SurfMode");
                 if (surfMode != null && surfMode == 1) {
@@ -131,26 +169,26 @@ class DataManager {
                     onWeatherData(weatherData as Dictionary);
                 }
             }
-            Application.Storage.setValue("weatherUpdated", false);
-            Application.Storage.setValue("bgWeatherData", null);
+            Application.Storage.setValue("wu", false);
+            Application.Storage.setValue("bwd", null);
         }
 
         // Swell data
-        var swellUpdated = Application.Storage.getValue("swellUpdated");
+        var swellUpdated = Application.Storage.getValue("su");
         if (swellUpdated != null && swellUpdated == true) {
-            var swellData = Application.Storage.getValue("bgSwellData");
+            var swellData = Application.Storage.getValue("bsd");
             if (swellData != null && swellData instanceof Dictionary) {
                 onSwellData(swellData as Dictionary);
             }
-            Application.Storage.setValue("swellUpdated", false);
-            Application.Storage.setValue("bgSwellData", null);
+            Application.Storage.setValue("su", false);
+            Application.Storage.setValue("bsd", null);
         }
 
         // Tide data (arrays already in Storage — just reload)
-        var tideUpdated = Application.Storage.getValue("tideUpdated");
+        var tideUpdated = Application.Storage.getValue("tu");
         if (tideUpdated != null && tideUpdated == true) {
             onTideData();
-            Application.Storage.setValue("tideUpdated", false);
+            Application.Storage.setValue("tu", false);
         }
 
         // Refresh weather (sunrise/sunset + Garmin weather if applicable)
@@ -232,13 +270,13 @@ class DataManager {
         // Write shared state to Application.Storage for background process
         // Only write when values actually change to avoid flash I/O every tick
         if (lastKnownLat != _prevStoredLat || lastKnownLng != _prevStoredLng) {
-            Application.Storage.setValue("lastKnownLat", lastKnownLat);
-            Application.Storage.setValue("lastKnownLng", lastKnownLng);
+            Application.Storage.setValue("lat", lastKnownLat);
+            Application.Storage.setValue("lng", lastKnownLng);
             _prevStoredLat = lastKnownLat;
             _prevStoredLng = lastKnownLng;
         }
         if (bluetoothConnected != _prevStoredBt) {
-            Application.Storage.setValue("bluetoothConnected", bluetoothConnected);
+            Application.Storage.setValue("bt", bluetoothConnected);
             _prevStoredBt = bluetoothConnected;
         }
     }
@@ -281,7 +319,7 @@ class DataManager {
                 }
                 weatherDict["sunrise"] = sunrise as Application.PropertyValueType;
                 weatherDict["sunset"] = sunset as Application.PropertyValueType;
-                Application.Storage.setValue("owmFetchedAt", Time.now().value());
+                Application.Storage.setValue("ofa", Time.now().value());
                 onWeatherData(weatherDict);
             }
             // Surf + Garmin: no wind API, surfSunrise/surfSunset already computed above
@@ -337,16 +375,16 @@ class DataManager {
     // Also clears surf wind forecast arrays.
     // =========================================================
     function clearPersistedWeatherData() as Void {
-        Application.Storage.setValue("cachedTemp", null);
-        Application.Storage.setValue("cachedConditionId", null);
-        Application.Storage.setValue("cachedWindSpeed", null);
-        Application.Storage.setValue("cachedWindDeg", null);
-        Application.Storage.setValue("cachedSunrise", null);
-        Application.Storage.setValue("cachedSunset", null);
-        Application.Storage.setValue("owmFetchedAt", null);
+        Application.Storage.setValue("ct", null);
+        Application.Storage.setValue("cci", null);
+        Application.Storage.setValue("cws", null);
+        Application.Storage.setValue("cwd", null);
+        Application.Storage.setValue("csr", null);
+        Application.Storage.setValue("css", null);
+        Application.Storage.setValue("ofa", null);
         // Clear surf wind forecast arrays (source-dependent)
-        Application.Storage.setValue("surf_windSpeeds", null);
-        Application.Storage.setValue("surf_windDirections", null);
+        Application.Storage.setValue("sws", null);
+        Application.Storage.setValue("swd", null);
     }
 
     // =========================================================
@@ -501,7 +539,7 @@ class DataManager {
         }
         isDay = data["isDay"] as Number or Null;
         // Read owmFetchedAt from Storage (written by WeatherService/OpenMeteoService in background)
-        owmFetchedAt = Application.Storage.getValue("owmFetchedAt") as Number or Null;
+        owmFetchedAt = Application.Storage.getValue("ofa") as Number or Null;
         persistWeatherData();
     }
 
@@ -511,11 +549,16 @@ class DataManager {
     // =========================================================
     function onTideData() as Void {
         var surfMode = Application.Properties.getValue("SurfMode");
-        var prefix = (surfMode != null && surfMode == 1) ? "surf_" : "";
-        tideHeights = Application.Storage.getValue(prefix + "tideHeights") as Array or Null;
-        tideTimes = Application.Storage.getValue(prefix + "tideTimes") as Array or Null;
-        tideTypes = Application.Storage.getValue(prefix + "tideTypes") as Array or Null;
-        nextTideTime = null; // Force recomputation with new data
+        if (surfMode != null && surfMode == 1) {
+            tideHeights = Application.Storage.getValue("sth") as Array or Null;
+            tideTimes = Application.Storage.getValue("stt") as Array or Null;
+            tideTypes = Application.Storage.getValue("sty") as Array or Null;
+        } else {
+            tideHeights = Application.Storage.getValue("th") as Array or Null;
+            tideTimes = Application.Storage.getValue("tt") as Array or Null;
+            tideTypes = Application.Storage.getValue("tp") as Array or Null;
+        }
+        nextTideTime = null;
         _tideExpiredWritten = false;
         extractTideCurveData();
     }
@@ -528,8 +571,11 @@ class DataManager {
     function markTideForRefresh() as Void {
         if (!_tideExpiredWritten) {
             var surfMode = Application.Properties.getValue("SurfMode");
-            var prefix = (surfMode != null && surfMode == 1) ? "surf_" : "";
-            Application.Storage.setValue(prefix + "tideDataExpired", true);
+            if (surfMode != null && surfMode == 1) {
+                Application.Storage.setValue("ste", true);
+            } else {
+                Application.Storage.setValue("tde", true);
+            }
             _tideExpiredWritten = true;
         }
     }
@@ -687,10 +733,10 @@ class DataManager {
         swellDirection = data["swellDirection"] as Number or Null;
         seaSurfaceTemp = data["seaSurfaceTemp"] as Float or Null;
         // Refresh cached forecast arrays from Storage (delegate just wrote them)
-        _swellHeightsCache = Application.Storage.getValue("surf_swellHeights") as Array or Null;
-        _swellPeriodsCache = Application.Storage.getValue("surf_swellPeriods") as Array or Null;
-        _swellDirectionsCache = Application.Storage.getValue("surf_swellDirections") as Array or Null;
-        _seaSurfaceTempsCache = Application.Storage.getValue("surf_seaSurfaceTemps") as Array or Null;
+        _swellHeightsCache = Application.Storage.getValue("ssh") as Array or Null;
+        _swellPeriodsCache = Application.Storage.getValue("ssp") as Array or Null;
+        _swellDirectionsCache = Application.Storage.getValue("ssd") as Array or Null;
+        _seaSurfaceTempsCache = Application.Storage.getValue("sst") as Array or Null;
     }
 
     // onSurfWindData(data) — receives OWM wind for surf spot.
@@ -702,8 +748,8 @@ class DataManager {
         if (data["surfSunrise"] != null) { surfSunrise = data["surfSunrise"] as Number; }
         if (data["surfSunset"] != null) { surfSunset = data["surfSunset"] as Number; }
         // Refresh cached wind forecast arrays from Storage (delegate may have written them)
-        _windSpeedsCache = Application.Storage.getValue("surf_windSpeeds") as Array or Null;
-        _windDirectionsCache = Application.Storage.getValue("surf_windDirections") as Array or Null;
+        _windSpeedsCache = Application.Storage.getValue("sws") as Array or Null;
+        _windDirectionsCache = Application.Storage.getValue("swd") as Array or Null;
     }
 
     // updateSwellFromForecast() — picks the current hour's entry
@@ -743,12 +789,12 @@ class DataManager {
     // from Application.Storage into memory. Called on data change
     // (onSwellData, onSurfWindData) and mode switch (loadSurfCache).
     function loadForecastCaches() as Void {
-        _swellHeightsCache = Application.Storage.getValue("surf_swellHeights") as Array or Null;
-        _swellPeriodsCache = Application.Storage.getValue("surf_swellPeriods") as Array or Null;
-        _swellDirectionsCache = Application.Storage.getValue("surf_swellDirections") as Array or Null;
-        _seaSurfaceTempsCache = Application.Storage.getValue("surf_seaSurfaceTemps") as Array or Null;
-        _windSpeedsCache = Application.Storage.getValue("surf_windSpeeds") as Array or Null;
-        _windDirectionsCache = Application.Storage.getValue("surf_windDirections") as Array or Null;
+        _swellHeightsCache = Application.Storage.getValue("ssh") as Array or Null;
+        _swellPeriodsCache = Application.Storage.getValue("ssp") as Array or Null;
+        _swellDirectionsCache = Application.Storage.getValue("ssd") as Array or Null;
+        _seaSurfaceTempsCache = Application.Storage.getValue("sst") as Array or Null;
+        _windSpeedsCache = Application.Storage.getValue("sws") as Array or Null;
+        _windDirectionsCache = Application.Storage.getValue("swd") as Array or Null;
     }
 
     // =========================================================
@@ -756,10 +802,10 @@ class DataManager {
     // Application.Storage keys.
     // =========================================================
     function loadSurfCache() as Void {
-        tideHeights = Application.Storage.getValue("surf_tideHeights") as Array or Null;
-        tideTimes = Application.Storage.getValue("surf_tideTimes") as Array or Null;
-        tideTypes = Application.Storage.getValue("surf_tideTypes") as Array or Null;
-        tideFetchedDay = Application.Storage.getValue("surf_tideFetchedDay") as String or Null;
+        tideHeights = Application.Storage.getValue("sth") as Array or Null;
+        tideTimes = Application.Storage.getValue("stt") as Array or Null;
+        tideTypes = Application.Storage.getValue("sty") as Array or Null;
+        tideFetchedDay = Application.Storage.getValue("std") as String or Null;
         nextTideTime = null;
         extractTideCurveData();
         loadForecastCaches();
@@ -836,15 +882,15 @@ class DataManager {
     // to Application.Storage
     // =========================================================
     function persistTideData() as Void {
-        Application.Storage.setValue("tideHeights", tideHeights);
-        Application.Storage.setValue("tideTimes", tideTimes);
-        Application.Storage.setValue("tideTypes", tideTypes);
+        Application.Storage.setValue("th", tideHeights);
+        Application.Storage.setValue("tt", tideTimes);
+        Application.Storage.setValue("tp", tideTypes);
         var now = Time.now();
         var today = Gregorian.info(now, Time.FORMAT_SHORT);
         tideFetchedDay = today.year.format("%04d") + "-" +
                          today.month.format("%02d") + "-" +
                          today.day.format("%02d");
-        Application.Storage.setValue("tideFetchedDay", tideFetchedDay);
+        Application.Storage.setValue("tfd", tideFetchedDay);
     }
 
     // =========================================================
@@ -852,10 +898,10 @@ class DataManager {
     // from Application.Storage on startup
     // =========================================================
     function loadTideData() as Void {
-        tideHeights = Application.Storage.getValue("tideHeights") as Array or Null;
-        tideTimes = Application.Storage.getValue("tideTimes") as Array or Null;
-        tideTypes = Application.Storage.getValue("tideTypes") as Array or Null;
-        tideFetchedDay = Application.Storage.getValue("tideFetchedDay") as String or Null;
+        tideHeights = Application.Storage.getValue("th") as Array or Null;
+        tideTimes = Application.Storage.getValue("tt") as Array or Null;
+        tideTypes = Application.Storage.getValue("tp") as Array or Null;
+        tideFetchedDay = Application.Storage.getValue("tfd") as String or Null;
     }
 
     // =========================================================
@@ -863,12 +909,12 @@ class DataManager {
     // Application.Storage so they survive restarts
     // =========================================================
     function persistWeatherData() as Void {
-        Application.Storage.setValue("cachedTemp", temperature);
-        Application.Storage.setValue("cachedConditionId", weatherConditionId);
-        Application.Storage.setValue("cachedWindSpeed", windSpeed);
-        Application.Storage.setValue("cachedWindDeg", windDeg);
-        Application.Storage.setValue("cachedSunrise", sunrise);
-        Application.Storage.setValue("cachedSunset", sunset);
+        Application.Storage.setValue("ct", temperature);
+        Application.Storage.setValue("cci", weatherConditionId);
+        Application.Storage.setValue("cws", windSpeed);
+        Application.Storage.setValue("cwd", windDeg);
+        Application.Storage.setValue("csr", sunrise);
+        Application.Storage.setValue("css", sunset);
     }
 
     // =========================================================
@@ -876,13 +922,13 @@ class DataManager {
     // Application.Storage on startup
     // =========================================================
     function loadWeatherData() as Void {
-        temperature = Application.Storage.getValue("cachedTemp") as Float or Null;
-        weatherConditionId = Application.Storage.getValue("cachedConditionId") as Number or Null;
-        windSpeed = Application.Storage.getValue("cachedWindSpeed") as Float or Null;
-        windDeg = Application.Storage.getValue("cachedWindDeg") as Number or Null;
-        sunrise = Application.Storage.getValue("cachedSunrise") as Number or Null;
-        sunset = Application.Storage.getValue("cachedSunset") as Number or Null;
-        owmFetchedAt = Application.Storage.getValue("owmFetchedAt") as Number or Null;
+        temperature = Application.Storage.getValue("ct") as Float or Null;
+        weatherConditionId = Application.Storage.getValue("cci") as Number or Null;
+        windSpeed = Application.Storage.getValue("cws") as Float or Null;
+        windDeg = Application.Storage.getValue("cwd") as Number or Null;
+        sunrise = Application.Storage.getValue("csr") as Number or Null;
+        sunset = Application.Storage.getValue("css") as Number or Null;
+        owmFetchedAt = Application.Storage.getValue("ofa") as Number or Null;
     }
 
 }

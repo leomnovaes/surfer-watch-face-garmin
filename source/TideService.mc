@@ -50,7 +50,7 @@ class TideService {
 
     // Callback for StormGlass response
     function onTideResponse(responseCode as Number, data as Dictionary or String or Null) as Void {
-        Application.Storage.setValue("sgLastResponseCode", responseCode);
+        Application.Storage.setValue("src", responseCode);
 
         // On 402 (quota exhausted), immediately retry with backup key if available
         if (responseCode == 402 && !_triedBackup) {
