@@ -114,6 +114,12 @@ class DataManager {
     // --- Surf mode: UI state ---
     var bottomToggleState as Number;
 
+    // --- Display-ready subscreen fields (set by updateSubscreenData/updateArcData) ---
+    var subscreenIcon as String;
+    var subscreenValue as String;
+    var subscreenFont as Number;
+    var arcValue as Number or Null;
+
     // --- Storage write tracking (avoid flash I/O every tick) ---
     private var _tideExpiredWritten as Boolean;
 
@@ -127,6 +133,11 @@ class DataManager {
         tideCurveMinH = 0.0;
         tideCurveMaxH = 1.0;
         tideCurveHRange = 1.0;
+        // Subscreen defaults (shore mode: heart)
+        subscreenIcon = "h";
+        subscreenValue = "--";
+        subscreenFont = 0;
+        arcValue = null;
 
         // Load persisted data from Application.Storage
         loadTideData();
@@ -227,6 +238,37 @@ class DataManager {
         var settings = System.getDeviceSettings();
         notificationCount = settings.notificationCount;
         bluetoothConnected = settings.phoneConnected;
+    }
+
+    // =========================================================
+    // updateSubscreenAndArc() — sets display-ready subscreen + arc
+    // fields. Called from onUpdate() AFTER sensor reads and tide
+    // computation so values are current tick.
+    // =========================================================
+    function updateSubscreenAndArc() as Void {
+        var surfMode = Application.Properties.getValue("SurfMode");
+        if (surfMode != null && surfMode == 1) {
+            if (nextTideType != null) {
+                subscreenIcon = nextTideType.equals("high") ? "H" : "L";
+                subscreenFont = 1;
+            } else {
+                subscreenIcon = "--";
+                subscreenFont = -1;
+            }
+            if (interpTideHeight != null) {
+                var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
+                subscreenValue = isMetric ? interpTideHeight.format("%.1f") : (interpTideHeight * 3.281).format("%.1f");
+            } else { subscreenValue = "--"; }
+            var stats = System.getSystemStats();
+            if (stats has :solarIntensity && stats.solarIntensity != null && stats.solarIntensity >= 0) {
+                arcValue = stats.solarIntensity.toNumber();
+            } else { arcValue = 0; }
+        } else {
+            subscreenIcon = "h";
+            subscreenFont = 0;
+            subscreenValue = (heartRate != null) ? heartRate.toString() : "--";
+            arcValue = (stress != null) ? stress : 0;
+        }
     }
 
     // =========================================================

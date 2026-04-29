@@ -216,8 +216,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             dm.interpolateTideHeight();
             dm.updateSwellFromForecast();
             dm.updatePerTickWeather();
+            dm.updateSubscreenAndArc();
 
-            drawHrCircle_Surf(dc, dm);
+            drawSubscreen(dc, dm);
             drawTopSection_Surf(dc, dm);
             drawDividers(dc);
             drawMiddleSection_Surf(dc, dm);
@@ -232,8 +233,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             dm.updateSensorData();
             dm.computeNextTide();
             dm.updatePerTickWeather();
+            dm.updateSubscreenAndArc();
 
-            drawHrCircle(dc, dm);
+            drawSubscreen(dc, dm);
             drawTopSection(dc, dm);
             drawDividers(dc);
             drawMiddleSection(dc, dm);
@@ -629,49 +631,35 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     // =========================================================
     // Section renderers — called from onUpdate()
     // =========================================================
-    private function drawHrCircle(dc as Dc, dm as DataManager) as Void {
-
+    private function drawSubscreen(dc as Dc, dm as DataManager) as Void {
         // Filled white circle
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.fillCircle(hrCenterX, hrCenterY, hrRadius);
 
-        // Stress arc
-        var stressVal = 0;
-        if (dm.stress != null) {
-            stressVal = dm.stress;
+        // Arc gauge (if available)
+        if (dm.arcValue != null) {
+            drawArc(dc, hrCenterX, hrCenterY, hrRadius, STRESS_ARC_WIDTH, dm.arcValue);
         }
-        drawStressArc(dc, hrCenterX, hrCenterY, hrRadius, STRESS_ARC_WIDTH, stressVal);
 
-        // Heart icon
+        // Icon
         dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        drawHrHeart(dc, hrIconX, hrIconY);
-
-        // Heart rate text
-        var hrText = "--";
-        if (dm.heartRate != null) {
-            hrText = dm.heartRate.toString();
+        if (dm.subscreenFont == 0 && heartIconFont != null) {
+            dc.drawText(hrIconX, hrIconY, heartIconFont, dm.subscreenIcon, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        } else if (dm.subscreenFont == 1 && surferIconsFont != null) {
+            dc.drawText(hrIconX, hrIconY, surferIconsFont, dm.subscreenIcon, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        } else {
+            dc.drawText(hrIconX, hrIconY, Graphics.FONT_XTINY, dm.subscreenIcon, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         }
-        drawHrText(dc, hrTextX, hrTextY, hrText);
 
-        // Restore white for subsequent drawing
+        // Value text
+        dc.drawText(hrTextX, hrTextY, Graphics.FONT_XTINY, dm.subscreenValue, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
     }
 
-    // Draws the heart icon at (x, y) — black, centered
-    private function drawHrHeart(dc as Dc, x as Number, y as Number) as Void {
-        if (heartIconFont != null) {
-            dc.drawText(x, y, heartIconFont, "h", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        }
-    }
-
-    // Draws the heart rate number at (x, y) — black, centered
-    private function drawHrText(dc as Dc, x as Number, y as Number, text as String) as Void {
-        dc.drawText(x, y, Graphics.FONT_XTINY, text, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-    }
-
-    // Draws the stress arc gauge around a circle
-    // cx, cy = circle center; radius = circle radius; barWidth = arc thickness; stressPercent = 0-100
-    private function drawStressArc(dc as Dc, cx as Number, cy as Number, radius as Number, barWidth as Number, stressPercent as Number) as Void {
+    // Draws the arc gauge around a circle
+    // cx, cy = circle center; radius = circle radius; barWidth = arc thickness; percent = 0-100
+    private function drawArc(dc as Dc, cx as Number, cy as Number, radius as Number, barWidth as Number, percent as Number) as Void {
         var arcOuterR = radius;
         var arcInnerR = arcOuterR - barWidth;
         var arcMidR = arcOuterR - (barWidth / 2);
@@ -699,9 +687,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             cx + (capInnerR * Math.cos(endRad)).toNumber(), cy - (capInnerR * Math.sin(endRad)).toNumber(),
             cx + (capOuterR * Math.cos(endRad)).toNumber(), cy - (capOuterR * Math.sin(endRad)).toNumber());
 
-        // Fill: black portion proportional to stress %
-        if (stressPercent > 0) {
-            var blackDegrees = (totalArcDeg * stressPercent / 100);
+        // Fill: black portion proportional to %
+        if (percent > 0) {
+            var blackDegrees = (totalArcDeg * percent / 100);
             var fillEnd = arcStartAngle - blackDegrees;
             dc.setPenWidth(barWidth);
             dc.drawArc(cx, cy, arcMidR, Graphics.ARC_CLOCKWISE, arcStartAngle, fillEnd);
@@ -879,43 +867,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
     // =========================================================
     // Surf Mode rendering methods
     // =========================================================
-
-    // Surf mode subscreen: tide height + solar arc + tide direction
-    private function drawHrCircle_Surf(dc as Dc, dm as DataManager) as Void {
-        // Filled white circle
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.fillCircle(hrCenterX, hrCenterY, hrRadius);
-
-        // Solar intensity arc (reuses stress arc geometry)
-        var solarVal = 0;
-        if (dm.solarIntensity != null) {
-            solarVal = dm.solarIntensity;
-        }
-        drawStressArc(dc, hrCenterX, hrCenterY, hrRadius, STRESS_ARC_WIDTH, solarVal);
-
-        // Tide direction arrow (up=rising, down=falling) — uses tide icons from surfer-icons
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-        if (dm.nextTideType != null && surferIconsFont != null) {
-            var tideGlyph = dm.nextTideType.equals("high") ? "H" : "L";
-            dc.drawText(hrIconX, hrIconY, surferIconsFont, tideGlyph, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        } else {
-            dc.drawText(hrIconX, hrIconY, Graphics.FONT_XTINY, "--", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        }
-
-        // Tide height text
-        var tideText = "--";
-        if (dm.interpTideHeight != null) {
-            var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
-            if (isMetric) {
-                tideText = dm.interpTideHeight.format("%.1f");
-            } else {
-                tideText = (dm.interpTideHeight * 3.281).format("%.1f");
-            }
-        }
-        dc.drawText(hrTextX, hrTextY, Graphics.FONT_XTINY, tideText, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-    }
 
     // Surf mode top section: battery, water temp, next tide
     private function drawTopSection_Surf(dc as Dc, dm as DataManager) as Void {
