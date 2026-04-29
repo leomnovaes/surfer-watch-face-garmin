@@ -217,34 +217,91 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
   - Early return when AlwaysShowSeconds is off (near-zero battery cost)
   - Note: `onPartialUpdate` is called by the system every second on MIP devices regardless — cannot be unregistered. The early return is the gating mechanism.
 
-### Task 33: Configurable arc bar per mode
-- [ ] 33.1 Add `ShoreArc` list property: 0=Stress (default), 1=Solar, 2=Body Battery, 3=Disabled
-- [ ] 33.2 Add `SurfArc` list property: 0=Solar (default), 1=Stress, 2=Body Battery, 3=Disabled
-- [ ] 33.3 Add setting UI entries and string resources
-- [ ] 33.4 Add `bodyBattery` field to DataManager
-- [ ] 33.5 Implement `readBodyBatteryHistory()` — isolated SensorHistory read
-- [ ] 33.6 Implement `readSolarIntensity()` — isolated System.getSystemStats read
-- [ ] 33.7 Gate all arc sensors: only read the sensor matching the active mode's arc setting (see steering/tech.md Sensor Gating Rules)
-- [ ] 33.8 Gate stress: only read when ShoreArc=0 or SurfArc=1
-- [ ] 33.9 Gate heart rate: only read in shore mode (surf mode shows tide height)
-- [ ] 33.10 Gate water temp: only read when SurfTempSource=0 (watch sensor)
-- [ ] 33.11 Gate solar intensity: only read when ShoreArc=1 or SurfArc=0
-- [ ] 33.12 Update `drawHrCircle()` to read ShoreArc and draw selected metric
-- [ ] 33.13 Update `drawHrCircle_Surf()` to read SurfArc and draw selected metric
-- [ ] 33.14 When Disabled (3), draw circle + content but skip arc
-- Note: SensorHistory OOM constraint — only one SensorHistory iterator per tick. Stress and Body Battery are mutually exclusive arc options, so only one runs.
+### Task 33: Refactor subscreen + arc to display-ready abstraction
+- The View currently has separate `drawHrCircle()` (shore) and `drawHrCircle_Surf()` (surf) methods with hardcoded content (HR vs tide height) and arc sources (stress vs solar). This refactor creates a single `drawSubscreen()` that renders whatever DataManager provides, enabling future configurability without View changes.
+
+- [ ] 33.1 Add display-ready fields to DataManager
+  - `subscreenIcon as String` — font glyph character to render (e.g., "h" for heart, "H"/"L" for tide, "T" for thermometer)
+  - `subscreenValue as String` — formatted display string (e.g., "72", "1.2m", "--")
+  - `subscreenFont` — which icon font to use (heartIconFont, surferIconsFont, etc.) — stored as a Number enum, View maps to font
+  - `arcValue as Number or Null` — 0-100 gauge value, null = disabled (no arc drawn)
+  - Initialize all to defaults in constructor
+
+- [ ] 33.2 Add `updateSubscreenData()` method to DataManager
+  - Called from `updateSensorData()` (per-tick, after sensor reads)
+  - Reads `SurfMode` to determine current mode
+  - Shore mode: icon = heart glyph, value = heartRate formatted or "--", font = heartIconFont enum
+  - Surf mode: icon = tide direction glyph ("H"/"L"), value = interpolated tide height formatted or "--", font = surferIconsFont enum
+  - Handles unit conversion (metric/imperial) internally
+  - View never formats sensor values — DataManager provides display-ready strings
+
+- [ ] 33.3 Add `updateArcData()` method to DataManager
+  - Called from `updateSensorData()` (per-tick, after sensor reads)
+  - Shore mode: reads stress (existing), sets `arcValue = stress`
+  - Surf mode: reads solar intensity (existing), sets `arcValue = solarIntensity`
+  - If sensor unavailable: `arcValue = null`
+  - Consolidate solar read from `updateSurfSensors()` into `updateSensorData()` (read from same `System.getSystemStats()` call as battery)
+
+- [ ] 33.4 Rename `drawHrCircle()` and `drawHrCircle_Surf()` to single `drawSubscreen(dc, dm)`
+  - Draw filled white circle
+  - If `dm.arcValue != null`: draw arc gauge with `dm.arcValue`
+  - Draw `dm.subscreenIcon` using the appropriate font (map enum to font var)
+  - Draw `dm.subscreenValue` as text
+  - One method for both modes — no mode branching in View
+
+- [ ] 33.5 Build and verify
+  - Shore mode: subscreen shows heart + BPM + stress arc (same as before)
+  - Surf mode: subscreen shows tide direction + height + solar arc (same as before)
+  - No visual change — this is a pure refactor
+  - Measure memory — should be similar (moved code, not added)
+
+### Task 33b: Add configurable arc setting
+- Builds on Task 33's abstraction. Adds ShoreArc/SurfArc settings so users can choose which metric the arc displays.
+
+- [ ] 33b.1 Add `ShoreArc` list property: 0=Stress (default), 1=Solar, 2=Body Battery, 3=Disabled
+- [ ] 33b.2 Add `SurfArc` list property: 0=Solar (default), 1=Stress, 2=Body Battery, 3=Disabled
+- [ ] 33b.3 Add setting UI entries and string resources
+- [ ] 33b.4 Add `bodyBattery as Number or Null` field to DataManager
+- [ ] 33b.5 Update `updateArcData()` to read the active arc setting per mode:
+  - Determine active arc from `SurfMode` + `ShoreArc`/`SurfArc`
+  - If Stress: read `SensorHistory.getStressHistory()` → `arcValue`
+  - If Body Battery: read `SensorHistory.getBodyBatteryHistory()` → `arcValue`
+  - If Solar: read from `System.getSystemStats().solarIntensity` → `arcValue`
+  - If Disabled: `arcValue = null` (arc not drawn)
+  - SensorHistory constraint: only one iterator per tick — Stress and Body Battery are mutually exclusive arc options
+- [ ] 33b.6 Build and verify
+  - Change ShoreArc to Solar → arc shows solar intensity in shore mode
+  - Change ShoreArc to Body Battery → arc shows body battery
+  - Change ShoreArc to Disabled → no arc, circle + content only
+  - Change SurfArc to Stress → arc shows stress in surf mode
+  - Measure memory
+- Memory: 2 Properties + ~8 strings + 1 DataManager field (~8 bytes) + body battery sensor read (~10 lines). No new Storage keys.
 
 ### Task 34: Configurable shore subscreen content
+- Builds on Task 33's abstraction. Adds ShoreSubscreen setting so users can choose what the subscreen circle displays in shore mode.
+
 - [ ] 34.1 Add `ShoreSubscreen` list property: 0=Heart Rate (default), 1=Temperature, 2=Altitude, 3=Steps
 - [ ] 34.2 Add setting UI entry and string resources
-- [ ] 34.3 Add `altitude` and `steps` fields to DataManager
-- [ ] 34.4 Read altitude from SensorHistory.getElevationHistory() — gated by ShoreSubscreen=2, shore mode only
-- [ ] 34.5 Read steps from ActivityMonitor.getInfo().steps — gated by ShoreSubscreen=3, shore mode only
+- [ ] 34.3 Add `altitude as Number or Null` and `steps as Number or Null` fields to DataManager
+- [ ] 34.4 Update `updateSubscreenData()` for shore mode to read `ShoreSubscreen`:
+  - 0=HR: icon = heart, value = heartRate or "--", font = heartIconFont
+  - 1=Temperature: icon = thermometer "T", value = temperature formatted, font = surferIconsFont
+  - 2=Altitude: icon = mountain "M", value = altitude formatted, font = surferIconsFont
+  - 3=Steps: icon = shoe-prints "W", value = steps formatted, font = surferIconsFont
+- [ ] 34.5 Gate sensor reads by ShoreSubscreen:
+  - HR: only read when ShoreSubscreen=0
+  - Altitude: read from `SensorHistory.getElevationHistory()` when ShoreSubscreen=2
+  - Steps: read from `ActivityMonitor.getInfo().steps` when ShoreSubscreen=3
+  - Temperature: already available from weather data, no extra sensor read
+  - SensorHistory constraint: altitude uses an iterator — mutually exclusive with stress/body battery per tick
 - [ ] 34.6 Rasterize mountain icon into surfer-icons font (char M=77)
 - [ ] 34.7 Rasterize steps/shoe-prints icon into surfer-icons font (char W=87)
-- [ ] 34.8 Implement `drawHrCircle()` variants: Temperature (thermometer + °C/°F), Altitude (mountain + m/ft), Steps (shoe-prints + count)
-- [ ] 34.9 Wire ShoreSubscreen setting into drawHrCircle shore branch
-- Note: Follow Sensor Gating Rules in steering/tech.md. Altitude and Steps use SensorHistory — put reads in isolated functions. Only one SensorHistory read per tick.
+- [ ] 34.8 Build and verify
+  - Change ShoreSubscreen to Temperature → circle shows thermometer + temp
+  - Change ShoreSubscreen to Altitude → circle shows mountain + elevation
+  - Change ShoreSubscreen to Steps → circle shows shoe-prints + step count
+  - Measure memory
+- Memory: 1 Property + ~4 strings + 2 DataManager fields (~16 bytes) + 2 sensor reads + 2 icon glyphs in font. No new Storage keys.
 
 ### Task 32b: Surf bottom view configuration
 - [x] 32b.1 Add `SurfDefaultView` list property: 0=Swell (default), 1=Tide Curve
