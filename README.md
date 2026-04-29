@@ -192,15 +192,20 @@ OWM uses station observations which tend to be more accurate for current conditi
 | Setting | Description |
 |---------|-------------|
 | Clock Font | 0 = Saira Condensed Bold (default), 1 = Rajdhani Bold |
+| Always Show Seconds | Show seconds in low-power mode (more battery usage). Default: off |
 | Wind Speed Unit | 0 = Auto (device default), 1 = km/h, 2 = knots, 3 = mph, 4 = m/s |
 | Weather Source | 0 = Garmin built-in (default), 1 = Open-Meteo (no key), 2 = OpenWeatherMap (needs key) |
 | OWM API Key | Your OpenWeatherMap API key (only needed if Weather Source = OWM or surf mode wind) |
 | StormGlass API Key | Your StormGlass API key (for tide data) |
 | StormGlass Backup API Key | Optional backup key, used automatically if primary returns 402 (quota exhausted) |
 | Surf Mode | 0 = Shore (default), 1 = Surf |
+| Surf Temperature Source | 0 = Watch Sensor (default), 1 = Ocean Surface (from Open-Meteo Marine API) |
+| Surf Bottom View | 0 = Swell (default), 1 = Tide Curve |
+| Wrist Gesture View Toggle | Enable/disable double wrist gesture to switch surf bottom view. Default: on |
+| Shore Arc | 0 = Stress (default), 1 = Solar, 2 = Body Battery, 3 = Disabled |
+| Surf Arc | 0 = Solar (default), 1 = Stress, 2 = Body Battery, 3 = Disabled |
 | Surf Spot Lat | Latitude of your surf spot (e.g., `48.4992`) |
 | Surf Spot Lng | Longitude of your surf spot (e.g., `-124.3003`) |
-| Surf Temperature Source | 0 = Watch Sensor (default), 1 = Ocean Surface (from Open-Meteo Marine API) |
 | Copy GPS to Surf Spot | Toggle ON to copy current GPS to surf spot coordinates (auto-resets to OFF) |
 
 ## Installation

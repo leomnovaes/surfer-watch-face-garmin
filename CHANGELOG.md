@@ -1,5 +1,33 @@
 # Changelog
 
+## v1.1.0
+
+### New Features
+- **Always Show Seconds** — new setting to keep seconds visible in low-power mode (uses per-second partial updates). Off by default to save battery.
+- **Configurable Arc Gauge** — choose what the arc around the subscreen circle displays, independently for shore and surf modes. Options: Stress (shore default), Solar Intensity (surf default), Body Battery, or Disabled.
+- **Surf Bottom View Configuration** — choose the default bottom section in surf mode (Swell or Tide Curve) and enable/disable the double wrist gesture toggle. Lock your preferred view before paddling out.
+
+### Improved
+- Sunrise/sunset accuracy upgraded to ±1 minute (SunCalc Julian date algorithm with equation of time and atmospheric refraction)
+- Sunrise/sunset no longer overwritten by local computation when API provides values (OWM/Open-Meteo)
+- Architecture refactored to Crystal Face pattern — App class has zero DataManager references, freeing background memory
+- Background events always trigger foreground refresh (fixes Garmin mode sunrise/sunset not updating)
+- Background delegate reads GPS and Bluetooth directly from OS APIs
+- GPS reads moved from per-tick to event-driven
+- Moon phase computation moved from per-tick to event-driven
+- Weather glyph mappers consolidated into single function (saves 360 bytes code)
+- All Storage keys shortened to 2-3 characters
+- Storage version gating prevents stale key bloat on updates
+- Dead code removed: unused font files, unused sensor fields, debug prints
+- Single clock font loaded at a time with live reload on settings change
+
+### Changed
+- Removed Home Latitude / Home Longitude settings (GPS from watch is sufficient)
+
+### Memory
+- Peak memory: 59.4KB (was 59.5KB pre-refactor) — added 4 features while maintaining same footprint
+- Code: 32263 bytes, Data: 9519 bytes
+
 ## v1.0.3
 
 ### Fixed
