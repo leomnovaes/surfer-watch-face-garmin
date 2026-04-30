@@ -12,7 +12,7 @@ SHORE MODE (default)
 • Wind direction arrow and speed (configurable: km/h, knots, mph, m/s)
 • Precipitation chance
 • Sunrise/sunset with next event time
-• Moon phase (28 phases, computed locally)
+• Moon phase (16 phases, computed locally)
 • Heart rate with configurable arc gauge (stress, solar, body battery, or disabled)
 • Battery, notifications, Bluetooth connectivity
 • Custom clock font (switchable via settings)

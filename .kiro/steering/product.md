@@ -18,7 +18,7 @@ Surfers and outdoor athletes who wear the Garmin Instinct 2X Solar and want a si
 - Weather condition icon and temperature — via Garmin built-in (default), Open-Meteo (no key), or OWM API
 - Wind direction and speed — via Garmin built-in, Open-Meteo, or OWM API
 - Precipitation chance — via DataManager (Garmin built-in, Open-Meteo API, or Garmin fallback for OWM)
-- Moon phase icon — computed locally from synodic period (28 phases)
+- Moon phase icon — computed locally from synodic period (16 phases)
 - Seconds display (hidden by default, revealed on wrist gesture to save battery, or always-on via setting)
 - AM/PM indicator
 - Surf mode: swell height/period/direction (Open-Meteo Marine API, free), tide curve graph, interpolated tide height, water temperature, configurable arc gauge (solar/stress/body battery/disabled), surf spot wind (Open-Meteo hourly forecast or OWM current)

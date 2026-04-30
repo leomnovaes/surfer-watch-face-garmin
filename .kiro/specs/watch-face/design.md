@@ -86,7 +86,7 @@ Row spacing must exceed the font's nominal size to avoid overlap. For `FONT_XTIN
 - Right column: 2x2 grid
   - Left edge x=132, right edge x=174
   - Top row y=74, bottom row y=94
-  - Top-left: moon phase icon (Erik Flowers Weather Icons, 28 phases, rasterized at 24px)
+  - Top-left: moon phase icon (Erik Flowers Weather Icons, 16 phases, rasterized at 24px)
   - Bottom-left: am/pm, left-justified
   - Bottom-right: seconds (only when awake — wrist gesture active)
 
@@ -142,8 +142,9 @@ SurferWatchFaceDelegate.mc  — System.ServiceDelegate (NOT Background.ServiceDe
                               runs in background process,
                               makes all HTTP requests via WeatherService and TideService,
                               exits with packaged data via Background.exit()
-DataManager.mc              — Singleton accessed via getApp().getDataManager(),
-                              holds all cached data read by the view
+DataManager.mc              — Business logic: holds cached data, processes background flags,
+                              computes sunrise/sunset/moon. Owned by View, NOT by App.
+                              Display-ready subscreen + arc fields set by updateSubscreenAndArc().
 WeatherService.mc           — OWM HTTP request and response parsing (called from ServiceDelegate)
 TideService.mc              — StormGlass HTTP request and response parsing (called from ServiceDelegate)
 ```
@@ -231,7 +232,7 @@ Runs inside `SurferWatchFaceDelegate` (background process). Returns a parsed Arr
   8. Draw date row
   9. Draw weather widget
 - No layout XML — all drawing via `dc` methods
-- Private helper methods per section: `drawHrCircle(dc)`, `drawTopSection(dc)`, `drawMiddleSection(dc)`, `drawDateRow(dc)`, `drawWeatherWidget(dc)`
+- Private helper methods per section: `drawSubscreen(dc)`, `drawTopSection(dc)`, `drawMiddleSection(dc)`, `drawDateRow(dc)`, `drawWeatherWidget(dc)`
 
 ---
 
@@ -386,7 +387,7 @@ Reference: Crystal Face (warmsound/crystal-face) uses this exact format — 8-bi
 |-----------|--------|--------|--------|
 | `weather-icons.fnt/.png` | Erik Flowers Weather Icons (SIL OFL), rasterized at 17px via fontbm | 29 weather glyphs: day (A-V) + night (a-g) | 8-bit grayscale 256x256 |
 | `crystal-icons.fnt/.png` | Crystal Face (custom pixel-art) | Notifications (5), sunrise (>), sunset (?) | 8-bit colormap 256x256 |
-| `moon.fnt/.png` | Erik Flowers Weather Icons (SIL OFL), rasterized at 24px via fontbm | 28 moon phases (mapped to ASCII chars) | 8-bit grayscale 256x256 |
+| `moon.fnt/.png` | Erik Flowers Weather Icons (SIL OFL), rasterized at 24px via fontbm | 16 moon phases (of 28 in PNG, trimmed to save memory) | 8-bit grayscale 512x512 |
 | `seg34-icons.fnt/.png` | Segment34mkII | Bluetooth (L) | 8-bit grayscale |
 | `surfer-icons.fnt/.png` | MDI webfont (Apache 2.0), rasterized at 17px via fontbm | Umbrella (U=85), tide high (H=72), tide low (L=76) | 8-bit grayscale 256x256 |
 | `heart-icon.fnt/.png` | Garmin Connect Icons (sunpazed/garmin-iconfonts), rasterized at 27px via fontbm | Heart outline (h=104) | 8-bit grayscale 256x256 |
@@ -529,7 +530,7 @@ Night glyphs (a-g):
 
 ---
 
-## 7. Moon Phase Mapping (28 phases)
+## 7. Moon Phase Mapping (16 phases)
 
 Moon phase is computed locally via synodic period in `DataManager.computeMoonPhase()`. The 0.0–1.0 float is mapped to 28 glyphs from Erik Flowers Weather Icons, rasterized at 24px.
 
@@ -562,8 +563,6 @@ Valid `settingConfig` types in Connect IQ: `alphaNumeric`, `numeric`, `list`, `b
 |----------|--------------------|--------------------|-------|
 | `OWMApiKey` | `string` | `alphaNumeric` | Free-text string input |
 | `StormGlassApiKey` | `string` | `alphaNumeric` | Free-text string input |
-| `HomeLat` | `string` | `alphaNumeric` | Property must be `string` (not `float`) because `alphaNumeric` is only valid for string properties. Parse to float in code via `toFloat()`. |
-| `HomeLng` | `string` | `alphaNumeric` | Same as HomeLat |
 | `ClockFont` | `number` | `list` | 0 = Saira Condensed Bold (default), 1 = Rajdhani Bold |
 
 ---

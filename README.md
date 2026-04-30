@@ -26,7 +26,7 @@ Built by a surfer for his own wrist, spec-driven with AI assistance. The entire 
 - **Weather** — condition icon with day/night variants, temperature. Default: Garmin built-in (zero config). Optional: OpenWeatherMap 2.5 (free, no credit card)
 - **Wind** — procedural arrow rotated to exact degree, speed with configurable unit (auto/km/h/knots/mph/m/s)
 - **Precipitation** — umbrella icon + chance % (from Garmin built-in weather)
-- **Moon phase** — 28-phase icon computed locally from synodic period
+- **Moon phase** — 16-phase icon computed locally from synodic period
 
 ### Surf Mode
 
@@ -101,7 +101,7 @@ The watch face is divided into four zones:
 | ↓ wave | Next tide is low |
 | ↑ sun | Next event is sunrise |
 | ↓ sun | Next event is sunset |
-| 🌑→🌕→🌑 | Moon phase (28 phases, updates daily) |
+| 🌑→🌕→🌑 | Moon phase (16 phases, updates daily) |
 | Arrow | Wind/swell direction (tip points where it's heading, tail shows origin) |
 | ☂ | Precipitation chance |
 | ♥ | Heart rate |

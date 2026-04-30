@@ -94,7 +94,7 @@ A surfer-focused watch face for the Garmin Instinct 2X Solar displaying time, fi
 ### 2.5 Moon Phase
 - The system SHALL compute moon phase locally from the current date using the synodic period (29.53058867 days) relative to a known new moon epoch (Jan 6, 2000 18:14 UTC)
 - The result is a 0.0–1.0 float matching OWM convention: 0=new, 0.25=first quarter, 0.5=full, 0.75=last quarter
-- The system SHALL map the float to one of 28 phases for icon selection (using Erik Flowers Weather Icons moon glyphs)
+- The system SHALL map the float to one of 16 phases for icon selection (using Erik Flowers Weather Icons moon glyphs, 16 of 28 loaded to save memory)
 - Moon phase is always available (computed locally, no API dependency)
 - Moon illumination % is NOT displayed (removed — overlaps with moon icon at this size)
 

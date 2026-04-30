@@ -51,7 +51,7 @@ Surf Mode is an alternate watch face layout optimized for surfers actively in th
 5. WHEN `CopyGPSToSurfSpot` has copied coordinates, THE DataManager SHALL reset `CopyGPSToSurfSpot` to false via Application.Properties.setValue()
 6. THE Watch_Face SHALL treat `SurfSpotLat`/`SurfSpotLng` values of "0.0" or empty string as "not configured" and display "--" for all Surf_Mode location-dependent fields
 7. WHILE `SurfMode` is set to 1, THE ServiceDelegate SHALL use `SurfSpotLat`/`SurfSpotLng` as the coordinates for all location-dependent API requests (tide, swell, wind)
-8. WHILE `SurfMode` is set to 0, THE ServiceDelegate SHALL use current GPS or HomeLat/HomeLng as the coordinates for all location-dependent API requests
+8. WHILE `SurfMode` is set to 0, THE ServiceDelegate SHALL use current GPS as the coordinates for all location-dependent API requests
 
 ---
 
@@ -266,7 +266,7 @@ Note: This requirement describes the OWM (WeatherSource=2) behavior. Open-Meteo 
 #### Acceptance Criteria
 
 1. WHEN `WeatherSource` is set to 1 (Open-Meteo) and `SurfMode` is 0 (Shore), THE ServiceDelegate SHALL fetch current weather from: `GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,precipitation_probability,is_day&daily=sunrise,sunset&timezone=auto&forecast_days=1&wind_speed_unit=ms`
-2. THE ServiceDelegate SHALL use current GPS or HomeLat/HomeLng coordinates for the request
+2. THE ServiceDelegate SHALL use current GPS coordinates for the request
 3. THE ServiceDelegate SHALL parse the response and extract: `current.temperature_2m`, `current.weather_code`, `current.wind_speed_10m`, `current.wind_direction_10m`, `current.precipitation_probability`, `current.is_day`, `daily.sunrise[0]`, `daily.sunset[0]`
 4. THE ServiceDelegate SHALL convert sunrise/sunset from ISO 8601 local time strings to Unix timestamps
 5. THE DataManager SHALL store the weather code as `weatherConditionId` (WMO code, not OWM code)
