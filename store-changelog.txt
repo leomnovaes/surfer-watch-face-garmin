@@ -1,0 +1,26 @@
+v1.1.0
+
+NEW FEATURES
+• Always Show Seconds — keep seconds visible in low-power mode (off by default)
+• Configurable Arc Gauge — choose Stress, Solar, Body Battery, or Disabled per mode
+• Surf Bottom View Config — set default view (Swell/Tide Curve), enable/disable wrist gesture toggle
+
+IMPROVED
+• Sunrise/sunset accuracy to ±1 minute
+• Better memory efficiency (architecture refactor)
+• GPS and moon phase updates moved to event-driven (less battery)
+• Removed Home Lat/Lng settings (GPS from watch is sufficient)
+
+v1.0.2
+
+FIXED
+• Wind/swell arrows now point in travel direction
+• Precipitation consistent across weather sources
+
+CHANGED
+• Ocean surface temperature option added
+• Surf temperature shows 1 decimal place
+
+v1.0.0
+
+Initial release — Shore Mode + Surf Mode watch face for Instinct 2/2X Solar/3 Solar.
