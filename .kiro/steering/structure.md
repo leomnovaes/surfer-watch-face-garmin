@@ -68,17 +68,28 @@ surfer-watch-face-instinct-2x-solar/
 - Placeholder values are used until a feature is fully implemented per its task
 - Any change to features, behavior, data sources, refresh rates, or user-facing functionality must also update `README.md` to keep user documentation in sync
 
-## Release Checklist (for every user-facing change)
-After any code change that affects behavior or visuals:
-1. Update spec files (requirements.md, design.md, tasks.md) to reflect the change
-2. Update `README.md` (features, user guide, data refresh table, etc.)
-3. Update `store-description.txt` if the change affects the store listing
-4. Regenerate `screenshot.png` (user takes new simulator screenshot)
-5. Regenerate `screenshot-annotated.png` (run `annotate.py` with the new screenshot)
-6. Regenerate `store-cover.png` (run `generate-cover.py` with the new screenshot)
-7. Add entry to `CHANGELOG.md` describing the change
-8. Build new `.iq` package via `Monkey C: Export Project`
-9. Upload to Connect IQ developer dashboard (new package + updated assets if visuals changed)
+## Release Checklist (for every version release)
+
+### Kiro does (code + docs):
+1. Update spec files (requirements.md, design.md, tasks.md) to reflect all changes
+2. Update `CHANGELOG.md` — newest version on top, correct ordering, no duplicates
+3. Update `store-changelog.txt` — trimmed version for Connect IQ store (max 4000 chars), latest 2-3 releases
+4. Update `store-description.txt` — feature list matches current capabilities (max 4000 chars)
+5. Update `README.md` — features, settings table, user guide, data refresh table
+6. Update steering files (`product.md`, `tech.md`, `structure.md`) if architecture or features changed
+7. Commit all changes
+
+### User does (build + publish):
+8. Build `.iq` package via `Monkey C: Export Project`
+9. Take new simulator screenshot if visuals changed → `screenshot.png`
+10. Regenerate `screenshot-annotated.png` (run `annotate.py` with new screenshot) if layout changed
+11. Regenerate `store-cover.png` (run `generate-cover.py` with new screenshot) if needed
+12. Upload to Connect IQ developer dashboard:
+    - `.iq` package
+    - Paste `store-description.txt` into description field
+    - Paste `store-changelog.txt` into changelog field
+    - Upload screenshots and cover image if updated
+13. Submit for approval
 
 ## Session Continuity
 - Before ending any session, mark completed tasks `[x]` and in-progress tasks `[-]` in `tasks.md`
