@@ -200,13 +200,6 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 
 ## Phase 5 — v1.1.0 Customization Features
 
-> **BLOCKED**: v1.1.0 features cannot be implemented until the background memory issue is resolved.
-> Adding any new properties, strings, or settings increases compiled app size, which reduces
-> background process free memory below the threshold needed for StormGlass tide JSON parsing.
-> See `.kiro/specs/memory-optimization/tasks.md` for details and possible solutions.
-> The tasks below are spec'd and ready — the code patterns were tested and work in the foreground.
-> All task checkboxes have been reset to not-started since the code was reverted to v1.0.2.
-
 ### Task 32: Always Show Seconds setting
 - [x] 32.1 Add `AlwaysShowSeconds` boolean property (default false) to properties.xml
 - [x] 32.2 Add setting UI entry to settings.xml with label "(more battery)"
@@ -220,14 +213,14 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 ### Task 33: Refactor subscreen + arc to display-ready abstraction
 - The View currently has separate `drawHrCircle()` (shore) and `drawHrCircle_Surf()` (surf) methods with hardcoded content (HR vs tide height) and arc sources (stress vs solar). This refactor creates a single `drawSubscreen()` that renders whatever DataManager provides, enabling future configurability without View changes.
 
-- [ ] 33.1 Add display-ready fields to DataManager
+- [x] 33.1 Add display-ready fields to DataManager
   - `subscreenIcon as String` — font glyph character to render (e.g., "h" for heart, "H"/"L" for tide, "T" for thermometer)
   - `subscreenValue as String` — formatted display string (e.g., "72", "1.2m", "--")
   - `subscreenFont` — which icon font to use (heartIconFont, surferIconsFont, etc.) — stored as a Number enum, View maps to font
   - `arcValue as Number or Null` — 0-100 gauge value, null = disabled (no arc drawn)
   - Initialize all to defaults in constructor
 
-- [ ] 33.2 Add `updateSubscreenData()` method to DataManager
+- [x] 33.2 Add `updateSubscreenData()` method to DataManager
   - Called from `updateSensorData()` (per-tick, after sensor reads)
   - Reads `SurfMode` to determine current mode
   - Shore mode: icon = heart glyph, value = heartRate formatted or "--", font = heartIconFont enum
@@ -235,21 +228,21 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
   - Handles unit conversion (metric/imperial) internally
   - View never formats sensor values — DataManager provides display-ready strings
 
-- [ ] 33.3 Add `updateArcData()` method to DataManager
+- [x] 33.3 Add `updateArcData()` method to DataManager
   - Called from `updateSensorData()` (per-tick, after sensor reads)
   - Shore mode: reads stress (existing), sets `arcValue = stress`
   - Surf mode: reads solar intensity (existing), sets `arcValue = solarIntensity`
   - If sensor unavailable: `arcValue = null`
   - Consolidate solar read from `updateSurfSensors()` into `updateSensorData()` (read from same `System.getSystemStats()` call as battery)
 
-- [ ] 33.4 Rename `drawHrCircle()` and `drawHrCircle_Surf()` to single `drawSubscreen(dc, dm)`
+- [x] 33.4 Rename `drawHrCircle()` and `drawHrCircle_Surf()` to single `drawSubscreen(dc, dm)`
   - Draw filled white circle
   - If `dm.arcValue != null`: draw arc gauge with `dm.arcValue`
   - Draw `dm.subscreenIcon` using the appropriate font (map enum to font var)
   - Draw `dm.subscreenValue` as text
   - One method for both modes — no mode branching in View
 
-- [ ] 33.5 Build and verify
+- [x] 33.5 Build and verify
   - Shore mode: subscreen shows heart + BPM + stress arc (same as before)
   - Surf mode: subscreen shows tide direction + height + solar arc (same as before)
   - No visual change — this is a pure refactor
@@ -258,18 +251,18 @@ Implement surf mode as an alternate watch face layout on top of the existing sho
 ### Task 33b: Add configurable arc setting
 - Builds on Task 33's abstraction. Adds ShoreArc/SurfArc settings so users can choose which metric the arc displays.
 
-- [ ] 33b.1 Add `ShoreArc` list property: 0=Stress (default), 1=Solar, 2=Body Battery, 3=Disabled
-- [ ] 33b.2 Add `SurfArc` list property: 0=Solar (default), 1=Stress, 2=Body Battery, 3=Disabled
-- [ ] 33b.3 Add setting UI entries and string resources
-- [ ] 33b.4 Add `bodyBattery as Number or Null` field to DataManager
-- [ ] 33b.5 Update `updateArcData()` to read the active arc setting per mode:
+- [x] 33b.1 Add `ShoreArc` list property: 0=Stress (default), 1=Solar, 2=Body Battery, 3=Disabled
+- [x] 33b.2 Add `SurfArc` list property: 0=Solar (default), 1=Stress, 2=Body Battery, 3=Disabled
+- [x] 33b.3 Add setting UI entries and string resources
+- [x] 33b.4 Add `bodyBattery as Number or Null` field to DataManager
+- [x] 33b.5 Update `updateArcData()` to read the active arc setting per mode:
   - Determine active arc from `SurfMode` + `ShoreArc`/`SurfArc`
   - If Stress: read `SensorHistory.getStressHistory()` → `arcValue`
   - If Body Battery: read `SensorHistory.getBodyBatteryHistory()` → `arcValue`
   - If Solar: read from `System.getSystemStats().solarIntensity` → `arcValue`
   - If Disabled: `arcValue = null` (arc not drawn)
   - SensorHistory constraint: only one iterator per tick — Stress and Body Battery are mutually exclusive arc options
-- [ ] 33b.6 Build and verify
+- [x] 33b.6 Build and verify
   - Change ShoreArc to Solar → arc shows solar intensity in shore mode
   - Change ShoreArc to Body Battery → arc shows body battery
   - Change ShoreArc to Disabled → no arc, circle + content only

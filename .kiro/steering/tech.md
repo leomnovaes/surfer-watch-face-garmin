@@ -78,7 +78,7 @@ The watch face supports two weather sources, configurable via `WeatherSource` se
 
 ### API Keys
 - Stored in Connect IQ app settings (configurable via Garmin Connect mobile app)
-- Properties: `OWMApiKey`, `StormGlassApiKey`, `StormGlassBackupApiKey`, `HomeLat`, `HomeLng`
+- Properties: `OWMApiKey`, `StormGlassApiKey`, `StormGlassBackupApiKey`
 - Surf mode properties: `SurfSpotLat`, `SurfSpotLng`, `CopyGPSToSurfSpot`
 - Never hardcoded in source
 - Open-Meteo requires no key
@@ -97,16 +97,18 @@ The watch face supports two weather sources, configurable via `WeatherSource` se
 
 ## Monkey C Patterns
 
-### Singleton via getApp()
-Monkey C has no static classes. The singleton pattern is:
+### DataManager Ownership (Crystal Face pattern)
+DataManager is owned by the View, NOT the App. Created via lazy init on the first `onUpdate()` tick:
 ```java
-// In SurferWatchFaceApp.mc
-var dataManager as DataManager;
-function getDataManager() as DataManager { return dataManager; }
-
-// Access anywhere via:
-var dm = (Application.getApp() as SurferWatchFaceApp).getDataManager();
+// In SurferWatchFaceView.mc onUpdate():
+var dm = dataManager;
+if (dm == null) {
+    dm = new DataManager();
+    dataManager = dm;
+    // ... init sequence ...
+}
 ```
+All methods access DataManager via the View's local field. The App class has ZERO references to DataManager.
 
 ### HTTP Requests — Background Service Delegate (CRITICAL)
 Watch faces CANNOT call `Communications.makeWebRequest()` from the main process.

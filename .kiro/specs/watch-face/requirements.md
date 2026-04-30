@@ -54,15 +54,15 @@ A surfer-focused watch face for the Garmin Instinct 2X Solar displaying time, fi
 - When no location is available, the system SHALL display `--` for all location-dependent fields
 - The system SHALL store the last known position for use in API refresh decisions
 
-### 2.3 OpenWeatherMap One Call API 3.0
-- Endpoint: `GET https://api.openweathermap.org/data/3.0/onecall`
-- Required parameters: `lat`, `lon`, `appid`, `units` (`metric` or `imperial` based on device setting), `exclude=minutely,hourly,daily,alerts`
+### 2.3 OpenWeatherMap 2.5 Current Weather API
+- Endpoint: `GET https://api.openweathermap.org/data/2.5/weather`
+- Required parameters: `lat`, `lon`, `appid`, `units` (`metric` or `imperial` based on device setting)
 - The system SHALL extract from the response:
-  - `current.temp` — temperature
-  - `current.weather[0].id` — weather condition code (mapped to icon)
-  - `current.wind_speed` — wind speed
-  - `current.wind_deg` — wind direction in degrees (converted to cardinal/arrow)
-  - `current.sunrise` and `current.sunset` — Unix timestamps, compared to now to determine next event
+  - `main.temp` — temperature
+  - `weather[0].id` — weather condition code (mapped to icon)
+  - `wind.speed` — wind speed
+  - `wind.deg` — wind direction in degrees
+  - `sys.sunrise` and `sys.sunset` — Unix timestamps
 - Fields NOT sourced from OWM (excluded to fit in background memory ~28KB):
   - Precipitation: sourced from `Toybox.Weather.getCurrentConditions().precipitationChance` (Garmin built-in current weather)
   - Moon phase: calculated locally from current date using synodic period in `DataManager.computeMoonPhase()`
@@ -106,10 +106,7 @@ A surfer-focused watch face for the Garmin Instinct 2X Solar displaying time, fi
 - The system SHALL expose the following configurable properties via Connect IQ app settings:
   - `OWMApiKey` (string) — OpenWeatherMap API key
   - `StormGlassApiKey` (string) — StormGlass API key
-  - `HomeLat` (string, optional) — fallback latitude if GPS unavailable (stored as string, parsed to float in code)
-  - `HomeLng` (string, optional) — fallback longitude if GPS unavailable (stored as string, parsed to float in code)
-- The system SHALL use `HomeLat`/`HomeLng` as the location source when GPS position is unavailable
-- The system SHALL treat `HomeLat`/`HomeLng` values of `0.0` or empty string as "not configured" and display `--` for location-dependent fields
+  - `StormGlassBackupApiKey` (string) — StormGlass backup API key
 - API keys SHALL NOT be hardcoded in source
 
 ---
