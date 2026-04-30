@@ -1150,6 +1150,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         dc.clear();
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         drawTextAligned(dc, MID_RIGHT_RIGHT_X, MID_RIGHT_BOTTOM_Y, Graphics.FONT_XTINY, seconds, Graphics.TEXT_JUSTIFY_RIGHT);
+        dc.clearClip();
     }
 
     // Safe numeric property read — handles Garmin quirk where list settings
