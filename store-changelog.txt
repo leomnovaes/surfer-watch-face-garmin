@@ -1,3 +1,14 @@
+v1.1.1
+
+FIXED
+• Weather/wind/sunrise no longer goes "--" when changing settings
+• Fixed frozen display when Always Show Seconds is on and switching power modes
+• Removed black flash on first render
+
+IMPROVED
+• Trimmed unused font glyphs — saves 1.9KB runtime memory
+• Peak memory reduced to 58.0KB (1.8KB headroom)
+
 v1.1.0
 
 NEW FEATURES
@@ -8,7 +19,6 @@ NEW FEATURES
 IMPROVED
 • Sunrise/sunset accuracy to ±1 minute
 • Better memory efficiency (architecture refactor)
-• GPS and moon phase updates moved to event-driven (less battery)
 • Removed Home Lat/Lng settings (GPS from watch is sufficient)
 
 v1.0.2
@@ -16,10 +26,6 @@ v1.0.2
 FIXED
 • Wind/swell arrows now point in travel direction
 • Precipitation consistent across weather sources
-
-CHANGED
-• Ocean surface temperature option added
-• Surf temperature shows 1 decimal place
 
 v1.0.0
 

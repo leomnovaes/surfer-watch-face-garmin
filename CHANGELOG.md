@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.1.1
+
+### Fixed
+- Weather/wind/sunrise data no longer goes "--" on settings changes (all fields now persisted to Storage)
+- Black flash on first render removed (lazy init no longer skips first frame)
+- `onPartialUpdate` clip region cleared properly (fixes frozen display when AlwaysShowSeconds is on)
+
+### Improved
+- Font glyph trimming: removed unused glyphs from crystal icons (17→3), seg34 icons (22→1), moon icons (28→16). Saves ~1.9KB runtime memory.
+- Peak memory reduced from 59.7KB to 58.0KB (1.8KB headroom)
+
 ## v1.1.0
 
 ### New Features

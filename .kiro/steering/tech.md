@@ -321,9 +321,9 @@ ServiceDelegate (:background):
 
 ### Foreground Memory Budget (Instinct 2)
 - Total heap: 59.8KB
-- v1.1.0 peak: ~59.7KB (~100 bytes headroom)
-- Code size: ~32.7KB, Application data: ~9.5KB
-- View stack: ~8.8KB (fonts ~6.4KB, DataManager ~1.9KB, other ~0.5KB)
+- v1.1.1 peak: ~58.0KB (~1.8KB headroom)
+- Code size: ~32.9KB, Application data: ~9.5KB
+- View stack: ~6.9KB (fonts ~4.5KB, DataManager ~1.9KB, other ~0.5KB)
 - Globals: ~1.1KB (strings, drawables, font IDs)
 - Runtime overhead: ~7.6KB (stack, temporaries, system)
 
@@ -332,33 +332,29 @@ On CIQ 3.x devices (Instinct 2/2X), fonts load into the app heap via `loadResour
 On CIQ 4.x+ devices (Instinct 3), fonts use a separate graphics pool and don't count against app heap.
 Setting a font field to null frees the memory (reference counting GC).
 
-Current font sizes (View stack, Instinct 2):
-| Font | Glyphs | Render size | Texture | Memory |
-|------|--------|-------------|---------|--------|
-| Moon icons | 28 phases | 18x18px each | 512x512 | 1617 bytes |
-| Weather icons | 29 glyphs | ~17px | 256x256 | 1519 bytes |
-| Saira clock | digits 0-9 + colon | 40px | 256x256 | 924 bytes |
-| Crystal icons | 3 glyphs (notif, sunrise, sunset) | ~15px | 256x256 | 919 bytes |
-| Seg34 icons | 1 glyph (bluetooth) | ~15px | varies | 917 bytes |
-| Surfer icons | 4 glyphs (umbrella, tide H/L, thermometer) | 17px | 256x256 | 352 bytes |
-| Heart icon | 1 glyph | 27px | 256x256 | 148 bytes |
-| Rajdhani clock | digits 0-9 + colon | 40px | 256x256 | 0 (null, not loaded) |
-| **Total** | | | | **6396 bytes** |
+**Key finding: Garmin loads glyph data proportional to glyph count, not texture size.**
+Removing unused `char` entries from .fnt files reduces runtime memory without touching the PNG texture.
+A font with 28 glyphs in a 512x512 texture uses the same memory as 28 glyphs in a 128x128 texture.
 
-### Memory Optimization Opportunities
-- **Moon font**: 28 phases in 512x512 texture is overkill. At 18x18px on 2-color MIP, only ~8 phases are visually distinguishable. Re-rasterize 8 phases in 128x128 texture → save ~1.1KB.
-- **Seg34 icons**: 917 bytes for 1 glyph (bluetooth "L"). Could merge into surfer-icons font → save ~900 bytes.
-- **Crystal icons**: 919 bytes for 3 glyphs. Could merge into surfer-icons font → save ~900 bytes.
-- **Heart icon**: 148 bytes for 1 glyph. Could merge into surfer-icons font → save ~130 bytes.
-- Font merging saves the per-font overhead (each `loadResource` call has fixed cost).
+Current font sizes (View stack, Instinct 2, v1.1.1):
+| Font | Glyphs loaded | Glyphs in PNG | Memory |
+|------|--------------|---------------|--------|
+| Moon icons | 16 (of 28 in PNG) | 28 | ~1109 bytes |
+| Weather icons | 29 | 29 | ~1519 bytes |
+| Saira clock | 11 | 11 | ~924 bytes |
+| Crystal icons | 3 (of 17 in PNG) | 17 | ~162 bytes |
+| Seg34 icons | 1 (of 22 in PNG) | 22 | ~306 bytes |
+| Surfer icons | 6 | 6 | ~352 bytes |
+| Heart icon | 1 | 1 | ~148 bytes |
+| **Total** | | | **~4520 bytes** |
 
-### Memory Rules
-1. Single clock font loaded at a time saves ~4KB vs loading both
-2. Storage keys use 2-3 char names to minimize data memory
-3. Version-gated `Storage.clearValues()` on startup prevents stale key bloat from updates
-4. Every `Storage.setValue`/`getValue` call generates code — minimize the number of calls
-5. Every function has fixed overhead (~40-60 bytes) — prefer inlining for small helpers
-6. `SensorHistory` iterators allocate heap temporarily — only one per tick
+### Font Optimization Rules
+1. Only include `char` entries in .fnt for glyphs actually used in code
+2. Removing .fnt entries saves runtime memory — PNG texture size doesn't matter
+3. Single clock font loaded at a time saves ~4KB vs loading both
+4. When adding new icon glyphs, add to existing font if glyph size matches
+5. Moon phases: 16 of 28 provides good visual resolution at 18x18px on MIP
+6. `onPartialUpdate()` must call `dc.clearClip()` after drawing — otherwise `onUpdate()` gets clipped
 
 ### When adding new features
 1. Measure foreground peak memory in simulator (View > Memory) — must stay under 59.8KB
