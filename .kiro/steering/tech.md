@@ -321,11 +321,44 @@ ServiceDelegate (:background):
 
 ### Foreground Memory Budget (Instinct 2)
 - Total heap: 59.8KB
-- v1.0.3 peak: ~58.2KB (~1.6KB headroom)
-- Code size: ~32KB, Application data: ~9.6KB
-- Single clock font loaded at a time saves ~4KB vs loading both
-- Storage keys use 2-3 char names to minimize data memory
-- Version-gated `Storage.clearValues()` on startup prevents stale key bloat from updates
+- v1.1.0 peak: ~59.7KB (~100 bytes headroom)
+- Code size: ~32.7KB, Application data: ~9.5KB
+- View stack: ~8.8KB (fonts ~6.4KB, DataManager ~1.9KB, other ~0.5KB)
+- Globals: ~1.1KB (strings, drawables, font IDs)
+- Runtime overhead: ~7.6KB (stack, temporaries, system)
+
+### Font Memory (CIQ 3.x — loaded into app heap)
+On CIQ 3.x devices (Instinct 2/2X), fonts load into the app heap via `loadResource()`.
+On CIQ 4.x+ devices (Instinct 3), fonts use a separate graphics pool and don't count against app heap.
+Setting a font field to null frees the memory (reference counting GC).
+
+Current font sizes (View stack, Instinct 2):
+| Font | Glyphs | Render size | Texture | Memory |
+|------|--------|-------------|---------|--------|
+| Moon icons | 28 phases | 18x18px each | 512x512 | 1617 bytes |
+| Weather icons | 29 glyphs | ~17px | 256x256 | 1519 bytes |
+| Saira clock | digits 0-9 + colon | 40px | 256x256 | 924 bytes |
+| Crystal icons | 3 glyphs (notif, sunrise, sunset) | ~15px | 256x256 | 919 bytes |
+| Seg34 icons | 1 glyph (bluetooth) | ~15px | varies | 917 bytes |
+| Surfer icons | 4 glyphs (umbrella, tide H/L, thermometer) | 17px | 256x256 | 352 bytes |
+| Heart icon | 1 glyph | 27px | 256x256 | 148 bytes |
+| Rajdhani clock | digits 0-9 + colon | 40px | 256x256 | 0 (null, not loaded) |
+| **Total** | | | | **6396 bytes** |
+
+### Memory Optimization Opportunities
+- **Moon font**: 28 phases in 512x512 texture is overkill. At 18x18px on 2-color MIP, only ~8 phases are visually distinguishable. Re-rasterize 8 phases in 128x128 texture → save ~1.1KB.
+- **Seg34 icons**: 917 bytes for 1 glyph (bluetooth "L"). Could merge into surfer-icons font → save ~900 bytes.
+- **Crystal icons**: 919 bytes for 3 glyphs. Could merge into surfer-icons font → save ~900 bytes.
+- **Heart icon**: 148 bytes for 1 glyph. Could merge into surfer-icons font → save ~130 bytes.
+- Font merging saves the per-font overhead (each `loadResource` call has fixed cost).
+
+### Memory Rules
+1. Single clock font loaded at a time saves ~4KB vs loading both
+2. Storage keys use 2-3 char names to minimize data memory
+3. Version-gated `Storage.clearValues()` on startup prevents stale key bloat from updates
+4. Every `Storage.setValue`/`getValue` call generates code — minimize the number of calls
+5. Every function has fixed overhead (~40-60 bytes) — prefer inlining for small helpers
+6. `SensorHistory` iterators allocate heap temporarily — only one per tick
 
 ### When adding new features
 1. Measure foreground peak memory in simulator (View > Memory) — must stay under 59.8KB
@@ -334,4 +367,5 @@ ServiceDelegate (:background):
 4. Bump Storage version number in View's lazy init when changing key names
 5. If background memory is tight, consider splitting API chains across separate temporal events
 6. Test on Instinct 2 (tightest memory) — Instinct 3 has more headroom
-4. Test on Instinct 2X simulator — it has the tightest memory budget
+7. Consider font merging: fewer font files = less per-font overhead
+8. Check if new code can replace existing code rather than adding to it

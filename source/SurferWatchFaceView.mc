@@ -321,10 +321,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (moonIconsFont != null) {
             var glyph = "0";
             if (dm.moonPhase != null) {
-                // Map 0.0-1.0 to 28 phases (chars '0' through 'K', ASCII 48-75)
-                var idx = Math.round(dm.moonPhase * 28).toNumber() % 28;
-                var charCode = 48 + idx;
-                glyph = charCode.toChar().toString();
+                // Map 0.0-1.0 to 12 phases from the 28-phase font
+                // Indices 0,2,5,7,9,12,14,16,19,21,23,26 from original 28
+                var phases = [48,50,52,53,55,57,58,60,62,64,66,67,69,71,72,74];
+                var idx = Math.round(dm.moonPhase * 16).toNumber() % 16;
+                glyph = phases[idx].toChar().toString();
             }
             drawTextAligned(dc, x, y, moonIconsFont, glyph, Graphics.TEXT_JUSTIFY_LEFT);
         }
