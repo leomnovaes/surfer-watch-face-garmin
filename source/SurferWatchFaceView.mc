@@ -165,8 +165,6 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             dm.updateGPS();
             dm.computeMoonPhase();
             dm.refreshWeatherOnBackgroundEvent();
-            WatchUi.requestUpdate();
-            return;
         }
 
         // Handle settings-changed flag (set by App.onSettingsChanged via Storage)

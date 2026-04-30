@@ -24,11 +24,15 @@ class DataManager {
     //   "ct"  = cachedTemp          "cci" = cachedConditionId
     //   "cws" = cachedWindSpeed     "cwd" = cachedWindDeg
     //   "csr" = cachedSunrise       "css" = cachedSunset
-    //   "ofa" = owmFetchedAt
+    //   "ofa" = owmFetchedAt        "pp"  = precipProbability
+    //   "id"  = isDay
     // Surf forecast arrays:
     //   "ssh" = surf_swellHeights   "ssp" = surf_swellPeriods
     //   "ssd" = surf_swellDirections "sst" = surf_seaSurfaceTemps
     //   "sws" = surf_windSpeeds     "swd" = surf_windDirections
+    // Surf wind + sunrise/sunset (persisted for settings change survival):
+    //   "sw"  = surfWindSpeed       "sd"  = surfWindDeg
+    //   "sr"  = surfSunrise         "ss"  = surfSunset
     // Surf tide arrays:
     //   "sth" = surf_tideHeights    "stt" = surf_tideTimes
     //   "sty" = surf_tideTypes      "std" = surf_tideFetchedDay
@@ -460,6 +464,13 @@ class DataManager {
         Application.Storage.setValue("csr", null);
         Application.Storage.setValue("css", null);
         Application.Storage.setValue("ofa", null);
+        Application.Storage.setValue("pp", null);
+        Application.Storage.setValue("id", null);
+        // Clear surf wind + sunrise/sunset
+        Application.Storage.setValue("sw", null);
+        Application.Storage.setValue("sd", null);
+        Application.Storage.setValue("sr", null);
+        Application.Storage.setValue("ss", null);
         // Clear surf wind forecast arrays (source-dependent)
         Application.Storage.setValue("sws", null);
         Application.Storage.setValue("swd", null);
@@ -797,9 +808,13 @@ class DataManager {
     function onSurfWindData(data as Dictionary) as Void {
         surfWindSpeed = data["windSpeed"] as Float or Null;
         surfWindDeg = data["windDeg"] as Number or Null;
-        // Extract surf sunrise/sunset if available (from Open-Meteo or OWM)
         if (data["surfSunrise"] != null) { surfSunrise = data["surfSunrise"] as Number; }
         if (data["surfSunset"] != null) { surfSunset = data["surfSunset"] as Number; }
+        // Persist surf wind + sunrise/sunset so they survive settings changes
+        Application.Storage.setValue("sw", surfWindSpeed);
+        Application.Storage.setValue("sd", surfWindDeg);
+        Application.Storage.setValue("sr", surfSunrise);
+        Application.Storage.setValue("ss", surfSunset);
         // Refresh cached wind forecast arrays from Storage (delegate may have written them)
         _windSpeedsCache = Application.Storage.getValue("sws") as Array or Null;
         _windDirectionsCache = Application.Storage.getValue("swd") as Array or Null;
@@ -862,6 +877,11 @@ class DataManager {
         nextTideTime = null;
         extractTideCurveData();
         loadForecastCaches();
+        // Restore persisted surf wind + sunrise/sunset
+        surfWindSpeed = Application.Storage.getValue("sw") as Float or Null;
+        surfWindDeg = Application.Storage.getValue("sd") as Number or Null;
+        surfSunrise = Application.Storage.getValue("sr") as Number or Null;
+        surfSunset = Application.Storage.getValue("ss") as Number or Null;
     }
 
     // =========================================================
@@ -915,6 +935,8 @@ class DataManager {
         Application.Storage.setValue("cwd", windDeg);
         Application.Storage.setValue("csr", sunrise);
         Application.Storage.setValue("css", sunset);
+        Application.Storage.setValue("pp", precipProbability);
+        Application.Storage.setValue("id", isDay);
     }
 
     // =========================================================
@@ -929,6 +951,8 @@ class DataManager {
         sunrise = Application.Storage.getValue("csr") as Number or Null;
         sunset = Application.Storage.getValue("css") as Number or Null;
         owmFetchedAt = Application.Storage.getValue("ofa") as Number or Null;
+        precipProbability = Application.Storage.getValue("pp") as Number or Null;
+        isDay = Application.Storage.getValue("id") as Number or Null;
     }
 
 }
