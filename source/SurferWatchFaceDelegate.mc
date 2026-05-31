@@ -219,7 +219,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
             var apiKey = Application.Properties.getValue("OWMApiKey") as String or Null;
             if (apiKey == null || apiKey.equals("")) { exitWithAllResults(); return; }
             var units = "metric";
-            if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) { units = "imperial"; }
             var ws = new WeatherService(method(:onWindDone));
             ws.fetch(_lat, _lng, apiKey, units);
         }
@@ -240,7 +239,6 @@ class SurferWatchFaceDelegate extends System.ServiceDelegate {
                 return;
             }
             var units = "metric";
-            if (System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE) { units = "imperial"; }
             var ws = new WeatherService(method(:onShoreWeatherDone));
             ws.fetch(_lat, _lng, apiKey, units);
         }

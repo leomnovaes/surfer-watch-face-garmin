@@ -299,8 +299,7 @@ class DataManager {
                 subscreenFont = -1;
             }
             if (interpTideHeight != null) {
-                var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
-                subscreenValue = isMetric ? interpTideHeight.format("%.1f") : (interpTideHeight * 3.281).format("%.1f");
+                subscreenValue = UnitConverter.isElevationImperial() ? UnitConverter.metersToFeet(interpTideHeight).format("%.1f") : interpTideHeight.format("%.1f");
             } else { subscreenValue = "--"; }
             // Surf arc: 0=Solar, 1=Stress, 2=BB, 3=Disabled
             var sa = Application.Properties.getValue("SurfArc");

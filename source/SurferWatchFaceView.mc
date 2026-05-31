@@ -149,9 +149,9 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (dm == null) {
             // Clear stale Storage on version bump (Properties/settings are preserved)
             var storedVer = Application.Storage.getValue("av");
-            if (storedVer == null || storedVer != 4) {
+            if (storedVer == null || storedVer != 5) {
                 Application.Storage.clearValues();
-                Application.Storage.setValue("av", 4);
+                Application.Storage.setValue("av", 5);
             }
             dm = new DataManager();
             dataManager = dm;
@@ -635,11 +635,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             tideTimeStr = formatUnixTime(dm.nextTideTime);
         }
         if (dm.currentTideHeight != null) {
-            var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
-            if (isMetric) {
-                tideHeightStr = dm.currentTideHeight.format("%.1f") + "m";
+            if (UnitConverter.isElevationImperial()) {
+                tideHeightStr = UnitConverter.metersToFeet(dm.currentTideHeight).format("%.1f") + "ft";
             } else {
-                tideHeightStr = (dm.currentTideHeight * 3.281).format("%.1f") + "ft";
+                tideHeightStr = dm.currentTideHeight.format("%.1f") + "m";
             }
         }
         drawTideInfo(dc, TOP_COL1_X, TOP_ROW3_Y, tideIsHigh, tideTimeStr, tideHeightStr);
@@ -722,9 +721,11 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         // Col 1: weather icon + temperature
         var tempText = "--";
         if (hasWeather && dm.temperature != null) {
-            var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
-            var suffix = isMetric ? "C" : "F";
-            tempText = dm.temperature.toNumber().toString() + "°" + suffix;
+            if (UnitConverter.isTemperatureImperial()) {
+                tempText = UnitConverter.celsiusToFahrenheit(dm.temperature).toNumber().toString() + "°F";
+            } else {
+                tempText = dm.temperature.toNumber().toString() + "°C";
+            }
         }
         drawIconWeather(dc, WX_COL1_X, WX_Y_EDGE, dm);
         drawTextAligned(dc, WX_COL1_X, WX_TEXT_Y_EDGE, Graphics.FONT_XTINY, tempText, Graphics.TEXT_JUSTIFY_CENTER);
@@ -736,19 +737,8 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             var speed;
             var rawSpeed = dm.windSpeed;
 
-            // Open-Meteo returns m/s always (wind_speed_unit=ms).
-            // OWM metric returns m/s, OWM imperial returns mph.
-            // Garmin returns m/s.
-            // Normalize to m/s first.
+            // All sources now return m/s (OWM always fetched with units=metric).
             var speedMs = rawSpeed;
-            if (weatherSource != null && weatherSource == 2) {
-                // OWM mode — may be imperial (mph)
-                var isImperial = System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE;
-                if (isImperial) {
-                    speedMs = rawSpeed / 2.237; // mph back to m/s
-                }
-            }
-            // Open-Meteo (1) and Garmin (0) both return m/s — no conversion needed
 
             if (windUnit == null || windUnit == 0) {
                 // Auto: km/h for metric, mph for imperial
@@ -796,21 +786,19 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         if (surfTempSource != null && surfTempSource == 1) {
             // Ocean surface temperature from Open-Meteo Marine API
             if (dm.seaSurfaceTemp != null) {
-                var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
-                if (isMetric) {
-                    tempText = dm.seaSurfaceTemp.format("%.1f") + "°C";
+                if (UnitConverter.isTemperatureImperial()) {
+                    tempText = UnitConverter.celsiusToFahrenheit(dm.seaSurfaceTemp).format("%.1f") + "°F";
                 } else {
-                    tempText = (dm.seaSurfaceTemp * 1.8 + 32).format("%.1f") + "°F";
+                    tempText = dm.seaSurfaceTemp.format("%.1f") + "°C";
                 }
             }
         } else {
             // Watch body temperature sensor (default)
             if (dm.waterTemp != null) {
-                var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
-                if (isMetric) {
-                    tempText = dm.waterTemp.format("%.1f") + "°C";
+                if (UnitConverter.isTemperatureImperial()) {
+                    tempText = UnitConverter.celsiusToFahrenheit(dm.waterTemp).format("%.1f") + "°F";
                 } else {
-                    tempText = (dm.waterTemp * 1.8 + 32).format("%.1f") + "°F";
+                    tempText = dm.waterTemp.format("%.1f") + "°C";
                 }
             }
         }
@@ -830,11 +818,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             tideTimeStr = formatUnixTime(dm.nextTideTime);
         }
         if (dm.currentTideHeight != null) {
-            var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
-            if (isMetric) {
-                tideHeightStr = dm.currentTideHeight.format("%.1f") + "m";
+            if (UnitConverter.isElevationImperial()) {
+                tideHeightStr = UnitConverter.metersToFeet(dm.currentTideHeight).format("%.1f") + "ft";
             } else {
-                tideHeightStr = (dm.currentTideHeight * 3.281).format("%.1f") + "ft";
+                tideHeightStr = dm.currentTideHeight.format("%.1f") + "m";
             }
         }
         drawTideInfo(dc, TOP_COL1_X, TOP_ROW3_Y, tideIsHigh, tideTimeStr, tideHeightStr);
@@ -851,16 +838,7 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
             var windUnit = Application.Properties.getValue("WindSpeedUnit");
             var speed;
             var speedMs = dm.surfWindSpeed;
-            // Open-Meteo always returns m/s (wind_speed_unit=ms).
-            // OWM returns m/s (metric) or mph (imperial).
-            // Only normalize OWM imperial to m/s.
-            var weatherSource = Application.Properties.getValue("WeatherSource");
-            if (weatherSource != null && weatherSource == 2) {
-                var isImperial = System.getDeviceSettings().distanceUnits == System.UNIT_STATUTE;
-                if (isImperial) {
-                    speedMs = dm.surfWindSpeed / 2.237;
-                }
-            }
+            // All sources now return m/s (OWM always fetched with units=metric).
             if (windUnit == null || windUnit == 0) {
                 var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
                 speed = isMetric ? speedMs * 3.6 : speedMs * 2.237;
@@ -938,11 +916,10 @@ class SurferWatchFaceView extends WatchUi.WatchFace {
         // Col 1: Swell height
         var htText = "--";
         if (dm.swellHeight != null) {
-            var isMetric = System.getDeviceSettings().distanceUnits == System.UNIT_METRIC;
-            if (isMetric) {
-                htText = dm.swellHeight.format("%.1f") + "m";
+            if (UnitConverter.isElevationImperial()) {
+                htText = UnitConverter.metersToFeet(dm.swellHeight).format("%.1f") + "ft";
             } else {
-                htText = (dm.swellHeight * 3.281).format("%.1f") + "ft";
+                htText = dm.swellHeight.format("%.1f") + "m";
             }
         }
         // Col 1: Swell height — surfing icon
