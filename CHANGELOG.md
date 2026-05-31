@@ -3,17 +3,9 @@
 ## v1.1.2
 
 ### Fixed
-- Temperature display now correctly converts Celsius to Fahrenheit (was showing raw Celsius with "°F" suffix)
-- Temperature unit preference now reads from `temperatureUnits` setting (not `distanceUnits`) — supports mixed unit configurations (e.g., distance=miles + temperature=Celsius)
-- Tide and swell height unit preference now reads from `elevationUnits` setting (not `distanceUnits`) — supports users who want feet for elevation but km for distance
-- OWM API always fetches in metric units to ensure consistent internal storage regardless of device settings
-
-### Added
-- `UnitConverter` module with pure conversion functions and unit tests (25 tests covering edge cases)
-- Storage version bump (v5) to invalidate cached imperial data from previous versions
-
-### Improved
-- Removed OWM wind speed back-conversion (`/ 2.237`) — all sources now consistently store m/s, eliminating floating-point precision loss
+- Temperature now correctly displays in Fahrenheit when set to imperial (was showing Celsius value with "°F" suffix)
+- Temperature, tide height, and swell height now each respect their own unit setting (temperature, elevation, distance can be configured independently)
+- Mixed unit configurations now work correctly (e.g., distance in miles + temperature in Celsius + elevation in meters)
 
 ## v1.1.1
 
