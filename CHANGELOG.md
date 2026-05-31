@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.2.0
+## v1.1.2
 
 ### Fixed
 - Temperature display now correctly converts Celsius to Fahrenheit (was showing raw Celsius with "°F" suffix)
